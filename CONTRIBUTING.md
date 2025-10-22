@@ -78,36 +78,60 @@ except Exception:
 
 ---
 
-## Example Module
+## Example Modules
 
+### 1. HTML string check (Reddit)
 ```python
 import httpx
-from httpx import ConnectError, TimeoutException
 
-def validate_github(user):
+def validate_reddit(user):
     """
-    Checks if a GitHub username is available.
-    Returns:
-        1 -> available
-        0 -> taken
-        2 -> error/blocked
+    Checks if a Reddit username is available.
+    Returns: 1 -> available, 0 -> taken, 2 -> error
     """
-    url = f"https://github.com/signup_check/username?value={user}"
-    headers = {"User-Agent": "Your User-Agent"}
+    url = f"https://www.reddit.com/user/{user}/"
+    NOT_FOUND = "Sorry, nobody on Reddit goes by that name."
 
     try:
-        response = httpx.get(url, headers=headers, timeout=3.0)
-        if response.status_code == 200:
-            return 1
-        elif response.status_code == 422:
-            return 0
-        else:
-            return 2
-    except (ConnectError, TimeoutException):
+        r = httpx.get(url, timeout=3.0, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code == 200:
+            return 1 if NOT_FOUND in r.text else 0
         return 2
-    except Exception:
+    except:
         return 2
 ```
+
+**Notes:**  
+- Some platforms always return 200; check for a **unique string** in the HTML that only appears for non-existent usernames.  
+- Prefer **official API endpoints** if available.
+
+---
+
+### 2. HTTP status check (Launchpad)
+```python
+import httpx
+
+def validate_launchpad(user):
+    """
+    Checks if a Launchpad username is available.
+    Returns: 1 -> available, 0 -> taken, 2 -> error
+    """
+    url = f"https://launchpad.net/~{user}"
+
+    try:
+        r = httpx.head(url, timeout=5, follow_redirects=True)
+        if r.status_code == 404:
+            return 1  # available
+        elif r.status_code == 200:
+            return 0  # taken
+        return 2
+    except:
+        return 2
+```
+
+**Notes:**  
+- HTTP status `404` usually → available, `200` → taken.  
+- HEAD request is sufficient, avoids downloading full HTML.
 
 ---
 
