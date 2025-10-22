@@ -131,7 +131,6 @@ def validate_launchpad(user):
 
 **Notes:**  
 - HTTP status `404` usually → available, `200` → taken.  
-- HEAD request is sufficient, avoids downloading full HTML.
 
 ---
 
