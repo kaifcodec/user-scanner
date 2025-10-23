@@ -14,9 +14,7 @@ def load_modules(package):
     return modules
 
 def run_module_single(module, username):
-    """
-    Run a single module's validate_ function on the given username.
-    """
+
     func = next((getattr(module, f) for f in dir(module)
                  if f.startswith("validate_") and callable(getattr(module, f))), None)
     site_name = module.__name__.split('.')[-1].capitalize()
@@ -38,9 +36,6 @@ def run_module_single(module, username):
         print(f"  {Fore.YELLOW}[!] {site_name} has no validate_ function{Style.RESET_ALL}")
 
 def run_checks_category(package, username, verbose=False):
-    """
-    Run all modules in a given package (category) on the username.
-    """
     modules = load_modules(package)
     category_name = package.__name__.split('.')[-1].capitalize()
     print(f"{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")

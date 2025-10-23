@@ -1,4 +1,5 @@
 import argparse
+import re
 from user_scanner.core.orchestrator import run_checks, load_modules
 from colorama import Fore, Style
 
@@ -59,6 +60,8 @@ def main():
     if not args.username:
         print(Fore.RED + "[!] Please provide a username with -u or --username." + Style.RESET_ALL)
         return
+    if re.search(r"[^a-zA-Z0-9._-]", args.username):
+        print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
 
     from user_scanner import dev, social, creator, community
 
