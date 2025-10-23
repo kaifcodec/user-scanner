@@ -29,12 +29,14 @@ Scan a username across all platforms:
 ```bash
 user-scanner -u <username>
 ```
-Optionally, scan a specific category:
+Optionally, scan a specific category or single module:
 
 ```bash
 user-scanner -u <username> -c dev
-```
+user-scanner -l # Lists all available modules
+user-scanner -u <username> -m github
 
+```
 ---
 
 ## Contributing
