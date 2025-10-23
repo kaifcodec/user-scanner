@@ -16,11 +16,12 @@ def load_modules(package):
 
 def run_checks(username):
 
-    from user_scanner import tech, social, community
+    from user_scanner import dev, social,creator, community
 
     categories = [
-        ("TECH", tech),
+        ("DEV", dev),
         ("SOCIAL", social),
+        ("CREATOR", creator),
         ("COMMUNITY", community)
     ]
 
@@ -45,7 +46,8 @@ def run_checks(username):
                 continue
 
             site_name = module.__name__.split('.')[-1].capitalize()
-
+            if site_name == "X":
+               site_name = "X (Twitter)"
             try:
                 result = func(username)
                 if result == 1:

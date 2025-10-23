@@ -15,7 +15,7 @@ def validate_instagram(user):
     }
     
     try:
-        response = httpx.get(url, headers=headers, timeout = 15.0)
+        response = httpx.get(url, headers=headers, timeout = 3.0)
         status = response.status_code
 
         if status == 200:

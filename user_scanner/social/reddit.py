@@ -15,8 +15,8 @@ def validate_reddit(user):
     NOT_FOUND_STRING = "Sorry, nobody on Reddit goes by that name."
 
     try:
-        response = httpx.get(url, headers=headers, follow_redirects=True, timeout = 15.0)
-        
+        response = httpx.get(url, headers=headers, follow_redirects=True, timeout = 3.0)
+
         if response.status_code == 200:
             if NOT_FOUND_STRING in response.text:
                 return 1

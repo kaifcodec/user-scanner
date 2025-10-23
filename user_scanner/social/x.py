@@ -17,7 +17,7 @@ def validate_x(user):
     }
 
     try:
-        response = httpx.get(url, params=params, headers=headers, timeout = 15.0)
+        response = httpx.get(url, params=params, headers=headers, timeout = 3.0)
         status = response.status_code
 
         if status in [401, 403, 429]:

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "user-scanner"
+version = "1.0.0.0"
+description = "Check username availability across multiple popular platforms"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Kaif", email = "kafcodec@gmail.com"}
+]
+dependencies = [
+  "httpx",
+  "colorama"
+]
+
+requires-python = ">=3.7"
+keywords = ["username", "checker", "availability", "social", "tech", "python", "user-scanner"]
+
+[project.urls]
+Homepage = "https://github.com/kaifcodec/user-scanner"
+
+[project.scripts]
+user-scanner = "user_scanner.__main__:main"

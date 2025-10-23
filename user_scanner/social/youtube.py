@@ -29,7 +29,7 @@ def validate_youtube(user):
     }
 
     try:
-        response = httpx.get(url, headers=headers, follow_redirects=True, timeout = 15.0)
+        response = httpx.get(url, headers=headers, follow_redirects=True, timeout = 3.0)
         status = response.status_code
 
         if status == 200:
