@@ -4,11 +4,11 @@ from httpx import ConnectError, TimeoutException
 
 def validate_x(user):
     url = "https://api.twitter.com/i/users/username_available.json"
-    
+
     params = {
         "username": user,
-        "full_name": "Test User",
-        "email": "test@example.com"
+        "full_name": "John Doe",
+        "email": "johndoe07@gmail.com"
     }
 
     headers = {
@@ -19,9 +19,10 @@ def validate_x(user):
     try:
         response = httpx.get(url, params=params, headers=headers, timeout = 3.0)
         status = response.status_code
-
+        print(status)
         if status in [401, 403, 429]:
             return 2
+
         
         elif status == 200:
             data = response.json()
