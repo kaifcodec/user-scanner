@@ -73,4 +73,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
-## ⚠️ `community/` is empty looking for contributions
+## ⚠️ `community/` is small looking for contributions
