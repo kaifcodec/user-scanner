@@ -10,17 +10,13 @@ def validate_kaggle(user):
     }
 
     try:
-        # Use GET request for maximum fidelity, though we only check status code
         response = httpx.get(url, headers=headers, timeout=3.0, follow_redirects=True)
         status = response.status_code
 
-        # If a profile exists (Taken) -> 200 OK
         if status == 200:
            return 0
-        # If no profile exists (Available) -> 404 Not Found
         elif status == 404:
            return 1
-        # Other status codes are errors
         else:
            return 2
 
