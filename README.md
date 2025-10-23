@@ -1,7 +1,7 @@
 # User Scanner
 
 Scan a username across multiple social, developer, and creator platforms to see if it’s available.  
-Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instagram, and more — all in one command.
+Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instagram, and more, all in one command.
 
 ---
 
