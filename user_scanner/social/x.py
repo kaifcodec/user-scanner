@@ -18,15 +18,13 @@ def validate_x(user):
 
     try:
         response = httpx.get(url, params=params, headers=headers, timeout = 3.0)
-        status = response.status_code
         print(status)
         if status in [401, 403, 429]:
             return 2
 
-        
+
         elif status == 200:
             data = response.json()
-            
             if data.get('valid') is True:
                 return 1
             elif data.get('reason') == 'taken':
