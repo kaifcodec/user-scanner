@@ -69,7 +69,9 @@ user-scanner -u <username> -m github
 
 == COMMUNITY SITES ==
   [✔] Coderlegion: Available
-
+  ...
+  ...
+  ...
 ```
 ### Contributing
 
