@@ -11,7 +11,7 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Clear **Available / Taken / Error** output for each platform.
 - ✅ Fully modular: add new platform modules easily.
 - ✅ Command-line interface ready: works directly after `pip install`.
-
+- ✅ Can be used as username OSINT tool.
 ---
 
 ## Installation
