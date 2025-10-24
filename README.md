@@ -38,7 +38,39 @@ user-scanner -u <username> -m github
 
 ```
 ---
+## Example Output 
+```bash
+ Checking username: johndoe07
 
+== DEV SITES ==
+  [✔] Codeberg: Available
+  [✔] Cratesio: Available
+  [✘] Dockerhub: Taken
+  [✘] Github: Taken
+  [✔] Gitlab: Available
+  [✔] Launchpad: Available
+  [✔] Npmjs: Available
+  [✘] Replit: Taken
+
+== SOCIAL SITES ==
+  [✘] Instagram: Taken
+  [✘] Pinterest: Taken
+  [✘] Reddit: Taken
+  [✘] Snapchat: Taken
+  [✘] Threads: Taken
+  [✘] X (Twitter): Taken
+  [✔] Youtube: Available
+
+== CREATOR SITES ==
+  [✔] Devto: Available
+  [✔] Hashnode: Available
+  [✘] Kaggle: Taken
+  [!] Medium: Error
+
+== COMMUNITY SITES ==
+  [✔] Coderlegion: Available
+
+```
 ## Contributing
 
 Modules are organized by category:
