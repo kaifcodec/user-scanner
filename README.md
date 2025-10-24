@@ -5,7 +5,7 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 
 ---
 
-## Features
+### Features
 
 - ✅ Check usernames across **social networks**, **developer platforms**, and **creator communities**.
 - ✅ Clear **Available / Taken / Error** output for each platform.
@@ -14,7 +14,7 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Can be used as username OSINT tool.
 ---
 
-## Installation
+### Installation
 
 ```bash
 pip install user-scanner
@@ -22,7 +22,7 @@ pip install user-scanner
 
 ---
 
-## Usage
+### Usage
 
 Scan a username across all platforms:
 
@@ -38,8 +38,42 @@ user-scanner -u <username> -m github
 
 ```
 ---
+### Example Output 
+```bash
+ Checking username: johndoe07
 
-## Contributing
+== DEV SITES ==
+  [✔] Codeberg: Available
+  [✔] Cratesio: Available
+  [✘] Dockerhub: Taken
+  [✘] Github: Taken
+  [✔] Gitlab: Available
+  [✔] Launchpad: Available
+  [✔] Npmjs: Available
+  [✘] Replit: Taken
+
+== SOCIAL SITES ==
+  [✘] Instagram: Taken
+  [✘] Pinterest: Taken
+  [✘] Reddit: Taken
+  [✘] Snapchat: Taken
+  [✘] Threads: Taken
+  [✘] X (Twitter): Taken
+  [✔] Youtube: Available
+
+== CREATOR SITES ==
+  [✔] Devto: Available
+  [✔] Hashnode: Available
+  [✘] Kaggle: Taken
+  [!] Medium: Error
+
+== COMMUNITY SITES ==
+  [✔] Coderlegion: Available
+  ...
+  ...
+  ...
+```
+### Contributing
 
 Modules are organized by category:
 
@@ -63,13 +97,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 
 ---
 
-## Dependencies
+### Dependencies
 - [httpx](https://pypi.org/project/httpx/)
 - [colorama](https://pypi.org/project/colorama/)
 
 ---
 
-## License
+### License
 
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
