@@ -62,6 +62,9 @@ def main():
         return
     if re.search(r"[^a-zA-Z0-9._-]", args.username):
         print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
+    if re.search(r"[^a-zA-Z0-9\.-]", args.username):
+        print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL +"\n")
+
 
     from user_scanner import dev, social, creator, community
 

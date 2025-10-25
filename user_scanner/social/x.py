@@ -1,5 +1,6 @@
 import httpx
 import json
+from colorama import Fore, Style
 from httpx import ConnectError, TimeoutException
 
 def validate_x(user):
@@ -30,7 +31,7 @@ def validate_x(user):
             elif data.get('reason') == 'taken':
                 return 0
             elif data.get('reason') == "improper_format":
-                print(data.get('desc'))
+                print("\n" +"  "+f"{Fore.CYAN}X says: {data.get('desc')}{Style.RESET_ALL}")
                 return 2
             else:
                 return 2
