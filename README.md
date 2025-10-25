@@ -53,7 +53,9 @@ user-scanner -u <username> -m github
   [✘] Replit: Taken
 
 == SOCIAL SITES ==
+  [✘] Bluesky: Taken
   [✘] Instagram: Taken
+  [✘] Mastodon: Taken
   [✘] Pinterest: Taken
   [✘] Reddit: Taken
   [✘] Snapchat: Taken
@@ -66,9 +68,14 @@ user-scanner -u <username> -m github
   [✔] Hashnode: Available
   [✘] Kaggle: Taken
   [!] Medium: Error
+  [✔] Patreon: Available
 
 == COMMUNITY SITES ==
   [✔] Coderlegion: Available
+
+== GAMING SITES ==
+  [✘] Chess_com: Taken
+
   ...
   ...
   ...
