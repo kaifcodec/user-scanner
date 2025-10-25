@@ -38,7 +38,7 @@ user-scanner -u <username> -m github
 
 ```
 ---
-### Example Output 
+### Example Output: 
 ```bash
  Checking username: johndoe07
 
@@ -73,7 +73,7 @@ user-scanner -u <username> -m github
   ...
   ...
 ```
-### Contributing
+### Contributing: 
 
 Modules are organized by category:
 
@@ -97,7 +97,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 
 ---
 
-### Dependencies
+### Dependencies: 
 - [httpx](https://pypi.org/project/httpx/)
 - [colorama](https://pypi.org/project/colorama/)
 
