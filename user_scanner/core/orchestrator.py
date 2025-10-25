@@ -45,13 +45,14 @@ def run_checks_category(package, username, verbose=False):
 
 def run_checks(username):
 
-    from user_scanner import dev, social,creator, community
+    from user_scanner import dev, social,creator, community, gaming
 
     categories = [
         ("DEV", dev),
         ("SOCIAL", social),
         ("CREATOR", creator),
-        ("COMMUNITY", community)
+        ("COMMUNITY", community),
+        ("GAMING", gaming)
     ]
 
     print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}\n")
