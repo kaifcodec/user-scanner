@@ -7,16 +7,18 @@ CATEGORY_MAPPING = {
     "dev": "dev",
     "social": "social",
     "creator": "creator",
-    "community": "community"
+    "community": "community",
+    "gaming": "gaming"
 }
 
 def list_modules(category=None):
-    from user_scanner import dev, social, creator, community
+    from user_scanner import dev, social, creator, community, gaming
     packages = {
         "dev": dev,
         "social": social,
         "creator": creator,
-        "community": community
+        "community": community,
+        "gaming": gaming
     }
 
     categories_to_list = [category] if category else packages.keys()
@@ -60,17 +62,21 @@ def main():
     if not args.username:
         print(Fore.RED + "[!] Please provide a username with -u or --username." + Style.RESET_ALL)
         return
-    if re.search(r"[^a-zA-Z0-9._-]", args.username):
-        print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
-    if re.search(r"[^a-zA-Z0-9\.-]", args.username):
-        print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL +"\n")
+
+    # Special username checks before run
+    if (args.module == "x" or args.category == "social"):
+       if re.search(r"[^a-zA-Z0-9._-]", args.username):
+          print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
+    if (args.module == "bluesky" or args.category == "social"):
+       if re.search(r"[^a-zA-Z0-9\.-]", args.username):
+          print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL +"\n")
 
 
-    from user_scanner import dev, social, creator, community
+    from user_scanner import dev, social, creator, community, gaming
 
     if args.module:
         # Single module search across all categories
-        packages = [dev, social, creator, community]
+        packages = [dev, social, creator, community, gaming]
         found = False
         for package in packages:
             modules = load_modules(package)
