@@ -20,6 +20,7 @@ def validate_x(user):
     try:
         response = httpx.get(url, params=params, headers=headers, timeout = 3.0)
         status = response.status_code
+       # print(response.text)
         if status in [401, 403, 429]:
             return 2
 
@@ -30,7 +31,7 @@ def validate_x(user):
                 return 1
             elif data.get('reason') == 'taken':
                 return 0
-            elif data.get('reason') == "improper_format":
+            elif (data.get('reason') == "improper_format" or data.get('reason') == "invalid_username"):
                 print("\n" +"  "+f"{Fore.CYAN}X says: {data.get('desc')}{Style.RESET_ALL}")
                 return 2
             else:
