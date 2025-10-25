@@ -90,6 +90,7 @@ user_scanner/
 ├── social/     # Social platforms (Twitter/X, Reddit, Instagram, etc.)
 ├── creator/    # Creator platforms (Hashnode, Dev.to, Medium, etc.)
 ├── community/  # Community platforms (forums, niche sites)
+├── gaming/     # Gaming sites (chess.com, and many more(upcoming))
 ```
 
 **Module guidelines:**
@@ -114,4 +115,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
-## ⚠️ `community/` is small looking for contributions
+## ⚠️ `community/` and `gaming/` are small, looking for contributions
