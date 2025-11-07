@@ -20,3 +20,15 @@ def validate_telegram(user: str) -> int:
         return 2
     except Exception:
         return 2
+
+
+if __name__ == "__main__":
+   user = input ("Username?: ").strip()
+   result = validate_telegram(user)
+
+   if result == 1:
+      print("Available!")
+   elif result == 0:
+      print("Unavailable!")
+   else:
+      print("Error occured!")
