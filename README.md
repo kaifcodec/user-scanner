@@ -1,6 +1,16 @@
 # User Scanner
 
 ![1000136215](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-1.0.1.2-blueviolet?style=for-the-badge&logo=github" />
+<img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Status-Stable-brightgreen?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
+  <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
+  <img src="https://img.shields.io/badge/Tested%20on-Linux-balck?style=for-the-badge&logo=Linux" />
+  <img src="https://img.shields.io/badge/Tested%20on-mac-silver?style=for-the-badge&logo=apple" />
+  <img src="https://img.shields.io/pepy/dt/user-scanner?style=for-the-badge" />
+</p>
 
 ---
 
