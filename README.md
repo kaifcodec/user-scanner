@@ -1,9 +1,12 @@
 # User Scanner
 
+![1000136215](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
+
+---
+
 Scan a username across multiple social, developer, and creator platforms to see if it’s available.  
 Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instagram, and more, all in one command.
 
----
 
 ### Features
 
