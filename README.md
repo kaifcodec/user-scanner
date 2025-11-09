@@ -40,41 +40,43 @@ user-scanner -u <username> -m github
 ---
 ### Example Output: 
 ```bash
- Checking username: johndoe07
+ Checking username: johndoe078
 
 == DEV SITES ==
   [✔] Codeberg: Available
   [✔] Cratesio: Available
-  [✘] Dockerhub: Taken
+  [✔] Dockerhub: Available
   [✘] Github: Taken
   [✔] Gitlab: Available
   [✔] Launchpad: Available
   [✔] Npmjs: Available
-  [✘] Replit: Taken
+  [✔] Replit: Available
 
 == SOCIAL SITES ==
-  [✘] Bluesky: Taken
+  [✔] Bluesky: Available
   [✘] Instagram: Taken
-  [✘] Mastodon: Taken
-  [✘] Pinterest: Taken
+  [✔] Mastodon: Available
+  [✔] Pinterest: Available
   [✘] Reddit: Taken
-  [✘] Snapchat: Taken
+  [✔] Snapchat: Available
+  [✔] Telegram: Available
   [✘] Threads: Taken
-  [✘] X (Twitter): Taken
+  [✔] X (Twitter): Available
   [✔] Youtube: Available
 
 == CREATOR SITES ==
   [✔] Devto: Available
   [✔] Hashnode: Available
-  [✘] Kaggle: Taken
-  [!] Medium: Error
+  [✔] Kaggle: Available
+  [✔] Medium: Available
   [✔] Patreon: Available
 
 == COMMUNITY SITES ==
   [✔] Coderlegion: Available
 
 == GAMING SITES ==
-  [✘] Chess_com: Taken
+  [✔] Chess_com: Available
+  [✔] Osu: Available
   ...
   ...
   ...
