@@ -65,12 +65,13 @@ user-scanner -u <username> -m github
 
 == SOCIAL SITES ==
   [✔] Bluesky: Available
+  [✔] Discord: Available
   [✘] Instagram: Taken
   [✔] Mastodon: Available
   [✔] Pinterest: Available
   [✘] Reddit: Taken
   [✔] Snapchat: Available
-  [✔] Telegram: Available
+  [✔] Telegram: Available 
   [✘] Threads: Taken
   [✔] X (Twitter): Available
   [✔] Youtube: Available
@@ -88,6 +89,7 @@ user-scanner -u <username> -m github
 == GAMING SITES ==
   [✔] Chess_com: Available
   [✔] Osu: Available
+  [✔] Roblox: Available
   ...
   ...
   ...
