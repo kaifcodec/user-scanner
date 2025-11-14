@@ -2,18 +2,8 @@ import httpx
 from httpx import ConnectError, TimeoutException
 import json
 
-
 def validate_monkeytype(user: str) -> int:
-    """
-    Check if a Monkeytype username is available.
 
-    Returns:
-        1 -> Available
-        0 -> Taken
-        2 -> Error / Could not check
-    """
-    # Monkeytype username check endpoint:
-    # GET https://api.monkeytype.com/users/checkName/{name}
     url = f"https://api.monkeytype.com/users/checkName/{user}"
 
     headers = {
@@ -39,16 +29,12 @@ def validate_monkeytype(user: str) -> int:
             available = payload.get("available")
 
             if available is True:
-                # available: True => username NOT taken
                 return 1
             elif available is False:
-                # available: False => username IS taken
                 return 0
             else:
-                # Unexpected response shape
                 return 2
         else:
-            # Non-200 response (400, 429, 500, etc) -> treat as error
             return 2
 
     except (ConnectError, TimeoutException):
