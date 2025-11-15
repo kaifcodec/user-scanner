@@ -37,7 +37,7 @@ def main():
         description="Scan usernames across multiple platforms."
     )
     parser.add_argument(
-        "-u", "--username", help="Username to scan across platforms"
+        "-u", "--username", required = True,  help="Username to scan across platforms"
     )
     parser.add_argument(
         "-c", "--category", choices=CATEGORY_MAPPING.keys(),
@@ -59,9 +59,6 @@ def main():
         list_modules(args.category)
         return
 
-    if not args.username:
-        print(Fore.RED + "[!] Please provide a username with -u or --username." + Style.RESET_ALL)
-        return
 
     # Special username checks before run
     if (args.module == "x" or args.category == "social"):
