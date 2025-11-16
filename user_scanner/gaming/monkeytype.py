@@ -13,7 +13,7 @@ def validate_monkeytype(user: str) -> int:
             "Chrome/128.0.0.0 Safari/537.36"
         ),
         "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Encoding": "identity",
         "Accept-Language": "en-US,en;q=0.9",
     }
 
