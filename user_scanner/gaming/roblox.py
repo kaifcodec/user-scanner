@@ -26,7 +26,8 @@ def validate_roblox(user):
             return 2
 
         for entry in search_results["data"]: # iterates through the entries in the search results
-            if entry["name"] == user: # if a username matches the user
+            # .lower() so casing from the API doesn't matter
+            if entry["name"].lower() == user.lower(): # if a username matches the user
                 return 0
         return 1
 
