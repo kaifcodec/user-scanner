@@ -106,7 +106,7 @@ user_scanner/
 ├── social/     # Social platforms (Twitter/X, Reddit, Instagram, etc.)
 ├── creator/    # Creator platforms (Hashnode, Dev.to, Medium, etc.)
 ├── community/  # Community platforms (forums, niche sites)
-├── gaming/     # Gaming sites (chess.com, and many more(upcoming))
+├── gaming/     # Gaming sites (chess.com, roblox, valorant etc.)
 ```
 
 **Module guidelines:**
@@ -119,6 +119,9 @@ user_scanner/
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 
+### 📧 Contact:
+- [Email](kaifcodec@gmail.com)
+  
 ---
 
 ### Dependencies: 
