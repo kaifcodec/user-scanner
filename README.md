@@ -23,6 +23,7 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Fully modular: add new platform modules easily.
 - ✅ Command-line interface ready: works directly after `pip install`.
 - ✅ Can be used as username OSINT tool.
+- ✅ Very low and lightweight dependencies, can be run on any machine.
 ---
 
 ### Installation
@@ -106,7 +107,7 @@ user_scanner/
 ├── social/     # Social platforms (Twitter/X, Reddit, Instagram, etc.)
 ├── creator/    # Creator platforms (Hashnode, Dev.to, Medium, etc.)
 ├── community/  # Community platforms (forums, niche sites)
-├── gaming/     # Gaming sites (chess.com, roblox, valorant etc.)
+├── gaming/     # Gaming sites (chess.com, roblox, monkeytype etc.)
 ```
 
 **Module guidelines:**
@@ -135,6 +136,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 
+<!--- 
 ## 🌟 Stars: 
 
 <a href="https://www.star-history.com/#kaifcodec/user-scanner&type=date&legend=top-left">
@@ -144,6 +146,6 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for d
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=kaifcodec/user-scanner&type=date&legend=top-left" />
  </picture>
 </a>
-
+--->
 ---
 ## ⚠️ `community/` and `gaming/` are small, looking for contributions
