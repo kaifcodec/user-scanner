@@ -50,6 +50,8 @@ user-scanner -u <username> -m github
 ```
 ---
 ### Example Output: 
+
+- Note*: New modules are constantly getting added so this might have only limited, outdated output: 
 ```bash
  Checking username: johndoe078
 
