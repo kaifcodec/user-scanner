@@ -40,7 +40,7 @@ def main():
         description="Scan usernames across multiple platforms."
     )
     parser.add_argument(
-        "-u", "--username", required = True,  help="Username to scan across platforms"
+        "-u", "--username",  help="Username to scan across platforms"
     )
     parser.add_argument(
         "-c", "--category", choices=CATEGORY_MAPPING.keys(),
@@ -71,7 +71,8 @@ def main():
        if re.search(r"[^a-zA-Z0-9\.-]", args.username):
           print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL +"\n")
     if not args.username:
-       pass
+       parser.print_help()
+       return
     else:
        print_banner()
 
