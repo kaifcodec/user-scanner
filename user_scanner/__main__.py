@@ -2,6 +2,9 @@ import argparse
 import re
 from user_scanner.core.orchestrator import run_checks, load_modules
 from colorama import Fore, Style
+from .cli import banner
+from .cli.banner import print_banner
+
 
 CATEGORY_MAPPING = {
     "dev": "dev",
@@ -67,6 +70,10 @@ def main():
     if (args.module == "bluesky" or args.category == "social"):
        if re.search(r"[^a-zA-Z0-9\.-]", args.username):
           print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL +"\n")
+    if not args.username:
+       pass
+    else:
+       print_banner()
 
 
     from user_scanner import dev, social, creator, community, gaming
