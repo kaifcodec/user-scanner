@@ -44,8 +44,7 @@ def run_checks_category(package, username, verbose=False):
         run_module_single(module, username)
 
 def run_checks(username):
-
-    from user_scanner import dev, social,creator, community, gaming
+    from user_scanner import dev, social, creator, community, gaming
 
     categories = [
         ("DEV", dev),
@@ -57,36 +56,6 @@ def run_checks(username):
 
     print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}\n")
 
-    for cat_name, package in categories:
-        try:
-            modules = load_modules(package)
-        except ModuleNotFoundError:
-            continue
-
-        print(f"{Fore.MAGENTA}== {cat_name} SITES =={Style.RESET_ALL}")
-
-        for module in modules:
-            # Find the first function starting with "validate_"
-            func = None
-            for f in dir(module):
-                if f.startswith("validate_") and callable(getattr(module, f)):
-                    func = getattr(module, f)
-                    break
-            if not func:
-                continue
-
-            site_name = module.__name__.split('.')[-1].capitalize()
-            if site_name == "X":
-               site_name = "X (Twitter)"
-            try:
-                result = func(username)
-                if result == 1:
-                    print(f"  {Fore.GREEN}[✔] {site_name}: Available{Style.RESET_ALL}")
-                elif result == 0:
-                    print(f"  {Fore.RED}[✘] {site_name}: Taken{Style.RESET_ALL}")
-                else:
-                    print(f"  {Fore.YELLOW}[!] {site_name}: Error{Style.RESET_ALL}")
-            except Exception as e:
-                print(f"  {Fore.YELLOW}[!] {site_name}: Exception - {e}{Style.RESET_ALL}")
-
+    for _, package in categories:
+        run_checks_category(package, username)
         print()
