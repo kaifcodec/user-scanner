@@ -27,13 +27,6 @@ def print_banner():
     print(BANNER_ASCII)
     print(INFO_BOX)
     print(" ")
+
 if __name__ == "__main__":
     print_banner()
-
-
-
-
-
-
-
-
