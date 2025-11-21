@@ -1,0 +1,95 @@
+name: Matrix CLI Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  # --------------------------------------------------------
+  # 1) Test help and listing (simple single-run jobs)
+  # --------------------------------------------------------
+  help:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install .
+      - name: Test help flag
+        run: user-scanner -h
+
+  list-modules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install .
+      - name: Test module listing
+        run: user-scanner -l
+
+  # --------------------------------------------------------
+  # 2) Category-based tests (parallel)
+  # --------------------------------------------------------
+  category-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        category: [dev, social, creator, community, gaming]
+        verbose: ["", "-v"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install .
+      - name: Run category scan
+        run: |
+          echo "Testing category: ${{ matrix.category }}  Verbose: '${{ matrix.verbose }}'"
+          user-scanner -c ${{ matrix.category }} -u testuser ${{ matrix.verbose }}
+
+  # --------------------------------------------------------
+  # 3) Module-based tests (parallel)
+  #    Replace the module list below with real modules
+  # --------------------------------------------------------
+  module-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [github, twitter, youtube]  # <-- Replace with real modules
+        verbose: ["", "-v"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install .
+      - name: Run module scan
+        run: |
+          echo "Testing module: ${{ matrix.module }} Verbose: '${{ matrix.verbose }}'"
+          user-scanner -m ${{ matrix.module }} -u testuser ${{ matrix.verbose }}
+
+  # --------------------------------------------------------
+  # 4) Username-only test (simple)
+  # --------------------------------------------------------
+  username-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        verbose: ["", "-v"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install .
+      - name: Test basic username scan
+        run: |
+          echo "Testing username-only scan verbose='${{ matrix.verbose }}'"
+          user-scanner -u testuser ${{ matrix.verbose }}
