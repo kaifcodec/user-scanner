@@ -1,13 +1,13 @@
 import httpx
 from httpx import ConnectError, TimeoutException
 
-def validate_steam(user):
+def validate_itch_io(user):
     """
-    Checks if a steam username is available.
+    Checks if a itch.io username is available.
     Returns: 1 -> available, 0 -> taken, 2 -> error
     """
 
-    url = f"https://steamcommunity.com/id/{user}/"
+    url = f"https://{user}.itch.io"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
@@ -18,17 +18,16 @@ def validate_steam(user):
     }
 
     try:
-        response = httpx.get(url, headers = headers, timeout = 5)
+        response = httpx.get(url, headers = headers, timeout = 5, follow_redirects=True)
+        status = response.status_code
 
-        if response.status_code == 200:
-                
-            if response.text.find("Error</title>") != -1:
-                return 1
-            else:
-                return 0
-        
-        return 2
-    
+        if status == 200:
+            return 0
+        elif status == 404:
+            return 1
+        else:
+            return 2
+
     except (ConnectError, TimeoutException):
         return 2
     except Exception as e:
@@ -36,7 +35,7 @@ def validate_steam(user):
 
 if __name__ == "__main__":
    user = input ("Username?: ").strip()
-   result = validate_steam(user)
+   result = validate_itch_io(user)
 
    if result == 1:
       print("Available!")
