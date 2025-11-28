@@ -24,3 +24,6 @@ Homepage = "https://github.com/kaifcodec/user-scanner"
 
 [project.scripts]
 user-scanner = "user_scanner.__main__:main"
+
+[tool.flit.sdist]
+exclude = ["tests/", "docs/", ".github/", ".git", "rm_pycache", "che.py", ".gitignore"]
