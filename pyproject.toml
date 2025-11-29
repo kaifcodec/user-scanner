@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "user-scanner"
-version = "1.0.4.0"
+version = "1.0.4.1"
 description = "Check username availability across multiple popular platforms"
 readme = "README.md"
 license = {file = "LICENSE"}
