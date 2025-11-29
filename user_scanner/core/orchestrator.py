@@ -23,7 +23,7 @@ def worker_single(module, username, i):
 
     func = next((getattr(module, f) for f in dir(module)
                  if f.startswith("validate_") and callable(getattr(module, f))), None)
-    site_name = module.__name__.split('.')[-1].capitalize()
+    site_name = module.__name__.split('.')[-1].capitalize().replace("_",".")
     if site_name == "X":
         site_name = "X (Twitter)"
 
