@@ -57,6 +57,9 @@ def main():
 
     args = parser.parse_args()
 
+    if args.module and "." in args.module:
+       args.module = args.module.replace(".", "_")
+
     if args.list:
         list_modules(args.category)
         return
