@@ -1,6 +1,7 @@
 import httpx
 from httpx import ConnectError, TimeoutException
 
+
 def validate_medium(user):
     url = f"https://medium.com/@{user}"
 
@@ -15,7 +16,6 @@ def validate_medium(user):
         if response.status_code == 200:
             html_text = response.text
 
-
             username_tag = f'property="profile:username" content="{user}"'
 
             if username_tag in html_text:
@@ -29,13 +29,14 @@ def validate_medium(user):
     except Exception:
         return 2
 
-if __name__ == "__main__":
-   user = input ("Username?: ").strip()
-   result = validate_medium(user)
 
-   if result == 1:
-      print("Available!")
-   elif result == 0:
-      print("Unavailable!")
-   else:
-      print("Error occurred!")
+if __name__ == "__main__":
+    user = input("Username?: ").strip()
+    result = validate_medium(user)
+
+    if result == 1:
+        print("Available!")
+    elif result == 0:
+        print("Unavailable!")
+    else:
+        print("Error occurred!")

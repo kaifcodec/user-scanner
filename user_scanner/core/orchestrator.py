@@ -7,8 +7,9 @@ import httpx
 from httpx import ConnectError, TimeoutException
 
 lock = threading.Condition()
-#Basically which thread is the one to print
+# Basically which thread is the one to print
 print_queue = 0
+
 
 def load_modules(package):
 
@@ -21,12 +22,13 @@ def load_modules(package):
             print(f"Failed to import {name}: {e}")
     return modules
 
+
 def worker_single(module, username, i):
     global print_queue
 
     func = next((getattr(module, f) for f in dir(module)
                  if f.startswith("validate_") and callable(getattr(module, f))), None)
-    site_name = module.__name__.split('.')[-1].capitalize().replace("_",".")
+    site_name = module.__name__.split('.')[-1].capitalize().replace("_", ".")
     if site_name == "X":
         site_name = "X (Twitter)"
 
@@ -46,7 +48,7 @@ def worker_single(module, username, i):
         output = f"  {Fore.YELLOW}[!] {site_name} has no validate_ function{Style.RESET_ALL}"
 
     with lock:
-        #Waits for in-order printing
+        # Waits for in-order printing
         while i != print_queue:
             lock.wait()
 
@@ -54,13 +56,15 @@ def worker_single(module, username, i):
         print_queue += 1
         lock.notify_all()
 
+
 def run_module_single(module, username):
-    #Just executes as if it was a thread
+    # Just executes as if it was a thread
     worker_single(module, username, print_queue)
-    
+
+
 def run_checks_category(package, username, verbose=False):
     global print_queue
-    
+
     modules = load_modules(package)
     category_name = package.__name__.split('.')[-1].capitalize()
     print(f"{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
@@ -76,6 +80,7 @@ def run_checks_category(package, username, verbose=False):
     for t in threads:
         t.join()
 
+
 def run_checks(username):
     from user_scanner import dev, social, creator, community, gaming, donation
 
@@ -86,6 +91,7 @@ def run_checks(username):
     for package in packages:
         run_checks_category(package, username)
         print()
+
 
 def make_get_request(url, **kwargs):
     """Simple wrapper to **httpx.get** that predefines headers and timeout"""
@@ -103,6 +109,7 @@ def make_get_request(url, **kwargs):
 
     return httpx.get(url, **kwargs)
 
+
 def generic_validate(url, func, **kwargs):
     """
     A generic validate function that makes a request and executes the provided function on the response.
@@ -114,7 +121,8 @@ def generic_validate(url, func, **kwargs):
         return 2
     except Exception:
         return 2
-    
+
+
 def status_validate(url, available, taken, **kwargs):
     """
     Function that takes a **url** and **kwargs** for the request and 
@@ -122,15 +130,15 @@ def status_validate(url, available, taken, **kwargs):
     **Available** and **Taken** must either be whole numbers or lists of whole numbers.
     """
     def inner(response):
-        #Checks if a number is equal or is contained inside
-        contains = lambda a,b: (isinstance(a,list) and b in a) or (a == b)
+        # Checks if a number is equal or is contained inside
+        def contains(a, b): return (isinstance(a, list) and b in a) or (a == b)
 
         status = response.status_code
         available_value = contains(available, status)
         taken_value = contains(taken, status)
 
         if available_value and taken_value:
-            return 2 # Can't be both available and taken
+            return 2  # Can't be both available and taken
         elif available_value:
             return 1
         elif taken_value:

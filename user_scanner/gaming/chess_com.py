@@ -1,5 +1,6 @@
 from ..core.orchestrator import generic_validate
 
+
 def validate_chess_com(user):
     url = f"https://www.chess.com/callback/user/valid?username={user}"
 
@@ -15,27 +16,28 @@ def validate_chess_com(user):
             data = response.json()
             if data.get('valid') is True:
                 # 'valid': true means the username is NOT taken
-                return 1 
+                return 1
             elif data.get('valid') is False:
                 # 'valid': false means the username IS taken
                 return 0
         return 2
 
-    return generic_validate(url, process, headers = headers)
+    return generic_validate(url, process, headers=headers)
+
 
 if __name__ == "__main__":
-   try:
-       import httpx
-   except ImportError:
-       print("Error: 'httpx' library is not installed.")
-       exit()
+    try:
+        import httpx
+    except ImportError:
+        print("Error: 'httpx' library is not installed.")
+        exit()
 
-   user = input ("Username?: ").strip()
-   result = validate_chess_com(user)
+    user = input("Username?: ").strip()
+    result = validate_chess_com(user)
 
-   if result == 1:
-      print("Available!")
-   elif result == 0:
-      print("Unavailable!")
-   else:
-      print("Error occured!")
+    if result == 1:
+        print("Available!")
+    elif result == 0:
+        print("Unavailable!")
+    else:
+        print("Error occured!")

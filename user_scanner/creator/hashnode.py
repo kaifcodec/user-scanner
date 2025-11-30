@@ -2,20 +2,21 @@ import httpx
 import json
 from httpx import ConnectError, TimeoutException
 
+
 def validate_hashnode(user):
     url = "https://hashnode.com/utility/ajax/check-username"
 
     payload = {
-      "username": user,
-      "name": "Dummy Dummy"
+        "username": user,
+        "name": "Dummy Dummy"
     }
 
     headers = {
-      'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
-      'Accept': "application/json",
-      'Content-Type': "application/json",
-      'Origin': "https://hashnode.com",
-      'Referer': "https://hashnode.com/signup",
+        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+        'Accept': "application/json",
+        'Content-Type': "application/json",
+        'Origin': "https://hashnode.com",
+        'Referer': "https://hashnode.com/signup",
     }
 
     try:
@@ -33,7 +34,7 @@ def validate_hashnode(user):
             return 2
 
         else:
-           return 2
+            return 2
 
     except (ConnectError, TimeoutException):
         return 2
@@ -42,13 +43,14 @@ def validate_hashnode(user):
     except Exception:
         return 2
 
-if __name__ == "__main__":
-   user = input ("Username?: ").strip()
-   result = validate_hashnode(user)
 
-   if result == 1:
-      print("Available!")
-   elif result == 0:
-      print("Unavailable!")
-   else:
-      print("Error occurred!")
+if __name__ == "__main__":
+    user = input("Username?: ").strip()
+    result = validate_hashnode(user)
+
+    if result == 1:
+        print("Available!")
+    elif result == 0:
+        print("Unavailable!")
+    else:
+        print("Error occurred!")
