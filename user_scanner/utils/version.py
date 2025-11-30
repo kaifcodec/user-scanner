@@ -4,6 +4,7 @@ from pathlib import Path
 _SCRIPT_DIR = Path(__file__).resolve().parent
 VERSION_FILE = _SCRIPT_DIR.parent / "version.json"
 
+
 def load_local_version():
     try:
         data = json.loads(VERSION_FILE.read_text())
@@ -14,6 +15,7 @@ def load_local_version():
         return "N/A", "json_error"
     except Exception:
         return "N/A", "error"
+
 
 if __name__ == "__main__":
     version, version_type = load_local_version()

@@ -23,10 +23,12 @@ INFO_BOX = f"""{C_MAGENTA}      ╔═══════════════
       ║ {C_RED}♚ {C_GREEN}Email{C_WHITE}  : kaifcodec@gmail.com         {C_MAGENTA}║
       ══════════════════════════════════════════{Style.RESET_ALL}""".strip()
 
+
 def print_banner():
     print(BANNER_ASCII)
     print(INFO_BOX)
     print(" ")
+
 
 if __name__ == "__main__":
     print_banner()

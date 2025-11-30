@@ -1,5 +1,6 @@
 from ..core.orchestrator import generic_validate
 
+
 def validate_gitlab(user):
     url = f"https://gitlab.com/users/{user}/exists"
 
@@ -22,16 +23,17 @@ def validate_gitlab(user):
                 elif data['exists'] is True:
                     return 0
         return 2
-    
-    return generic_validate(url, process, headers = headers)
+
+    return generic_validate(url, process, headers=headers)
+
 
 if __name__ == "__main__":
-   user = input ("Username?: ").strip()
-   result = validate_gitlab(user)
+    user = input("Username?: ").strip()
+    result = validate_gitlab(user)
 
-   if result == 1:
-      print("Available!")
-   elif result == 0:
-      print("Unavailable!")
-   else:
-      print("Error occurred!")
+    if result == 1:
+        print("Available!")
+    elif result == 0:
+        print("Unavailable!")
+    else:
+        print("Error occurred!")

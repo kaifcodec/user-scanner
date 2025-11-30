@@ -3,6 +3,7 @@ import json
 from colorama import Fore, Style
 from httpx import ConnectError, TimeoutException
 
+
 def validate_x(user):
     url = "https://api.twitter.com/i/users/username_available.json"
 
@@ -18,12 +19,11 @@ def validate_x(user):
     }
 
     try:
-        response = httpx.get(url, params=params, headers=headers, timeout = 3.0)
+        response = httpx.get(url, params=params, headers=headers, timeout=3.0)
         status = response.status_code
        # print(response.text)
         if status in [401, 403, 429]:
             return 2
-
 
         elif status == 200:
             data = response.json()
@@ -32,7 +32,8 @@ def validate_x(user):
             elif data.get('reason') == 'taken':
                 return 0
             elif (data.get('reason') == "improper_format" or data.get('reason') == "invalid_username"):
-                print("\n" +"  "+f"{Fore.CYAN}X says: {data.get('desc')}{Style.RESET_ALL}")
+                print(
+                    "\n" + "  "+f"{Fore.CYAN}X says: {data.get('desc')}{Style.RESET_ALL}")
                 return 2
             else:
                 return 2
@@ -42,13 +43,14 @@ def validate_x(user):
     except Exception:
         return 2
 
-if __name__ == "__main__":
-   user = input ("Username?: ").strip()
-   result = validate_x(user)
 
-   if result == 1:
-      print("Available!")
-   elif result == 0:
-      print("Unavailable!")
-   else:
-      print("Error occured!")
+if __name__ == "__main__":
+    user = input("Username?: ").strip()
+    result = validate_x(user)
+
+    if result == 1:
+        print("Available!")
+    elif result == 0:
+        print("Unavailable!")
+    else:
+        print("Error occured!")

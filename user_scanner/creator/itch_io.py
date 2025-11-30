@@ -1,5 +1,6 @@
 from ..core.orchestrator import status_validate
 
+
 def validate_itch_io(user):
     """
     Checks if a itch.io username is available.
@@ -8,15 +9,16 @@ def validate_itch_io(user):
 
     url = f"https://{user}.itch.io"
 
-    return  status_validate(url, 404, 200, follow_redirects = True)
+    return status_validate(url, 404, 200, follow_redirects=True)
+
 
 if __name__ == "__main__":
-   user = input ("Username?: ").strip()
-   result = validate_itch_io(user)
+    user = input("Username?: ").strip()
+    result = validate_itch_io(user)
 
-   if result == 1:
-      print("Available!")
-   elif result == 0:
-      print("Unavailable!")
-   else:
-      print("Error occurred!")
+    if result == 1:
+        print("Available!")
+    elif result == 0:
+        print("Unavailable!")
+    else:
+        print("Error occurred!")

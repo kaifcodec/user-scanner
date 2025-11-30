@@ -1,5 +1,6 @@
 from ..core.orchestrator import generic_validate
 
+
 def validate_monkeytype(user: str) -> int:
 
     url = f"https://api.monkeytype.com/users/checkName/{user}"
@@ -28,9 +29,9 @@ def validate_monkeytype(user: str) -> int:
             elif available is False:
                 return 0
         return 2
-    
 
-    return generic_validate(url, process, headers = headers)
+    return generic_validate(url, process, headers=headers)
+
 
 if __name__ == "__main__":
     try:

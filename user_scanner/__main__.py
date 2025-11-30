@@ -14,6 +14,7 @@ CATEGORY_MAPPING = {
     "donation": "donation"
 }
 
+
 def list_modules(category=None):
     from user_scanner import dev, social, creator, community, gaming, donation
     packages = {
@@ -30,10 +31,12 @@ def list_modules(category=None):
     for cat_name in categories_to_list:
         package = packages[cat_name]
         modules = load_modules(package)
-        print(Fore.MAGENTA + f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
+        print(Fore.MAGENTA +
+              f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
         for module in modules:
             site_name = module.__name__.split(".")[-1]
             print(f"  - {site_name}")
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -60,26 +63,26 @@ def main():
     args = parser.parse_args()
 
     if args.module and "." in args.module:
-       args.module = args.module.replace(".", "_")
+        args.module = args.module.replace(".", "_")
 
     if args.list:
         list_modules(args.category)
         return
 
-
     # Special username checks before run
     if (args.module == "x" or args.category == "social"):
-       if re.search(r"[^a-zA-Z0-9._-]", args.username):
-          print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
+        if re.search(r"[^a-zA-Z0-9._-]", args.username):
+            print(
+                Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
     if (args.module == "bluesky" or args.category == "social"):
-       if re.search(r"[^a-zA-Z0-9\.-]", args.username):
-          print(Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL +"\n")
+        if re.search(r"[^a-zA-Z0-9\.-]", args.username):
+            print(
+                Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL + "\n")
     if not args.username:
-       parser.print_help()
-       return
+        parser.print_help()
+        return
     else:
-       print_banner()
-
+        print_banner()
 
     from user_scanner import dev, social, creator, community, gaming, donation
 
@@ -96,7 +99,8 @@ def main():
                     run_module_single(module, args.username)
                     found = True
         if not found:
-            print(Fore.RED + f"[!] Module '{args.module}' not found in any category." + Style.RESET_ALL)
+            print(
+                Fore.RED + f"[!] Module '{args.module}' not found in any category." + Style.RESET_ALL)
     elif args.category:
         # Category-wise scan
         category_package = eval(CATEGORY_MAPPING[args.category])
@@ -105,6 +109,7 @@ def main():
     else:
         # Full scan
         run_checks(args.username)
+
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,6 @@
 from ..core.orchestrator import generic_validate
 
+
 def validate_steam(user):
     """
     Checks if a steam username is available.
@@ -18,13 +19,14 @@ def validate_steam(user):
 
     return generic_validate(url, process)
 
-if __name__ == "__main__":
-   user = input ("Username?: ").strip()
-   result = validate_steam(user)
 
-   if result == 1:
-      print("Available!")
-   elif result == 0:
-      print("Unavailable!")
-   else:
-      print("Error occurred!")
+if __name__ == "__main__":
+    user = input("Username?: ").strip()
+    result = validate_steam(user)
+
+    if result == 1:
+        print("Available!")
+    elif result == 0:
+        print("Unavailable!")
+    else:
+        print("Error occurred!")

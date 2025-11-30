@@ -1,6 +1,7 @@
 import re
 from ..core.orchestrator import generic_validate
 
+
 def validate_bluesky(user):
     handle = user if user.endswith('.bsky.social') else f"{user}.bsky.social"
     url = "https://bsky.social/xrpc/com.atproto.temp.checkHandleAvailability"
@@ -26,7 +27,7 @@ def validate_bluesky(user):
 
     if not re.fullmatch(r"^[a-zA-Z0-9\.-]{1,64}$", user):
         return 2
-    
+
     def process(response):
         if response.status_code == 200:
             data = response.json()
@@ -38,21 +39,22 @@ def validate_bluesky(user):
                 return 0
         return 2
 
-    return generic_validate(url, process, headers = headers, params = params, timeout = 15.0)
+    return generic_validate(url, process, headers=headers, params=params, timeout=15.0)
+
 
 if __name__ == "__main__":
-   try:
-       import httpx
-   except ImportError:
-       print("Error: 'httpx' library is not installed.")
-       exit()
+    try:
+        import httpx
+    except ImportError:
+        print("Error: 'httpx' library is not installed.")
+        exit()
 
-   user = input ("Username?: ").strip()
-   result = validate_bluesky(user)
+    user = input("Username?: ").strip()
+    result = validate_bluesky(user)
 
-   if result == 1:
-      print("Available!")
-   elif result == 0:
-      print("Unavailable!")
-   else:
-      print("Error occured!")
+    if result == 1:
+        print("Available!")
+    elif result == 0:
+        print("Unavailable!")
+    else:
+        print("Error occured!")

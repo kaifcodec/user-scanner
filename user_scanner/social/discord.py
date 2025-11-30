@@ -1,6 +1,7 @@
 import httpx
 from httpx import ConnectError, TimeoutException
 
+
 def validate_discord(user):
     url = "https://discord.com/api/v9/unique-username/username-attempt-unauthed"
 
@@ -12,9 +13,9 @@ def validate_discord(user):
         "origin": "https://discord.com",
         "referer": "https://discord.com/register"
     }
-    
+
     data = {"username": user}
-    
+
     try:
         response = httpx.post(url, headers=headers, json=data, timeout=3.0)
         if response.status_code == 200:
@@ -29,16 +30,14 @@ def validate_discord(user):
     except Exception:
         return 2
 
+
 if __name__ == "__main__":
-   user = input ("Username?: ").strip()
-   result = validate_discord(user)
-   
-   if result == 1:
-      print("Available!")
-   elif result == 0:
-      print("Unavailable!")
-   else:
-      print("Error occured!")
+    user = input("Username?: ").strip()
+    result = validate_discord(user)
 
-
-
+    if result == 1:
+        print("Available!")
+    elif result == 0:
+        print("Unavailable!")
+    else:
+        print("Error occured!")
