@@ -16,9 +16,6 @@ def validate_facebook(username):
 
         final_url = str(r.url).lower()
 
-        # -----------------------------------------
-        #   CASE 1: Non-existing username
-        # -----------------------------------------
         unavailable_patterns = [
             "unsupportedbrowser",
             "help",                   # fb help redirect
@@ -31,9 +28,6 @@ def validate_facebook(username):
         if any(p in final_url for p in unavailable_patterns) and "profile.php?id=" not in final_url:
             return 1  # Available
 
-        # -----------------------------------------
-        #   CASE 2: Existing username
-        # -----------------------------------------
         if "profile.php?id=" in final_url:
             return 0  # Exists
 
@@ -41,7 +35,7 @@ def validate_facebook(username):
         if username.lower() in final_url:
             return 0  # Exists (custom username)
 
-        return 2  # Unknown / blocked
+        return 2
 
     except (ConnectError, TimeoutException):
         return 2
