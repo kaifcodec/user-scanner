@@ -19,7 +19,7 @@ Follow this document when adding or updating validators.
 ## Folder structure
 
 - `social/` -> Social media platforms (Instagram, Reddit, X, etc.)
-- `dev/` -> Tech platforms (GitHub, GitLab, Kaggle, etc.)
+- `dev/` -> Developer platforms (GitHub, GitLab, Kaggle, etc.)
 - `community/` -> Miscellaneous or community-specific platforms
 - Add new directories for new categories as needed.
 
@@ -27,11 +27,14 @@ Example:
 ```
 user_scanner/
 ├── social/
-│   └── reddit.py
+|   └── reddit.py
+|    ...
 ├── dev/
-│   └── launchpad.py
+|   └── launchpad.py
+|    ...
 └── core/
     └── orchestrator.py
+     ...
 ```
 
 Place each new module in the most relevant folder.
