@@ -1,7 +1,5 @@
-import httpx
-from httpx import ConnectError, TimeoutException
 import re
-import json
+from ..core.orchestrator import generic_validate
 
 def validate_bluesky(user):
     handle = user if user.endswith('.bsky.social') else f"{user}.bsky.social"
@@ -28,12 +26,9 @@ def validate_bluesky(user):
 
     if not re.fullmatch(r"^[a-zA-Z0-9\.-]{1,64}$", user):
         return 2
-
-    try:
-        response = httpx.get(url, headers=headers, params=params, timeout = 15.0)
-        status = response.status_code
-
-        if status == 200:
+    
+    def process(response):
+        if response.status_code == 200:
             data = response.json()
             result_type = data.get('result', {}).get('$type')
 
@@ -41,17 +36,9 @@ def validate_bluesky(user):
                 return 1
             elif result_type == "com.atproto.temp.checkHandleAvailability#resultUnavailable":
                 return 0
-            else:
-                return 2
-        else:
-            return 2
+        return 2
 
-    except (ConnectError, TimeoutException):
-        return 2
-    except json.JSONDecodeError:
-        return 2
-    except Exception:
-        return 2
+    return generic_validate(url, process, headers = headers, params = params, timeout = 15.0)
 
 if __name__ == "__main__":
    try:

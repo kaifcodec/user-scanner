@@ -1,13 +1,17 @@
+import httpx
+from httpx import ConnectError, TimeoutException
+
 from ..core.orchestrator import status_validate
 
-def validate_codeberg(user):
-   url = f"https://codeberg.org/{user}"
+def validate_buymeacoffee(user):
+    url = f"https://buymeacoffee.com/{user}"
 
-   return status_validate(url, 404, 200, follow_redirects = True)
+    return status_validate(url, 404, 200, follow_redirects = True)
+
 
 if __name__ == "__main__":
    user = input ("Username?: ").strip()
-   result = validate_codeberg(user)
+   result = validate_buymeacoffee(user)
 
    if result == 1:
       print("Available!")

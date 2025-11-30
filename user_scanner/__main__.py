@@ -10,17 +10,19 @@ CATEGORY_MAPPING = {
     "social": "social",
     "creator": "creator",
     "community": "community",
-    "gaming": "gaming"
+    "gaming": "gaming",
+    "donation": "donation"
 }
 
 def list_modules(category=None):
-    from user_scanner import dev, social, creator, community, gaming
+    from user_scanner import dev, social, creator, community, gaming, donation
     packages = {
         "dev": dev,
         "social": social,
         "creator": creator,
         "community": community,
-        "gaming": gaming
+        "gaming": gaming,
+        "donation": donation
     }
 
     categories_to_list = [category] if category else packages.keys()
@@ -79,11 +81,11 @@ def main():
        print_banner()
 
 
-    from user_scanner import dev, social, creator, community, gaming
+    from user_scanner import dev, social, creator, community, gaming, donation
 
     if args.module:
         # Single module search across all categories
-        packages = [dev, social, creator, community, gaming]
+        packages = [dev, social, creator, community, gaming, donation]
         found = False
         for package in packages:
             modules = load_modules(package)

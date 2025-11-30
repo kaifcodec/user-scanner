@@ -1,5 +1,5 @@
-import httpx
 import re
+from ..core.orchestrator import generic_validate
 
 def validate_telegram(user: str) -> int:
     """
@@ -7,20 +7,13 @@ def validate_telegram(user: str) -> int:
     Returns: 1 -> available, 0 -> taken, 2 -> error
     """
     url = f"https://t.me/{user}"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
-    }
 
-    try:
-        r = httpx.get(url, headers=headers, follow_redirects=True, timeout=3.0)
+    def process(r):
         if r.status_code == 200:
             return 0 if re.search(r'<div[^>]*class="tgme_page_extra"[^>]*>', r.text) else 1
         return 2
-    except (httpx.ConnectError, httpx.TimeoutException):
-        return 2
-    except Exception:
-        return 2
-
+    
+    return generic_validate(url, process, follow_redirects = True)
 
 if __name__ == "__main__":
    user = input ("Username?: ").strip()

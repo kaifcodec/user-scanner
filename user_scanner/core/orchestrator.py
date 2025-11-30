@@ -3,6 +3,9 @@ import pkgutil
 from colorama import Fore, Style
 import threading
 
+import httpx
+from httpx import ConnectError, TimeoutException
+
 lock = threading.Condition()
 #Basically which thread is the one to print
 print_queue = 0
@@ -74,18 +77,64 @@ def run_checks_category(package, username, verbose=False):
         t.join()
 
 def run_checks(username):
-    from user_scanner import dev, social, creator, community, gaming
+    from user_scanner import dev, social, creator, community, gaming, donation
 
-    categories = [
-        ("DEV", dev),
-        ("SOCIAL", social),
-        ("CREATOR", creator),
-        ("COMMUNITY", community),
-        ("GAMING", gaming)
-    ]
+    packages = [dev, social, creator, community, gaming, donation]
 
     print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}\n")
 
-    for _, package in categories:
+    for package in packages:
         run_checks_category(package, username)
         print()
+
+def make_get_request(url, **kwargs):
+    """Simple wrapper to **httpx.get** that predefines headers and timeout"""
+    if not "headers" in kwargs:
+        kwargs["headers"] = {
+            'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+            'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            'Accept-Encoding': "gzip, deflate, br",
+            'Accept-Language': "en-US,en;q=0.9",
+            'sec-fetch-dest': "document",
+        }
+
+    if not "timeout" in kwargs:
+        kwargs["timeout"] = 5.0
+
+    return httpx.get(url, **kwargs)
+
+def generic_validate(url, func, **kwargs):
+    """
+    A generic validate function that makes a request and executes the provided function on the response.
+    """
+    try:
+        response = make_get_request(url, **kwargs)
+        return func(response)
+    except (ConnectError, TimeoutException):
+        return 2
+    except Exception:
+        return 2
+    
+def status_validate(url, available, taken, **kwargs):
+    """
+    Function that takes a **url** and **kwargs** for the request and 
+    checks if the request status matches the availabe or taken.
+    **Available** and **Taken** must either be whole numbers or lists of whole numbers.
+    """
+    def inner(response):
+        #Checks if a number is equal or is contained inside
+        contains = lambda a,b: (isinstance(a,list) and b in a) or (a == b)
+
+        status = response.status_code
+        available_value = contains(available, status)
+        taken_value = contains(taken, status)
+
+        if available_value and taken_value:
+            return 2 # Can't be both available and taken
+        elif available_value:
+            return 1
+        elif taken_value:
+            return 0
+        return 2
+
+    return generic_validate(url, inner, **kwargs)
