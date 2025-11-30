@@ -50,53 +50,13 @@ user-scanner -u <username> -m github
 
 ```
 ---
-### Example Output: 
+### Screenshot: 
 
-- Note*: New modules are constantly getting added so this might have only limited, outdated output: 
-```bash
- Checking username: johndoe078
+- Note*: New modules are constantly getting added so this might have only limited, outdated output:
 
-== DEV SITES ==
-  [✔] Codeberg: Available
-  [✔] Cratesio: Available
-  [✔] Dockerhub: Available
-  [✘] Github: Taken
-  [✔] Gitlab: Available
-  [✔] Launchpad: Available
-  [✔] Npmjs: Available
-  [✔] Replit: Available
+<img width="1008" height="568" alt="1000139959" src="https://github.com/user-attachments/assets/467a4aa0-238d-4110-b9a6-d4b96c244432" />
 
-== SOCIAL SITES ==
-  [✔] Bluesky: Available
-  [✔] Discord: Available
-  [✘] Instagram: Taken
-  [✔] Mastodon: Available
-  [✔] Pinterest: Available
-  [✘] Reddit: Taken
-  [✔] Snapchat: Available
-  [✔] Telegram: Available 
-  [✘] Threads: Taken
-  [✔] X (Twitter): Available
-  [✔] Youtube: Available
 
-== CREATOR SITES ==
-  [✔] Devto: Available
-  [✔] Hashnode: Available
-  [✔] Kaggle: Available
-  [✔] Medium: Available
-  [✔] Patreon: Available
-
-== COMMUNITY SITES ==
-  [✔] Coderlegion: Available
-
-== GAMING SITES ==
-  [✔] Chess_com: Available
-  [✔] Osu: Available
-  [✔] Roblox: Available
-  ...
-  ...
-  ...
-```
 ### Contributing: 
 
 Modules are organized by category:
