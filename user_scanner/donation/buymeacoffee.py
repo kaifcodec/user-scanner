@@ -1,13 +1,17 @@
+import httpx
+from httpx import ConnectError, TimeoutException
+
 from ..core.orchestrator import status_validade
 
-def validate_devto(user):
-   url = f"https://dev.to/{user}"
+def validate_buymeacoffee(user):
+    url = f"https://buymeacoffee.com/{user}"
 
-   return status_validade(url, 404, 200, follow_redirects = True)
+    return status_validade(url, 404, 200, follow_redirects = True)
+
 
 if __name__ == "__main__":
    user = input ("Username?: ").strip()
-   result = validate_devto(user)
+   result = validate_buymeacoffee(user)
 
    if result == 1:
       print("Available!")
