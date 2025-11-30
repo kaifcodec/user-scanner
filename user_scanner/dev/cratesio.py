@@ -1,4 +1,4 @@
-from ..core.orchestrator import status_validade
+from ..core.orchestrator import status_validate
 
 def validate_cratesio(user):
    url = f"https://crates.io/api/v1/users/{user}"
@@ -10,7 +10,7 @@ def validate_cratesio(user):
       'sec-fetch-mode': "cors",
    }
 
-   return status_validade(url, 404, 200, headers = headers)
+   return status_validate(url, 404, 200, headers = headers)
 
 if __name__ == "__main__":
    user = input ("Username?: ").strip()

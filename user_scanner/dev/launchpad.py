@@ -1,4 +1,4 @@
-from ..core.orchestrator import status_validade
+from ..core.orchestrator import status_validate
 
 def validate_launchpad(user):
    url = f"https://launchpad.net/~{user}"
@@ -10,7 +10,7 @@ def validate_launchpad(user):
       'Upgrade-Insecure-Requests': "1",
    }
 
-   return status_validade(url, 404, 200, headers = headers, follow_redirects=True)
+   return status_validate(url, 404, 200, headers = headers, follow_redirects=True)
 
 if __name__ == "__main__":
    user = input ("Username?: ").strip()

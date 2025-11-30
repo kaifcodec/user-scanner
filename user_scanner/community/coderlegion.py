@@ -1,9 +1,9 @@
-from ..core.orchestrator import status_validade
+from ..core.orchestrator import status_validate
 
 def validate_coderlegion(user): 
    url = f"https://coderlegion.com/user/{user}"
    
-   return status_validade(url, 404, 200, timeout = 15.0)
+   return status_validate(url, 404, 200, timeout = 15.0)
 
 if __name__ == "__main__":
    user = input ("Username?: ").strip()

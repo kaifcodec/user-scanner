@@ -87,7 +87,8 @@ def run_checks(username):
         run_checks_category(package, username)
         print()
 
-def make_request(url, **kwargs):
+def make_get_request(url, **kwargs):
+    """Simple wrapper to **httpx.get** that predefines headers and timeout"""
     if not "headers" in kwargs:
         kwargs["headers"] = {
             'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
@@ -103,16 +104,25 @@ def make_request(url, **kwargs):
     return httpx.get(url, **kwargs)
 
 def generic_validate(url, func, **kwargs):
+    """
+    A generic validate function that makes a request and executes the provided function on the response.
+    """
     try:
-        response = make_request(url, **kwargs)
+        response = make_get_request(url, **kwargs)
         return func(response)
     except (ConnectError, TimeoutException):
         return 2
     except Exception:
         return 2
     
-def status_validade(url, available, taken, **kwargs):
+def status_validate(url, available, taken, **kwargs):
+    """
+    Function that takes a **url** and **kwargs** for the request and 
+    checks if the request status matches the availabe or taken.
+    **Available** and **Taken** must either be whole numbers or lists of whole numbers.
+    """
     def inner(response):
+        #Checks if a number is equal or is contained inside
         contains = lambda a,b: (isinstance(a,list) and b in a) or (a == b)
 
         status = response.status_code

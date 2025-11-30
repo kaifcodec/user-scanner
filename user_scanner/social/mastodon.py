@@ -1,9 +1,9 @@
-from ..core.orchestrator import status_validade
+from ..core.orchestrator import status_validate
 
 def validate_mastodon(user):
     url = f"https://mastodon.social/@{user}"
 
-    return status_validade(url, 404, 200, follow_redirects = True)
+    return status_validate(url, 404, 200, follow_redirects = True)
 
 if __name__ == "__main__":
    try:

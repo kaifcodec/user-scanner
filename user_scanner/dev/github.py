@@ -1,4 +1,4 @@
-from ..core.orchestrator import status_validade
+from ..core.orchestrator import status_validate
 
 def validate_github(user):
    url = f"https://github.com/signup_check/username?value={user}"
@@ -17,7 +17,7 @@ def validate_github(user):
       'priority': "u=1, i"
    }
 
-   return status_validade(url, 200, 422, headers = headers)
+   return status_validate(url, 200, 422, headers = headers)
 
 if __name__ == "__main__":
    user = input ("Username?: ").strip()

@@ -1,4 +1,4 @@
-from ..core.orchestrator import status_validade
+from ..core.orchestrator import status_validate
 
 def validate_instagram(user):
    url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={user}"
@@ -13,7 +13,7 @@ def validate_instagram(user):
       'Referer': f"https://www.instagram.com/{user}/",
    }
 
-   return status_validade(url, 404, 200, headers = headers)
+   return status_validate(url, 404, 200, headers = headers)
 
 if __name__ == "__main__":
    user = input ("Username?: ").strip()
