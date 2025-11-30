@@ -1,67 +1,165 @@
 # Contributing to User-Scanner
 
-Thanks for contributing! This guide explains how to add or modify platform validators correctly.
+Thanks for contributing! This guide explains how to add or modify platform validators correctly, and it includes the new "orchestrator" helpers (generic_validate and status_validate) used to keep validators DRY.
 
 ---
 
-## Folder Structure
+## Overview
 
-- `social/` -> Social media platforms (Instagram, Reddit, Twitter, etc.)
-- `tech/` -> Tech platforms (GitHub, GitLab, Kaggle, etc.)
-- `community/`  -> Miscellaneous or community-specific platforms
-- ...
-- ...
-- Create new directories for new category sites.
+This project contains small "validator" modules that check whether a username exists on a given platform. Each validator is a single function that returns one of three integer statuses:
 
-All new modules should be placed in the relevant folder.
+- `1` → Username available
+- `0` → Username taken
+- `2` → Error, blocked, unknown, or request failure
 
-Example structure:
+Follow this document when adding or updating validators.
+
+---
+
+## Folder structure
+
+- `social/` -> Social media platforms (Instagram, Reddit, X, etc.)
+- `dev/` -> Tech platforms (GitHub, GitLab, Kaggle, etc.)
+- `community/` -> Miscellaneous or community-specific platforms
+- Add new directories for new categories as needed.
+
+Example:
 ```
 user_scanner/
 ├── social/
-│   └── <platform>.py
-├── tech/
-│   └── <platform>.py
-└── community/
-    └── <platform>.py
+│   └── reddit.py
+├── dev/
+│   └── launchpad.py
+└── core/
+    └── orchestrator.py
 ```
 
+Place each new module in the most relevant folder.
+
 ---
 
-## Module Naming
+## Module naming
 
-- Each file should be named exactly after the platform, in lowercase.
+- File name must be the platform name in lowercase (no spaces or special characters).
   - Examples: `github.py`, `reddit.py`, `x.py`, `pinterest.py`
-- Avoid spaces, special characters, or uppercase letters.
 
 ---
 
-## Validator Function
+## Validator function
 
-Each module must contain **one validator function**:
+Each module must expose exactly one validator function named:
 
-- Function name format: `validate_<sitename>()`
-  - Example: `validate_github(user)` or `validate_x(user)`
-- Signature:
 ```python
 def validate_<sitename>(user: str) -> int:
     ...
 ```
-- Return values:
-  - `1` → Username **available**
-  - `0` → Username **taken**
-  - `2` → Error, blocked, or unknown
-- Only accepts a single argument: the username string.
-- Keep it **synchronous** (async optional for advanced modules).
+
+Rules:
+- Single parameter: the username (str).
+- Return values must be integers: `1` (available), `0` (taken), `2` (error).
+- Keep the function synchronous unless you are implementing an optional async variant; prefer sync for consistency.
+- Prefer using the orchestrator helpers (see below) so validators stay small and consistent.
 
 ---
 
-## HTTP Requests
+## Orchestrator helpers
 
-- Use `httpx` for requests.
-- Set a reasonable timeout (e.g., 3–15 seconds).
-- Include a User-Agent header.
-- Catch exceptions and return `2` for errors:
+To keep validators DRY, the repository provides helper functions in `core/orchestrator.py`. Use these where appropriate.
+
+1. generic_validate
+- Purpose: Run a request for a given URL and let a small callback (processor) inspect the httpx.Response and return 1/0/2.
+
+- Typical signature (example — consult the actual orchestrator implementation for exact parameter names):
+  - generic_validate(url: str, processor: Callable[[httpx.Response], int], headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> int
+
+- Processor function signature:
+  - def process(response) -> int
+  - Must return 1, 0, or 2.
+
+- Use case: Sites that return 200 for both found and not-found states and require checking the HTML body for a unique "not found" string (e.g., Reddit).
+
+Example reddit module:
+```python
+from ..core.orchestrator import generic_validate
+
+def validate_reddit(user: str) -> int:
+    """
+    Checks if a Reddit username is available.
+    Strategy: request the user profile page and look for the "not found" message
+    because Reddit often returns 200 for both states.
+    """
+    url = f"https://www.reddit.com/user/{user}/"
+
+    def process(response):
+        if response.status_code == 200:
+            if "Sorry, nobody on Reddit goes by that name." in response.text:
+                return 1
+            else:
+                return 0
+        else:
+            return 2
+
+    return generic_validate(url, process, follow_redirects=True)
+```
+
+2. status_validate
+- Purpose: Simple helper for sites where availability can be determined purely from HTTP status codes (e.g., 404 = available, 200 = taken).
+- Typical signature (example):
+  - status_validate(url: str, available_status: int, taken_status: int, headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> int
+- Use case: Sites that reliably return 404 for missing profiles and 200 for existing ones.
+
+Example launchpad module:
+```python
+from ..core.orchestrator import status_validate
+
+def validate_launchpad(user: str) -> int:
+    """
+    Uses status_validate because Launchpad returns 404 for non-existing users
+    and 200 for existing ones.
+    """
+    url = f"https://launchpad.net/~{user}"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Upgrade-Insecure-Requests": "1",
+    }
+
+    # available_status=404, taken_status=200
+    return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+```
+
+Note: The exact parameter names and behavior of the orchestrator functions are defined in `core/orchestrator.py`. Use this CONTRIBUTING guide as a reference for when to use each helper; inspect the orchestrator file if you need detailed signatures.
+
+---
+
+## HTTP requests & headers
+
+- The orchestrator centralizes httpx usage and exception handling. Validators should avoid making raw httpx requests themselves unless there's a specific reason.
+- When providing headers, include a User-Agent and reasonable Accept headers.
+- Timeouts should be reasonable (3–10 seconds). The orchestrator will usually expose a timeout parameter.
+
+Example common headers:
+```py
+   headers = {
+      'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+      'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9",
+      'Accept-Encoding': "gzip, deflate, br, zstd",
+      'Upgrade-Insecure-Requests': "1",
+   }
+
+```
+
+---
+
+## Return values and error handling
+
+- Always return one of:
+  - `1` → available
+  - `0` → taken
+  - `2` → error / blocked / unknown
+- The orchestrator should capture network errors (httpx.ConnectError, httpx.TimeoutException, etc.) and return `2`. If you implement direct requests inside a validator, follow the same exception rules:
 ```python
 except (httpx.ConnectError, httpx.TimeoutException):
     return 2
@@ -71,67 +169,70 @@ except Exception:
 
 ---
 
-## Style Guidelines
+---
 
-- Keep code clean and readable.
-- Follow **PEP8** conventions.
+## Style & linting
+
+- Follow PEP8.
+- Use type hints for validator signatures.
+- Keep code readable and small.
+- Add docstrings to explain non-obvious heuristics.
+- Run linters and formatters before opening a PR (pre-commit is recommended).
 
 ---
 
-## Example Modules
+## Pull request checklist
 
-### 1. HTML string check (Reddit)
+Before opening a PR:
+- [ ] Add the new validator file in the appropriate folder.
+- [ ] Prefer using `generic_validate` or `status_validate` where applicable.
+- [ ] Ensure imports are valid and package can be imported.
+
+When opening the PR:
+- Describe the approach, any heuristics used, and potential edge cases.
+- If the platform has rate limits or anti-bot measures, note them and recommend a testing approach.
+
+---
+
+## When to implement custom logic
+
+- Use `status_validate` when availability is determined by HTTP status codes (e.g., 404 vs 200).
+- Use `generic_validate` when you need to inspect response content or headers and decide availability via a short callback.
+- If a platform requires API keys, OAuth, or heavy JS rendering, document it in the PR and consider an "advanced" module that can be enabled separately.
+
+---
+
+## Example validator templates
+
+Generic processor style (HTML check):
 ```python
-import httpx
+from ..core.orchestrator import generic_validate
 
-def validate_reddit(user):
-    """
-    Checks if a Reddit username is available.
-    Returns: 1 -> available, 0 -> taken, 2 -> error
-    """
-    url = f"https://www.reddit.com/user/{user}/"
-    NOT_FOUND = "Sorry, nobody on Reddit goes by that name."
+def validate_example(user: str) -> int:
+    url = f"https://example.com/{user}"
 
-    try:
-        r = httpx.get(url, timeout=3.0, headers={"User-Agent": "Mozilla/5.0"})
-        if r.status_code == 200:
-            return 1 if NOT_FOUND in r.text else 0
+    def process(resp):
+        if resp.status_code == 200:
+            if "no such user" in resp.text:
+                return 1
+            return 0
+        elif resp.status_code == 404:
+            return 1
         return 2
-    except:
-        return 2
+
+    return generic_validate(url, process, follow_redirects=True)
 ```
 
-**Notes:**  
-- Some platforms always return 200; check for a **unique string** in the HTML that only appears for non-existent usernames.  
-- Prefer **official API endpoints** if available.
-
----
-
-### 2. HTTP status check (Launchpad)
+Status-based style:
 ```python
-import httpx
+from ..core.orchestrator import status_validate
 
-def validate_launchpad(user):
-    """
-    Checks if a Launchpad username is available.
-    Returns: 1 -> available, 0 -> taken, 2 -> error
-    """
-    url = f"https://launchpad.net/~{user}"
-
-    try:
-        r = httpx.head(url, timeout=5, follow_redirects=True)
-        if r.status_code == 404:
-            return 1  # available
-        elif r.status_code == 200:
-            return 0  # taken
-        return 2
-    except:
-        return 2
+def validate_example2(user: str) -> int:
+    url = f"https://example2.com/{user}"
+    # 404 => available, 200 => taken
+    return status_validate(url, 404, 200, follow_redirects=False)
 ```
 
-**Notes:**  
-- HTTP status `404` usually → available, `200` → taken.  
-
 ---
 
-Following these guidelines ensures that **all validators are compatible with the orchestrator** and run correctly for the username scan.
+Thank you for contributing!
