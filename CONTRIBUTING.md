@@ -191,9 +191,9 @@ except Exception:
 ## Pull request checklist
 
 Before opening a PR:
-- [ ] Add the new validator file in the appropriate folder.
-- [ ] Prefer using `generic_validate` or `status_validate` where applicable.
-- [ ] Ensure imports are valid and package can be imported.
+- [x] Add the new validator file in the appropriate folder.
+- [x] Prefer using `generic_validate` or `status_validate` where applicable.
+- [x] Ensure imports are valid and package can be imported.
 
 When opening the PR:
 - Describe the approach, any heuristics used, and potential edge cases.
