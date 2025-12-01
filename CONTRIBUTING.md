@@ -1,6 +1,6 @@
 # Contributing to User-Scanner
 
-Thanks for contributing! This guide explains how to add or modify platform validators correctly, and it includes the new "orchestrator" helpers (generic_validate and status_validate) used to keep validators DRY.
+Thanks for contributing! This guide explains how to add or modify platform validators correctly, and it includes the new "orchestrator" helpers (generic_validate and status_validate) used to keep validators DRY (Don't Repeat Yourself).
 
 ---
 
@@ -73,7 +73,7 @@ To keep validators DRY, the repository provides helper functions in `core/orches
 - Purpose: Run a request for a given URL and let a small callback (processor) inspect the httpx.Response and return 1/0/2.
 
 - Typical signature (example — consult the actual orchestrator implementation for exact parameter names):
-  - generic_validate(url: str, processor: Callable[[httpx.Response], int], headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> int
+  - `generic_validate(url: str, processor: Callable[[httpx.Response], int], headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> int`
 
 - Processor function signature:
   - def process(response) -> int
@@ -81,7 +81,9 @@ To keep validators DRY, the repository provides helper functions in `core/orches
 
 - Use case: Sites that return 200 for both found and not-found states and require checking the HTML body for a unique "not found" string (e.g., Reddit).
 
-Example reddit module:
+### Example `reddit.py` module:
+- This one represents how to use the `generic_validate()` function when the site returns status code 200 for both cases:
+
 ```python
 from ..core.orchestrator import generic_validate
 
@@ -111,7 +113,9 @@ def validate_reddit(user: str) -> int:
   - status_validate(url: str, available_status: int, taken_status: int, headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> int
 - Use case: Sites that reliably return 404 for missing profiles and 200 for existing ones.
 
-Example launchpad module:
+### Example `launchpad.py` module:
+- This one represents how to use `status_validate()` function when the site simply returns status code 200 and 404 for existing and non existing username respectively.
+
 ```python
 from ..core.orchestrator import status_validate
 
@@ -205,37 +209,5 @@ When opening the PR:
 
 ---
 
-## Example validator templates
-
-Generic processor style (HTML check):
-```python
-from ..core.orchestrator import generic_validate
-
-def validate_example(user: str) -> int:
-    url = f"https://example.com/{user}"
-
-    def process(resp):
-        if resp.status_code == 200:
-            if "no such user" in resp.text:
-                return 1
-            return 0
-        elif resp.status_code == 404:
-            return 1
-        return 2
-
-    return generic_validate(url, process, follow_redirects=True)
-```
-
-Status-based style:
-```python
-from ..core.orchestrator import status_validate
-
-def validate_example2(user: str) -> int:
-    url = f"https://example2.com/{user}"
-    # 404 => available, 200 => taken
-    return status_validate(url, 404, 200, follow_redirects=False)
-```
-
----
 
 Thank you for contributing!
