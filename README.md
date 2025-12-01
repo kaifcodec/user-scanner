@@ -68,6 +68,7 @@ user_scanner/
 ├── creator/    # Creator platforms (Hashnode, Dev.to, Medium, etc.)
 ├── community/  # Community platforms (forums, niche sites)
 ├── gaming/     # Gaming sites (chess.com, roblox, monkeytype etc.)
+├── donation/   # Donation taking sites (buymeacoffe.com, similar...)
 ```
 
 **Module guidelines:**
