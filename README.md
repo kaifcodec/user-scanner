@@ -108,4 +108,4 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for d
 </a>
 --->
 ---
-## ⚠️ `community/` and `gaming/` are small, looking for contributions
+## ⚠️ `community/` and `donation/` are small, looking for contributions
