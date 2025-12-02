@@ -7,9 +7,9 @@ def validate_minecraft(user):
     Returns: 1 -> available, 0 -> taken, 2 -> error
     """
 
-    url = f"https://api.mojang.com/users/profiles/minecraft/{user}"
+    url = f"https://api.mojang.com/minecraft/profile/lookup/name/{user}"
 
-    return status_validate(url, 404, [200, 302], follow_redirects=True)
+    return status_validate(url, 404, 200, follow_redirects=True)
 
 
 if __name__ == "__main__":
