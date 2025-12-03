@@ -1,4 +1,4 @@
-from ..core.orchestrator import status_validate
+from user_scanner.core.orchestrator import status_validate
 
 
 def validate_codeberg(user):

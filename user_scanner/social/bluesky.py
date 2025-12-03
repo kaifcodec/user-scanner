@@ -1,5 +1,5 @@
 import re
-from ..core.orchestrator import generic_validate
+from user_scanner.core.orchestrator import generic_validate
 
 
 def validate_bluesky(user):

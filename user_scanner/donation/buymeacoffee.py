@@ -1,7 +1,7 @@
 import httpx
 from httpx import ConnectError, TimeoutException
 
-from ..core.orchestrator import status_validate
+from user_scanner.core.orchestrator import status_validate
 
 
 def validate_buymeacoffee(user):
