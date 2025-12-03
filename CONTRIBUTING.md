@@ -85,7 +85,7 @@ To keep validators DRY, the repository provides helper functions in `core/orches
 - This one represents how to use the `generic_validate()` function when the site returns status code 200 for both cases:
 
 ```python
-from ..core.orchestrator import generic_validate
+from user_scanner.core.orchestrator import generic_validate
 
 def validate_reddit(user: str) -> int:
     """
@@ -117,7 +117,7 @@ def validate_reddit(user: str) -> int:
 - This one represents how to use `status_validate()` function when the site simply returns status code 200 and 404 for existing and non existing username respectively.
 
 ```python
-from ..core.orchestrator import status_validate
+from user_scanner.core.orchestrator import status_validate
 
 def validate_launchpad(user: str) -> int:
     """
