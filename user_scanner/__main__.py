@@ -115,6 +115,15 @@ def main():
         args.module = args.module.replace(".", "_")
 
     from user_scanner import dev, social, creator, community, gaming, donation
+    
+    MODULE_MAPPING = {
+        "dev": dev,
+        "social": social,
+        "creator": creator,
+        "community": community,
+        "gaming": gaming,
+        "donation": donation
+    }
 
     if args.module:
         # Single module search across all categories
@@ -136,7 +145,7 @@ def main():
                 Fore.RED + f"[!] Module '{args.module}' not found in any category." + Style.RESET_ALL)
     elif args.category:
         # Category-wise scan
-        category_package = eval(CATEGORY_MAPPING[args.category])
+        category_package = MODULE_MAPPING.get(args.category)
         from user_scanner.core.orchestrator import run_checks_category
         
         for name in usernames:   # <-- permutation support here
