@@ -83,13 +83,6 @@ def main():
     if not args.username:
         parser.print_help()
         return
-    
-    if args.permute and args.delay == 0:
-        print(
-        Fore.YELLOW
-        + "[!] Warning: You're generating multiple usernames with NO delay between requests. "
-        "This may trigger rate limits or IP bans. Use --delay 1 or higher."
-        + Style.RESET_ALL)
         
     # Special username checks before run
     if (args.module == "x" or args.category == "social"):
@@ -101,7 +94,14 @@ def main():
             print(
                 Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL + "\n")
     print_banner()
-    
+
+    if args.permute and args.delay == 0:
+        print(
+        Fore.YELLOW
+        + "[!] Warning: You're generating multiple usernames with NO delay between requests. "
+        "This may trigger rate limits or IP bans. Use --delay 1 or higher. (Use only if the sites throw errors otherwise ignore)\n"
+        + Style.RESET_ALL)
+        
     usernames = [args.username]  # Default single username list
     
     #Added permutation support , generate all possible permutation of given sequence.
