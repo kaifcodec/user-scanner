@@ -2,7 +2,7 @@ import importlib
 import pkgutil
 from colorama import Fore, Style
 import threading
-
+from itertools import permutations
 import httpx
 from httpx import ConnectError, TimeoutException
 
@@ -37,11 +37,11 @@ def worker_single(module, username, i):
         try:
             result = func(username)
             if result == 1:
-                output = f"  {Fore.GREEN}[✔] {site_name}: Available{Style.RESET_ALL}"
+                output = f"  {Fore.GREEN}[✔] {site_name} ({username}): Available{Style.RESET_ALL}"
             elif result == 0:
-                output = f"  {Fore.RED}[✘] {site_name}: Taken{Style.RESET_ALL}"
+                output = f"  {Fore.RED}[✘] {site_name} ({username}): Taken{Style.RESET_ALL}"
             else:
-                output = f"  {Fore.YELLOW}[!] {site_name}: Error{Style.RESET_ALL}"
+                output = f"  {Fore.YELLOW}[!] {site_name} ({username}): Error{Style.RESET_ALL}"
         except Exception as e:
             output = f"  {Fore.YELLOW}[!] {site_name}: Exception - {e}{Style.RESET_ALL}"
     else:
@@ -132,7 +132,6 @@ def status_validate(url, available, taken, **kwargs):
     def inner(response):
         # Checks if a number is equal or is contained inside
         def contains(a, b): return (isinstance(a, list) and b in a) or (a == b)
-
         status = response.status_code
         available_value = contains(available, status)
         taken_value = contains(taken, status)
@@ -146,3 +145,21 @@ def status_validate(url, available, taken, **kwargs):
         return 2
 
     return generic_validate(url, inner, **kwargs)
+
+def generate_permutations(username, pattern, limit=None):
+    """
+    Generate all order-based permutations of characters in `pattern`
+    appended after `username`.
+    """
+    permutations_set = {username}
+
+    chars = list(pattern)
+
+    # generate permutations of length 1 → len(chars)
+    for r in range(1, len(chars) + 1):
+        for combo in permutations(chars, r):
+            permutations_set.add(username + ''.join(combo))
+            if limit and len(permutations_set) >= limit:
+                return list(permutations_set)[:limit]
+
+    return sorted(permutations_set)
