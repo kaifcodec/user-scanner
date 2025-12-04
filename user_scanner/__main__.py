@@ -1,4 +1,5 @@
 import argparse
+import time
 import re
 from user_scanner.core.orchestrator import run_checks, load_modules , generate_permutations
 from colorama import Fore, Style
@@ -67,13 +68,29 @@ def main():
     parser.add_argument(
         "-s", "--stop",type=int,default=MAX_PERMUTATIONS_LIMIT,help="Limit the number of username permutations generated"
     )
-
+    
+    parser.add_argument(
+        "-d", "--delay",type=float,default=0,help="Delay in seconds between requests (recommended: 1-2 seconds)"
+    )
     
     args = parser.parse_args()
+    
+    
+    if args.list:
+        list_modules(args.category)
+        return
     
     if not args.username:
         parser.print_help()
         return
+    
+    if args.permute and args.delay == 0:
+        print(
+        Fore.YELLOW
+        + "[!] Warning: You're generating multiple usernames with NO delay between requests. "
+        "This may trigger rate limits or IP bans. Use --delay 1 or higher."
+        + Style.RESET_ALL)
+        
     # Special username checks before run
     if (args.module == "x" or args.category == "social"):
         if re.search(r"[^a-zA-Z0-9._-]", args.username):
@@ -97,10 +114,6 @@ def main():
     if args.module and "." in args.module:
         args.module = args.module.replace(".", "_")
 
-    if args.list:
-        list_modules(args.category)
-        return
-
     from user_scanner import dev, social, creator, community, gaming, donation
 
     if args.module:
@@ -115,6 +128,8 @@ def main():
                     from user_scanner.core.orchestrator import run_module_single
                     for name in usernames:   # <-- permutation support here
                         run_module_single(module, name)
+                        if args.delay > 0:
+                            time.sleep(args.delay)
                     found = True
         if not found:
             print(
@@ -126,10 +141,14 @@ def main():
         
         for name in usernames:   # <-- permutation support here
             run_checks_category(category_package, name, args.verbose)
+            if args.delay > 0:
+                time.sleep(args.delay)
     else:
         # Full scan
         for name in usernames:
             run_checks(name)
+            if args.delay > 0:
+                time.sleep(args.delay)
 
 
 if __name__ == "__main__":
