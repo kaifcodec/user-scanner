@@ -1,4 +1,5 @@
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
 
 def validate_steam(user):
@@ -12,10 +13,10 @@ def validate_steam(user):
     def process(response):
         if response.status_code == 200:
             if response.text.find("Error</title>") != -1:
-                return 1
+                return Result.available()
             else:
-                return 0
-        return 2
+                return Result.taken()
+        return Result.error("Invalid status code")
 
     return generic_validate(url, process)
 
