@@ -21,6 +21,7 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Check usernames across **social networks**, **developer platforms**, and **creator communities**.
 - ✅ Clear **Available / Taken / Error** output for each platform.
 - ✅ Fully modular: add new platform modules easily.
+- ✅ Wildcard-based username permutations for automatic variation generation
 - ✅ Command-line interface ready: works directly after `pip install`.
 - ✅ Can be used as username OSINT tool.
 - ✅ Very low and lightweight dependencies, can be run on any machine.
@@ -47,6 +48,7 @@ Optionally, scan a specific category or single module:
 user-scanner -u <username> -c dev
 user-scanner -l # Lists all available modules
 user-scanner -u <username> -m github
+user-scanner -u <username> -p <suffix> 
 
 ```
 ---
