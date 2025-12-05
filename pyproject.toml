@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "user-scanner"
-version = "1.0.6.0"
+version = "1.0.7.0"
 description = "Check username availability across multiple popular platforms"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -26,4 +26,4 @@ Homepage = "https://github.com/kaifcodec/user-scanner"
 user-scanner = "user_scanner.__main__:main"
 
 [tool.flit.sdist]
-exclude = ["tests/", "docs/", ".github/", ".git", "rm_pycache", "che.py", ".gitignore"]
+exclude = ["tests/", "docs/", ".github/", ".git", "rm_pycache.py", "che.py", ".gitignore"]

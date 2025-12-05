@@ -2,7 +2,7 @@
 
 ![1000136215](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.0.6.0-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.0.7.0-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
