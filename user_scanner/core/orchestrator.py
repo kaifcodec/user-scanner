@@ -1,15 +1,11 @@
-from enum import Enum
 import importlib
-import pkgutil
 from colorama import Fore, Style
 import threading
 from itertools import permutations
 import httpx
-from httpx import ConnectError, TimeoutException
 from pathlib import Path
-from typing import Dict
-
-from typing import Callable, Literal, List
+from user_scanner.core.result import Result, AnyResult
+from typing import Callable, Dict, List
 
 lock = threading.Condition()
 # Basically which thread is the one to print
@@ -41,55 +37,6 @@ def load_categories() -> Dict[str, Path]:
 
     return categories
 
-class Status(Enum):
-    TAKEN = 0
-    AVAILABLE = 1
-    ERROR = 2
-
-
-class Result:
-    def __init__(self, status: Status, reason: str | None = None):
-        self.status = status
-        self.reason = reason
-
-    @classmethod
-    def taken(cls):
-        return cls(Status.TAKEN)
-
-    @classmethod
-    def available(cls):
-        return cls(Status.AVAILABLE)
-
-    @classmethod
-    def error(cls, reason: str | None = None):
-        return cls(Status.ERROR, reason)
-
-    @classmethod
-    def from_number(cls, i: int, reason: str | None):
-        try:
-            status = Status(i)
-        except ValueError:
-            return cls(Status.ERROR, "Invalid status. Please contact maintainers.")
-
-        return cls(status,  reason if status == Status.TAKEN else None)
-
-    def to_number(self) -> int:
-        return self.status.value
-
-    def __eq__(self, other):
-        if isinstance(other, Status):
-            return self.status == other
-
-        if isinstance(other, Result):
-            return self.status == other.status
-
-        if isinstance(other, int):
-            return self.to_number() == other
-
-        return NotImplemented
-
-
-AnyResult = Literal[0, 1, 2] | Result
 
 def worker_single(module, username, i):
     global print_queue
@@ -106,8 +53,8 @@ def worker_single(module, username, i):
             result = func(username)
             reason = ""
 
-            if isinstance(result, Result) and result.reason != None:
-                reason = f" - {result.reason}"
+            if isinstance(result, Result) and result.has_reason():
+                reason = f" ({result.get_reason()})"
 
             if result == 1:
                 output = f"  {Fore.GREEN}[✔] {site_name} ({username}): Available{Style.RESET_ALL}"
@@ -186,10 +133,8 @@ def generic_validate(url: str, func: Callable[[httpx.Response], AnyResult], **kw
     try:
         response = make_get_request(url, **kwargs)
         return func(response)
-    except (ConnectError, TimeoutException):
-        return Result.error()
-    except Exception:
-        return Result.error()
+    except Exception as e:
+        return Result.error(e)
 
 
 def status_validate(url: str, available: int | List[int], taken: int | List[int], **kwargs) -> Result:
@@ -212,7 +157,7 @@ def status_validate(url: str, available: int | List[int], taken: int | List[int]
             return Result.available()
         elif taken_value:
             return Result.taken()
-        return Result.error()
+        return Result.error("Status didn't match. Report this on Github.")
 
     return generic_validate(url, inner, **kwargs)
 
