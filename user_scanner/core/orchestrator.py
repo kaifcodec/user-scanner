@@ -5,21 +5,38 @@ import threading
 from itertools import permutations
 import httpx
 from httpx import ConnectError, TimeoutException
+from pathlib import Path
+from typing import Dict
 
 lock = threading.Condition()
 # Basically which thread is the one to print
 print_queue = 0
 
 
-def load_modules(package):
+def load_categories() -> Dict[str, Path]:
+    root = Path(__file__).resolve().parent.parent  # Should be user_scanner
+    categories = {}
+
+    for subfolder in root.iterdir():
+        if subfolder.is_dir() and \
+                not subfolder.name.lower() in ["cli", "utils", "core"] and \
+                not "__" in subfolder.name:  # Removes __pycache__
+            categories[subfolder.name] = subfolder.resolve()
+
+    return categories
+
+
+def load_modules(category_path: Path):
 
     modules = []
-    for _, name, _ in pkgutil.iter_modules(package.__path__, package.__name__ + "."):
-        try:
-            module = importlib.import_module(name)
-            modules.append(module)
-        except Exception as e:
-            print(f"Failed to import {name}: {e}")
+    for file in category_path.glob("*.py"):
+        if file.name == "__init__.py":
+            continue
+        spec = importlib.util.spec_from_file_location(file.stem, str(file))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        modules.append(module)
     return modules
 
 
@@ -62,11 +79,11 @@ def run_module_single(module, username):
     worker_single(module, username, print_queue)
 
 
-def run_checks_category(package, username, verbose=False):
+def run_checks_category(category_path:Path, username:str, verbose=False):
     global print_queue
 
-    modules = load_modules(package)
-    category_name = package.__name__.split('.')[-1].capitalize()
+    modules = load_modules(category_path)
+    category_name = category_path.stem.capitalize()
     print(f"{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
 
     print_queue = 0
@@ -82,14 +99,10 @@ def run_checks_category(package, username, verbose=False):
 
 
 def run_checks(username):
-    from user_scanner import dev, social, creator, community, gaming, donation
-
-    packages = [dev, social, creator, community, gaming, donation]
-
     print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}\n")
 
-    for package in packages:
-        run_checks_category(package, username)
+    for category_path in load_categories().values():
+        run_checks_category(category_path, username)
         print()
 
 
