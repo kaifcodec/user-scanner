@@ -51,6 +51,22 @@ user-scanner -u <username> -m github
 user-scanner -u <username> -p <suffix> 
 
 ```
+
+Generate multiple username variations by appending a suffix:
+
+```bash
+user-scanner -u <username> -p <suffix> 
+
+```
+Optionally, scan a specific category or single module with limit:
+
+```bash
+user-scanner -u <username> -p <suffix> -c dev
+user-scanner -u <username> -p <suffix> -m github
+user-scanner -u <username> -p <suffix> -s <number> # limit generation of usernames
+user-scanner -u <username> -p <suffix> -t <seconds> #delay to avoid rate-limits
+```
+
 ---
 ### Screenshot: 
 
