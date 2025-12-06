@@ -34,7 +34,7 @@ def validate_x(user):
             elif data.get('reason') == 'taken':
                 return Result.taken()
             elif (data.get('reason') == "improper_format" or data.get('reason') == "invalid_username"):
-                return Result.error(f"\n\t{Fore.CYAN}{Fore.CYAN}X says: {data.get('desc')}{Style.RESET_ALL}")
+                return Result.error(f"{Fore.CYAN}{Fore.CYAN}X says: {data.get('desc')}{Style.RESET_ALL}")
 
         return Result.error()
 
