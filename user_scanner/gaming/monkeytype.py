@@ -1,5 +1,5 @@
 from user_scanner.core.orchestrator import generic_validate
-
+from user_scanner.core.result import Result
 
 def validate_monkeytype(user: str) -> int:
 
@@ -25,10 +25,10 @@ def validate_monkeytype(user: str) -> int:
             available = payload.get("available")
 
             if available is True:
-                return 1
+                return Result.available()
             elif available is False:
-                return 0
-        return 2
+                return Result.taken()
+        return Result.error("Invalid status code")
 
     return generic_validate(url, process, headers=headers)
 

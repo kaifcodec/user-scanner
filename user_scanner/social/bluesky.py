@@ -1,6 +1,6 @@
 import re
 from user_scanner.core.orchestrator import generic_validate
-
+from user_scanner.core.result import Result
 
 def validate_bluesky(user):
     handle = user if user.endswith('.bsky.social') else f"{user}.bsky.social"
@@ -26,7 +26,7 @@ def validate_bluesky(user):
     }
 
     if not re.fullmatch(r"^[a-zA-Z0-9\.-]{1,64}$", user):
-        return 2
+        return Result.error("Invalid username")
 
     def process(response):
         if response.status_code == 200:
@@ -34,10 +34,10 @@ def validate_bluesky(user):
             result_type = data.get('result', {}).get('$type')
 
             if result_type == "com.atproto.temp.checkHandleAvailability#resultAvailable":
-                return 1
+                return Result.available()
             elif result_type == "com.atproto.temp.checkHandleAvailability#resultUnavailable":
-                return 0
-        return 2
+                return Result.taken()
+        return Result.error("Invalid status code")
 
     return generic_validate(url, process, headers=headers, params=params, timeout=15.0)
 
