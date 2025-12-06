@@ -72,7 +72,13 @@ user-scanner -u <username> -p <suffix> -d <seconds> #delay to avoid rate-limits
 
 - Note*: New modules are constantly getting added so this might have only limited, outdated output:
 
-<img width="1008" height="568" alt="1000139959" src="https://github.com/user-attachments/assets/467a4aa0-238d-4110-b9a6-d4b96c244432" />
+
+<img width="1080" height="770" alt="1000140392" src="https://github.com/user-attachments/assets/4638c8f6-40c6-46f8-ae17-ac65cd199d81" />
+
+
+---
+
+<img width="1080" height="352" alt="1000140393" src="https://github.com/user-attachments/assets/578b248c-2a05-4917-aab3-6372a7c28045" />
 
 
 ### Contributing: 
