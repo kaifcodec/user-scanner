@@ -37,7 +37,7 @@ class Result:
         return cls(Status.ERROR, reason)
 
     @classmethod
-    def from_number(cls, i: int, reason: str | None):
+    def from_number(cls, i: int, reason: str | Exception | None = None):
         try:
             status = Status(i)
         except ValueError:
@@ -59,6 +59,9 @@ class Result:
         #Format the exception
         msg = humanize_exception(self.reason)
         return f"{type(self.reason).__name__}: {msg.capitalize()}"
+
+    def __str__(self):
+        return self.get_reason()
 
     def __eq__(self, other):
         if isinstance(other, Status):

@@ -1,5 +1,4 @@
-import httpx
-from httpx import ConnectError, TimeoutException
+from user_scanner.core.orchestrator import status_validate
 
 
 def validate_youtube(user):
@@ -29,22 +28,7 @@ def validate_youtube(user):
         'priority': "u=0, i"
     }
 
-    try:
-        response = httpx.get(url, headers=headers,
-                             follow_redirects=True, timeout=3.0)
-        status = response.status_code
-
-        if status == 200:
-            return 0
-        elif status == 404:
-            return 1
-        else:
-            return 2
-
-    except (ConnectError, TimeoutException):
-        return 2
-    except Exception:
-        return 2
+    status_validate(url, 404, 200, headers=headers, follow_redirects=True)
 
 
 if __name__ == "__main__":

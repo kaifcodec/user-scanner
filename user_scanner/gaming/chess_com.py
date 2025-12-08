@@ -27,12 +27,6 @@ def validate_chess_com(user):
 
 
 if __name__ == "__main__":
-    try:
-        import httpx
-    except ImportError:
-        print("Error: 'httpx' library is not installed.")
-        exit()
-
     user = input("Username?: ").strip()
     result = validate_chess_com(user)
 

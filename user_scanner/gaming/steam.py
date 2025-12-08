@@ -3,19 +3,15 @@ from user_scanner.core.result import Result
 
 
 def validate_steam(user):
-    """
-    Checks if a steam username is available.
-    Returns: 1 -> available, 0 -> taken, 2 -> error
-    """
-
     url = f"https://steamcommunity.com/id/{user}/"
 
     def process(response):
         if response.status_code == 200:
-            if response.text.find("Error</title>") != -1:
+            if "Error</title>" in response.text:
                 return Result.available()
             else:
                 return Result.taken()
+
         return Result.error("Invalid status code")
 
     return generic_validate(url, process)

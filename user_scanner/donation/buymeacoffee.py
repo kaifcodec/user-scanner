@@ -1,6 +1,3 @@
-import httpx
-from httpx import ConnectError, TimeoutException
-
 from user_scanner.core.orchestrator import status_validate
 
 

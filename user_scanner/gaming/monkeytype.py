@@ -34,12 +34,6 @@ def validate_monkeytype(user: str) -> int:
 
 
 if __name__ == "__main__":
-    try:
-        import httpx  # noqa: F401
-    except ImportError:
-        print("Error: 'httpx' library is not installed.")
-        raise SystemExit(1)
-
     user = input("Username?: ").strip()
     result = validate_monkeytype(user)
 

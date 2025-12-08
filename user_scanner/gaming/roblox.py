@@ -3,11 +3,6 @@ from user_scanner.core.result import Result
 
 
 def validate_roblox(user):
-    """
-    Checks if a roblox username is available.
-    Returns: 1 -> available, 0 -> taken, 2 -> error
-    """
-
     # official api
     url = f"https://users.roblox.com/v1/users/search?keyword={user}&limit=10"
 

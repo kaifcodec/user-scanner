@@ -24,5 +24,4 @@ if __name__ == "__main__":
     elif result == 0:
         print("Unavailable!")
     else:
-        reason = result.get_reason()
-        print(f"Error occurred! Reason: {reason}")
+        print(f"Error occurred! Reason: {result}")
