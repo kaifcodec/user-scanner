@@ -1,4 +1,5 @@
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
 
 def validate_soundcloud(user):
@@ -11,22 +12,21 @@ def validate_soundcloud(user):
 
     def process(response):
         if response.status_code == 404:
-            return 1
-        
+            return Result.available()
+
         if response.status_code == 200:
             text = response.text
-            
+
             if f'soundcloud://users:{user}' in text:
-                return 0
+                return Result.taken()
             if f'"username":"{user}"' in text:
-                return 0
-            
+                return Result.taken()
             if 'soundcloud://users:' in text and '"username":"' in text:
-                return 0
-            
-            return 1
-        
-        return 2
+                return Result.taken()
+
+            return Result.available()
+
+        return Result.error()
 
     return generic_validate(url, process, headers=headers, follow_redirects=True)
 
