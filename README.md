@@ -105,9 +105,6 @@ user_scanner/
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 
-### 📧 Contact:
-- [Email](kaifcodec@gmail.com)
-  
 ---
 
 ### Dependencies: 
