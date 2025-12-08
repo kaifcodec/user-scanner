@@ -1,6 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
+
 def validate_bluesky(user):
     handle = user if user.endswith('.bsky.social') else f"{user}.bsky.social"
     url = "https://bsky.social/xrpc/com.atproto.temp.checkHandleAvailability"
@@ -24,7 +25,6 @@ def validate_bluesky(user):
         'handle': handle,
     }
 
-
     def process(response):
         if response.status_code == 200:
             data = response.json()
@@ -34,7 +34,10 @@ def validate_bluesky(user):
                 return Result.available()
             elif result_type == "com.atproto.temp.checkHandleAvailability#resultUnavailable":
                 return Result.taken()
-        return Result.error("Username can only contain letters, numbers, hyphens (no leading/trailing)")
+        elif response.status_code == 400:
+            return Result.error("Username can only contain letters, numbers, hyphens (no leading/trailing)")
+
+        return Result.error("Invalid status code!")
 
     return generic_validate(url, process, headers=headers, params=params, timeout=15.0)
 
