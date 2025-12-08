@@ -43,7 +43,7 @@ class Result:
         except ValueError:
             return cls(Status.ERROR, "Invalid status. Please contact maintainers.")
 
-        return cls(status,  reason if status == Status.TAKEN else None)
+        return cls(status,  reason if status == Status.ERROR else None)
 
     def to_number(self) -> int:
         return self.status.value
