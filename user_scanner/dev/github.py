@@ -1,4 +1,4 @@
-from user_scanner.core.orchestrator import status_validate
+from user_scanner.core.orchestrator import generic_validate, Result
 
 
 def validate_github(user):
@@ -18,7 +18,24 @@ def validate_github(user):
         'priority': "u=1, i"
     }
 
-    return status_validate(url, 200, 422, headers=headers)
+    GITHUB_INVALID_MSG = (
+        "Username may only contain alphanumeric characters or single hyphens, "
+        "and cannot begin or end with a hyphen."
+    )
+
+    def process(response):
+        if response.status_code == 200:
+            return Result.available()
+
+        if response.status_code == 422:
+            if GITHUB_INVALID_MSG in response.text:
+                return Result.error("Cannot start/end with hyphen or use double hyphens")
+
+            return Result.taken()
+
+        return Result.error("Unexpected GitHub response report it via issues")
+
+    return generic_validate(url, process, headers=headers)
 
 
 if __name__ == "__main__":

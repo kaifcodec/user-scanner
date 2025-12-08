@@ -1,4 +1,5 @@
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
 
 def validate_chess_com(user):
@@ -16,22 +17,16 @@ def validate_chess_com(user):
             data = response.json()
             if data.get('valid') is True:
                 # 'valid': true means the username is NOT taken
-                return 1
+                return Result.available()
             elif data.get('valid') is False:
                 # 'valid': false means the username IS taken
-                return 0
-        return 2
+                return Result.taken()
+        return Result.error("Invalid status code")
 
     return generic_validate(url, process, headers=headers)
 
 
 if __name__ == "__main__":
-    try:
-        import httpx
-    except ImportError:
-        print("Error: 'httpx' library is not installed.")
-        exit()
-
     user = input("Username?: ").strip()
     result = validate_chess_com(user)
 

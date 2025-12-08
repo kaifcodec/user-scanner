@@ -1,5 +1,5 @@
 from user_scanner.core.orchestrator import generic_validate
-
+from user_scanner.core.result import Result
 
 def validate_pinterest(user):
     url = f"https://www.pinterest.com/{user}/"
@@ -7,11 +7,11 @@ def validate_pinterest(user):
     def process(response):
         if response.status_code == 200:
             if "User not found." in response.text:
-                return 1
+                return Result.available()
             else:
-                return 0
+                return Result.taken()
         else:
-            return 2
+            return Result.error("Invalid status code")
 
     return generic_validate(url, process, follow_redirects=True)
 

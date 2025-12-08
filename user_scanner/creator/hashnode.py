@@ -1,6 +1,5 @@
 import httpx
-import json
-from httpx import ConnectError, TimeoutException
+from user_scanner.core.result import Result
 
 
 def validate_hashnode(user):
@@ -27,21 +26,17 @@ def validate_hashnode(user):
 
             if 'status' in data:
                 if data['status'] == 1:
-                    return 1
+                    return Result.available()
                 elif data['status'] == 0:
-                    return 0
+                    return Result.taken()
 
-            return 2
+            return Result.error("Status not found")
 
         else:
-            return 2
+            return Result.error("Invalid status code")
 
-    except (ConnectError, TimeoutException):
-        return 2
-    except json.JSONDecodeError:
-        return 2
-    except Exception:
-        return 2
+    except Exception as e:
+        return Result.error(e)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
 
 def validate_gitlab(user):
@@ -18,11 +19,11 @@ def validate_gitlab(user):
                 # Corrected: Compare against Python boolean True/False
                 # AVAILABLE (return 1) if "exists": true
                 if data['exists'] is False:
-                    return 1
+                    return Result.available()
                 # UNAVAILABLE (return 0) if "exists": false
                 elif data['exists'] is True:
-                    return 0
-        return 2
+                    return Result.taken()
+        return Result.error("Invalid status code")
 
     return generic_validate(url, process, headers=headers)
 

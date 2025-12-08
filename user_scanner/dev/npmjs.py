@@ -1,34 +1,18 @@
-import httpx
-from httpx import ConnectError, TimeoutException
+import re
+from user_scanner.core.orchestrator import status_validate, Result
 
 
 def validate_npmjs(user):
+    if re.match(r'^[^a-zA-Z0-9_-]', user):
+        return Result.error("Username cannot start with a period")
+
+    if re.search(r'[A-Z]', user):
+        return Result.error("Username cannot contain uppercase letters.")
+
     url = f"https://www.npmjs.com/~{user}"
 
-    headers = {
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        'Accept-Encoding': "gzip, deflate, br, zstd",
-        'accept-language': "en-US,en;q=0.9",
-        'priority': "u=0, i"
-    }
 
-    try:
-        response = httpx.head(url, headers=headers,
-                              timeout=3.0, follow_redirects=True)
-        status = response.status_code
-
-        if status == 200:
-            return 0
-        elif status == 404:
-            return 1
-        else:
-            return 2
-
-    except (ConnectError, TimeoutException):
-        return 2
-    except Exception:
-        return 2
+    return status_validate(url, 404, 200, timeout=3.0, follow_redirects=True)
 
 
 if __name__ == "__main__":
@@ -40,4 +24,4 @@ if __name__ == "__main__":
     elif result == 0:
         print("Unavailable!")
     else:
-        print("Error occurred!")
+        print(f"Error occurred! Reason: {result}")

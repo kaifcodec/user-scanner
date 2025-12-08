@@ -1,5 +1,5 @@
-import httpx
-from httpx import ConnectError, TimeoutException
+from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
 
 def validate_medium(user):
@@ -10,24 +10,19 @@ def validate_medium(user):
         'Accept': "text/html",
     }
 
-    try:
-        response = httpx.get(url, headers=headers, timeout=3.0)
-
+    def process(response):
         if response.status_code == 200:
             html_text = response.text
 
             username_tag = f'property="profile:username" content="{user}"'
 
             if username_tag in html_text:
-                return 0
+                return Result.taken()
             else:
-                return 1
-        return 2
+                return Result.available()
+        return Result.error()
 
-    except (ConnectError, TimeoutException):
-        return 2
-    except Exception:
-        return 2
+    return generic_validate(url, process, headers=headers)
 
 
 if __name__ == "__main__":

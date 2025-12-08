@@ -1,5 +1,5 @@
-import re
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
 
 def validate_bluesky(user):
@@ -25,30 +25,24 @@ def validate_bluesky(user):
         'handle': handle,
     }
 
-    if not re.fullmatch(r"^[a-zA-Z0-9\.-]{1,64}$", user):
-        return 2
-
     def process(response):
         if response.status_code == 200:
             data = response.json()
             result_type = data.get('result', {}).get('$type')
 
             if result_type == "com.atproto.temp.checkHandleAvailability#resultAvailable":
-                return 1
+                return Result.available()
             elif result_type == "com.atproto.temp.checkHandleAvailability#resultUnavailable":
-                return 0
-        return 2
+                return Result.taken()
+        elif response.status_code == 400:
+            return Result.error("Username can only contain letters, numbers, hyphens (no leading/trailing)")
+
+        return Result.error("Invalid status code!")
 
     return generic_validate(url, process, headers=headers, params=params, timeout=15.0)
 
 
 if __name__ == "__main__":
-    try:
-        import httpx
-    except ImportError:
-        print("Error: 'httpx' library is not installed.")
-        exit()
-
     user = input("Username?: ").strip()
     result = validate_bluesky(user)
 

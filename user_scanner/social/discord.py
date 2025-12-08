@@ -1,6 +1,5 @@
 import httpx
-from httpx import ConnectError, TimeoutException
-
+from user_scanner.core.result import Result
 
 def validate_discord(user):
     url = "https://discord.com/api/v9/unique-username/username-attempt-unauthed"
@@ -21,14 +20,12 @@ def validate_discord(user):
         if response.status_code == 200:
             status = response.json().get("taken")
             if status is True:
-                return 0
+                return Result.taken()
             elif status is False:
-                return 1
-        return 2
-    except (ConnectError, TimeoutException):
-        return 2
-    except Exception:
-        return 2
+                return Result.available()
+        return Result.error("Invalid status code")
+    except Exception as e:
+        return Result.error(e)
 
 
 if __name__ == "__main__":
