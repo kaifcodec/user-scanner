@@ -96,12 +96,14 @@ user_scanner/
 ```
 
 **Module guidelines:**
-- Each module must define a `validate_<site>()` function that takes a `username` and returns:
-  - `1` → Available  
-  - `0` → Taken  
-  - `2` → Error / Could not check
-- Use `httpx` for requests, `colorama` for colored output.
-- Optional: modules can define a CLI parser if they support custom arguments.
+This project contains small "validator" modules that check whether a username exists on a given platform. Each validator is a single function that returns a Result object (see `core/orchestrator.py`).
+
+Result semantics:
+- Result.available() → `available`
+- Result.taken() → `taken`
+- Result.error(message: Optional[str]) → `error`, blocked, unknown, or request failure (include short diagnostic message when helpful)
+
+Follow this document when adding or updating validators.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 
