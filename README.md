@@ -20,9 +20,10 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 
 - ✅ Check usernames across **social networks**, **developer platforms**, and **creator communities**.
 - ✅ Clear **Available / Taken / Error** output for each platform.
+- ✅ Robust error handling: It prints the exact reason (e.g. Cannot use underscores, hyphens at the start/end)
 - ✅ Fully modular: add new platform modules easily.
-- ✅ Wildcard-based username permutations for automatic variation generation
-- ✅ Command-line interface ready: works directly after `pip install`.
+- ✅ Wildcard-based username permutations for automatic variation generation using provided suffix
+- ✅ Command-line interface ready: works directly after `pip install`
 - ✅ Can be used as username OSINT tool.
 - ✅ Very low and lightweight dependencies, can be run on any machine.
 ---
