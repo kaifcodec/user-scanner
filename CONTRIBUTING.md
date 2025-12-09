@@ -1,16 +1,17 @@
-# Contributing to User-Scanner
+# Contributing to user-scanner
 
-Thanks for contributing! This guide explains how to add or modify platform validators correctly, and it includes the new "orchestrator" helpers (generic_validate and status_validate) used to keep validators DRY (Don't Repeat Yourself).
+Thanks for contributing! This guide explains how to add or modify platform validators correctly, and it includes the orchestrator helpers (generic_validate and status_validate) used to keep validators small and consistent.
 
 ---
 
 ## Overview
 
-This project contains small "validator" modules that check whether a username exists on a given platform. Each validator is a single function that returns one of three integer statuses:
+This project contains small "validator" modules that check whether a username exists on a given platform. Each validator is a single function that returns a Result object (see core/orchestrator.py).
 
-- `1` → Username available
-- `0` → Username taken
-- `2` → Error, blocked, unknown, or request failure
+Result semantics:
+- Result.available() → available
+- Result.taken() → taken
+- Result.error(message: Optional[str]) → error, blocked, unknown, or request failure (include short diagnostic message when helpful)
 
 Follow this document when adding or updating validators.
 
@@ -53,13 +54,13 @@ Place each new module in the most relevant folder.
 Each module must expose exactly one validator function named:
 
 ```python
-def validate_<sitename>(user: str) -> int:
+def validate_<sitename>(user: str) -> Result:
     ...
 ```
 
 Rules:
 - Single parameter: the username (str).
-- Return values must be integers: `1` (available), `0` (taken), `2` (error).
+- Return a Result object (use Result.available(), Result.taken(), or Result.error(msg)).
 - Keep the function synchronous unless you are implementing an optional async variant; prefer sync for consistency.
 - Prefer using the orchestrator helpers (see below) so validators stay small and consistent.
 
@@ -70,56 +71,85 @@ Rules:
 To keep validators DRY, the repository provides helper functions in `core/orchestrator.py`. Use these where appropriate.
 
 1. generic_validate
-- Purpose: Run a request for a given URL and let a small callback (processor) inspect the httpx.Response and return 1/0/2.
-
+- Purpose: Run a request for a given URL and let a small callback (processor) inspect the httpx.Response and return a Result.
 - Typical signature (example — consult the actual orchestrator implementation for exact parameter names):
-  - `generic_validate(url: str, processor: Callable[[httpx.Response], int], headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> int`
-
+  - `generic_validate(url: str, processor: Callable[[httpx.Response], Result], headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
 - Processor function signature:
-  - def process(response) -> int
-  - Must return 1, 0, or 2.
+  - def process(response) -> Result
+  - Must return Result.available(), Result.taken(), or Result.error("message")
+- Use case: Sites that return 200 for both found and not-found states and require checking the HTML body for a unique "not found" string (or other content inspection).
 
-- Use case: Sites that return 200 for both found and not-found states and require checking the HTML body for a unique "not found" string (e.g., Reddit).
-
-### Example `reddit.py` module:
-- This one represents how to use the `generic_validate()` function when the site returns status code 200 for both cases:
+### Example `github.py` module:
+- This example shows how to use `generic_validate()` and how to return Result values with optional error messages.
 
 ```python
-from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.orchestrator import generic_validate, Result
 
-def validate_reddit(user: str) -> int:
-    """
-    Checks if a Reddit username is available.
-    Strategy: request the user profile page and look for the "not found" message
-    because Reddit often returns 200 for both states.
-    """
-    url = f"https://www.reddit.com/user/{user}/"
+
+def validate_github(user):
+    url = f"https://github.com/signup_check/username?value={user}"
+
+    headers = {
+        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+        'Accept-Encoding': "gzip, deflate, br, zstd",
+        'sec-ch-ua-platform': "\"Linux\"",
+        'sec-ch-ua': "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"Google Chrome\";v=\"140\"",
+        'sec-ch-ua-mobile': "?0",
+        'sec-fetch-site': "same-origin",
+        'sec-fetch-mode': "cors",
+        'sec-fetch-dest': "empty",
+        'referer': "https://github.com/signup?source=form-home-signup&user_email=",
+        'accept-language': "en-US,en;q=0.9",
+        'priority': "u=1, i"
+    }
+
+    GITHUB_INVALID_MSG = (
+        "Username may only contain alphanumeric characters or single hyphens, "
+        "and cannot begin or end with a hyphen."
+    )
 
     def process(response):
         if response.status_code == 200:
-            if "Sorry, nobody on Reddit goes by that name." in response.text:
-                return 1
-            else:
-                return 0
-        else:
-            return 2
+            return Result.available()
 
-    return generic_validate(url, process, follow_redirects=True)
+        if response.status_code == 422:
+            if GITHUB_INVALID_MSG in response.text:
+                return Result.error("Cannot start/end with hyphen or use double hyphens")
+
+            return Result.taken()
+
+        return Result.error("Unexpected GitHub response — report it via issues")
+
+    return generic_validate(url, process, headers=headers)
+
+
+if __name__ == "__main__":
+    user = input("Username?: ").strip()
+    result = validate_github(user)
+
+    # Inspect Result (example usage; adapt to actual Result API in orchestrator)
+    if result == Result.available():
+        print("Available!")
+    elif result == Result.taken():
+        print("Unavailable!")
+    else:
+        # Result.error can carry a message; show it when present
+        msg = getattr(result, "message", None)
+        print("Error occurred!" + (f" {msg}" if msg else ""))
 ```
 
 2. status_validate
 - Purpose: Simple helper for sites where availability can be determined purely from HTTP status codes (e.g., 404 = available, 200 = taken).
 - Typical signature (example):
-  - status_validate(url: str, available_status: int, taken_status: int, headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> int
+  - `status_validate(url: str, available_status: int, taken_status: int, headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
 - Use case: Sites that reliably return 404 for missing profiles and 200 for existing ones.
 
 ### Example `launchpad.py` module:
-- This one represents how to use `status_validate()` function when the site simply returns status code 200 and 404 for existing and non existing username respectively.
 
 ```python
 from user_scanner.core.orchestrator import status_validate
 
-def validate_launchpad(user: str) -> int:
+def validate_launchpad(user: str):
     """
     Uses status_validate because Launchpad returns 404 for non-existing users
     and 200 for existing ones.
@@ -137,7 +167,7 @@ def validate_launchpad(user: str) -> int:
     return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
 ```
 
-Note: The exact parameter names and behavior of the orchestrator functions are defined in `core/orchestrator.py`. Use this CONTRIBUTING guide as a reference for when to use each helper; inspect the orchestrator file if you need detailed signatures.
+Note: The exact parameter names and behavior of the orchestrator functions are defined in `core/orchestrator.py`. Use this CONTRIBUTING guide as a reference for when to use each helper; inspect the implementation for exact types and helper methods on Result.
 
 ---
 
@@ -162,19 +192,20 @@ Example common headers:
 
 ## Return values and error handling
 
-- Always return one of:
-  - `1` → available
-  - `0` → taken
-  - `2` → error / blocked / unknown
-- The orchestrator should capture network errors (httpx.ConnectError, httpx.TimeoutException, etc.) and return `2`. If you implement direct requests inside a validator, follow the same exception rules:
+- Always return a Result object:
+  - Result.available()
+  - Result.taken()
+  - Result.error("short diagnostic message")
+- The orchestrator will capture network errors (httpx.ConnectError, httpx.TimeoutException, etc.) and should return Result.error(...) for those cases. If you implement direct requests inside a validator, follow the same pattern:
+
 ```python
 except (httpx.ConnectError, httpx.TimeoutException):
-    return 2
+    return Result.error("network error")
 except Exception:
-    return 2
+    return Result.error("unexpected error")
 ```
 
----
+- Prefer returning meaningful error messages with Result.error to help debugging and triage in issues.
 
 ---
 
@@ -198,16 +229,16 @@ Before opening a PR:
 When opening the PR:
 - Describe the approach, any heuristics used, and potential edge cases.
 - If the platform has rate limits or anti-bot measures, note them and recommend a testing approach.
+- If you return Result.error with a message, include why and any reproducible steps if available.
 
 ---
 
 ## When to implement custom logic
 
 - Use `status_validate` when availability is determined by HTTP status codes (e.g., 404 vs 200).
-- Use `generic_validate` when you need to inspect response content or headers and decide availability via a short callback.
+- Use `generic_validate` when you need to inspect response content or headers and decide availability via a short callback that returns a Result.
 - If a platform requires API keys, OAuth, or heavy JS rendering, document it in the PR and consider an "advanced" module that can be enabled separately.
 
 ---
-
 
 Thank you for contributing!
