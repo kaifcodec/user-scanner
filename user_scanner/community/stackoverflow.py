@@ -32,4 +32,4 @@ if __name__ == "__main__":
         print("Unavailable!")
     else:
         msg = result.get_reason()
-        print("Error occurred!" + (f" {msg}" if msg else ""))
+        print("Error occurred!" + msg)
