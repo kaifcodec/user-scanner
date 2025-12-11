@@ -1,5 +1,5 @@
 import importlib
-import importlib.util #this is the line I added to fix the issue
+import importlib.util
 from colorama import Fore, Style
 import threading
 from itertools import permutations
