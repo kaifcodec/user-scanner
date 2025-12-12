@@ -5,6 +5,7 @@ import threading
 from itertools import permutations
 import httpx
 from pathlib import Path
+from user_scanner.cli.printer import Printer
 from user_scanner.core.result import Result, AnyResult
 from typing import Callable, Dict, List
 
@@ -39,7 +40,7 @@ def load_categories() -> Dict[str, Path]:
     return categories
 
 
-def worker_single(module, username, i):
+def worker_single(module, username: str, i: int, printer: Printer, last: bool = True) -> AnyResult:
     global print_queue
 
     func = next((getattr(module, f) for f in dir(module)
@@ -52,49 +53,46 @@ def worker_single(module, username, i):
     if func:
         try:
             result = func(username)
-            reason = ""
-
-            if isinstance(result, Result) and result.has_reason():
-                reason = f" ({result.get_reason()})"
-
-            if result == 1:
-                output = f"  {Fore.GREEN}[✔] {site_name} ({username}): Available{Style.RESET_ALL}"
-            elif result == 0:
-                output = f"  {Fore.RED}[✘] {site_name} ({username}): Taken{Style.RESET_ALL}"
-            else:
-                output = f"  {Fore.YELLOW}[!] {site_name} ({username}): Error{reason}{Style.RESET_ALL}"
+            output = printer.get_result_output(site_name, username, result)
+            if last == False and printer.is_json:
+                output += ","
         except Exception as e:
-            output = f"  {Fore.YELLOW}[!] {site_name}: Exception - {e}{Style.RESET_ALL}"
+            if Printer.is_console:
+                output = f"  {Fore.YELLOW}[!] {site_name}: Exception - {e}{Style.RESET_ALL}"
     else:
-        output = f"  {Fore.YELLOW}[!] {site_name} has no validate_ function{Style.RESET_ALL}"
+        if Printer.is_console:
+            output = f"  {Fore.YELLOW}[!] {site_name} has no validate_ function{Style.RESET_ALL}"
 
     with lock:
         # Waits for in-order printing
         while i != print_queue:
             lock.wait()
 
-        print(output)
+        if output != "":
+            print(output)
         print_queue += 1
         lock.notify_all()
 
 
-def run_module_single(module, username):
+def run_module_single(module, username: str, printer: Printer, last: bool = True) -> AnyResult:
     # Just executes as if it was a thread
-    worker_single(module, username, print_queue)
+    return worker_single(module, username, print_queue, printer, last)
 
 
-def run_checks_category(category_path:Path, username:str, verbose=False):
+def run_checks_category(category_path: Path, username: str, printer: Printer, last: bool = True):
     global print_queue
 
     modules = load_modules(category_path)
-    category_name = category_path.stem.capitalize()
-    print(f"{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
+    if printer.is_console:
+        category_name = category_path.stem.capitalize()
+        print(f"\n{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
 
     print_queue = 0
 
     threads = []
     for i, module in enumerate(modules):
-        t = threading.Thread(target=worker_single, args=(module, username, i))
+        last_thread = last and (i == len(modules) - 1)
+        t = threading.Thread(target=worker_single, args=(module, username, i, printer, last_thread))
         threads.append(t)
         t.start()
 
@@ -102,13 +100,14 @@ def run_checks_category(category_path:Path, username:str, verbose=False):
         t.join()
 
 
-def run_checks(username):
-    print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}\n")
+def run_checks(username: str, printer: Printer, last:bool = True):
+    if printer.is_console:
+        print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}")
 
-    for category_path in load_categories().values():
-        run_checks_category(category_path, username)
-        print()
-
+    categories = list(load_categories().values())
+    for i, category_path in enumerate(categories):
+        last_cat: int = last and (i == len(categories) - 1)
+        run_checks_category(category_path, username, printer, last_cat)
 
 def make_get_request(url: str, **kwargs) -> httpx.Response:
     """Simple wrapper to **httpx.get** that predefines headers and timeout"""

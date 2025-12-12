@@ -1,10 +1,10 @@
 import argparse
 import time
 import re
+from user_scanner.cli import printer
 from user_scanner.core.orchestrator import run_checks, load_modules , generate_permutations, load_categories
 from colorama import Fore, Style
-from .cli import banner
-from .cli.banner import print_banner
+from user_scanner.cli.banner import print_banner
 
 MAX_PERMUTATIONS_LIMIT = 100 # To prevent excessive generation
 
@@ -54,6 +54,10 @@ def main():
     parser.add_argument(
         "-d", "--delay",type=float,default=0,help="Delay in seconds between requests (recommended: 1-2 seconds)"
     )
+
+    parser.add_argument(
+        "-o", "--output-format", choices=["console", "csv", "json"], default="console", help="Specify output format (default: console)"
+    )
     
     args = parser.parse_args()
         
@@ -64,19 +68,22 @@ def main():
     if not args.username:
         parser.print_help()
         return
-        
-    # Special username checks before run
-    if (args.module == "x" or args.category == "social"):
-        if re.search(r"[^a-zA-Z0-9._-]", args.username):
-            print(
-                Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
-    if (args.module == "bluesky" or args.category == "social"):
-        if re.search(r"[^a-zA-Z0-9\.-]", args.username):
-            print(
-                Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL + "\n")
-    print_banner()
+    
+    Printer = printer.Printer(args.output_format)
 
-    if args.permute and args.delay == 0:
+    if Printer.is_console:
+        print_banner()
+        # Special username checks before run
+        if (args.module == "x" or args.category == "social"):
+            if re.search(r"[^a-zA-Z0-9._-]", args.username):
+                print(
+                    Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
+        if (args.module == "bluesky" or args.category == "social"):
+            if re.search(r"[^a-zA-Z0-9\.-]", args.username):
+                print(
+                    Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL + "\n")
+
+    if args.permute and args.delay == 0 and Printer.is_console:
         print(
         Fore.YELLOW
         + "[!] Warning: You're generating multiple usernames with NO delay between requests. "
@@ -88,13 +95,14 @@ def main():
     #Added permutation support , generate all possible permutation of given sequence.
     if args.permute:
         usernames = generate_permutations(args.username, args.permute , args.stop)
-        print(Fore.CYAN + f"[+] Generated {len(usernames)} username permutations" + Style.RESET_ALL)
+        if Printer.is_console:
+            print(
+                Fore.CYAN + f"[+] Generated {len(usernames)} username permutations" + Style.RESET_ALL)
 
-    
-    
     if args.module and "." in args.module:
         args.module = args.module.replace(".", "_")
 
+    is_last = lambda x: x == len(usernames) - 1 
 
     if args.module:
         # Single module search across all categories
@@ -105,10 +113,15 @@ def main():
                 site_name = module.__name__.split(".")[-1]
                 if site_name.lower() == args.module.lower():
                     from user_scanner.core.orchestrator import run_module_single
-                    for name in usernames:   # <-- permutation support here
-                        run_module_single(module, name)
-                        if args.delay > 0:
+
+                    Printer.print_json_start()
+
+                    for i, name in enumerate(usernames):   # <-- permutation support here
+                        run_module_single(module, name, Printer, is_last(i))
+                        if args.delay > 0 and not is_last(i):
                             time.sleep(args.delay)
+
+                    Printer.print_json_end()    
                     found = True
         if not found:
             print(
@@ -118,16 +131,25 @@ def main():
         category_package = load_categories().get(args.category)
         from user_scanner.core.orchestrator import run_checks_category
         
-        for name in usernames:   # <-- permutation support here
-            run_checks_category(category_package, name, args.verbose)
-            if args.delay > 0:
+        Printer.print_json_start()
+
+        for i, name in enumerate(usernames):   # <-- permutation support here
+            run_checks_category(category_package, name, Printer, is_last(i))
+            if args.delay > 0 and not is_last(i):
                 time.sleep(args.delay)
+
+        Printer.print_json_end()
+
     else:
         # Full scan
-        for name in usernames:
-            run_checks(name)
-            if args.delay > 0:
+        Printer.print_json_start()
+
+        for i, name in enumerate(usernames):
+            run_checks(name, Printer, is_last(i))
+            if args.delay > 0 and not is_last(i):
                 time.sleep(args.delay)
+
+        Printer.print_json_end()
 
 
 if __name__ == "__main__":
