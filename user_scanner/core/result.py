@@ -18,6 +18,9 @@ class Status(Enum):
     AVAILABLE = 1
     ERROR = 2
 
+    def __str__(self):
+        return super().__str__().split(".")[1].capitalize()
+
 
 class Result:
     def __init__(self, status: Status, reason: str | Exception | None = None):

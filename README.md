@@ -49,15 +49,20 @@ Optionally, scan a specific category or single module:
 user-scanner -u <username> -c dev
 user-scanner -l # Lists all available modules
 user-scanner -u <username> -m github
-user-scanner -u <username> -p <suffix> 
+```
 
+Also, the output format can be specified: <br>
+\* Errors and warnings will only appear when the format is set to "console"
+```bash
+user-scanner -u <username> -o console #Default format
+user-scanner -u <username> -o csv
+user-scanner -u <username> -o json
 ```
 
 Generate multiple username variations by appending a suffix:
 
 ```bash
 user-scanner -u <username> -p <suffix> 
-
 ```
 Optionally, scan a specific category or single module with limit:
 
