@@ -15,6 +15,9 @@ JSON_TEMPLATE_ERROR = """{{
 \t"reason": "{reason}"
 }}"""
 
+CSV_HEADER = "site_name,username,result,reason"
+CSV_TEMPLATE = "{site_name},{username},{result},{reason}"
+
 
 def identate(msg: str, ident: int):
     tabs = "\t" * ident
@@ -40,13 +43,14 @@ class Printer:
     def is_json(self) -> bool:
         return self.mode == "json"
 
-    def print_json_start(self) -> None:
-        if not self.is_json:
-            return
-        self.ident += 1
-        print(identate("[", self.ident - 1))
+    def print_start(self) -> None:
+        if self.is_json:
+            self.ident += 1
+            print(identate("[", self.ident - 1))
+        elif self.is_csv:
+            print(CSV_HEADER)
 
-    def print_json_end(self) -> None:
+    def print_end(self) -> None:
         if not self.is_json:
             return
         self.ident = max(self.ident - 1, 0)
@@ -73,18 +77,25 @@ class Printer:
                 return f"  {Fore.YELLOW}[!] {site_name} ({username}): Error{reason}{Style.RESET_ALL}"
 
             case (Status.AVAILABLE, "json") | (Status.TAKEN, "json"):
-                msg = identate(JSON_TEMPLATE, self.ident).format(
+                return identate(JSON_TEMPLATE, self.ident).format(
                     site_name=site_name,
                     username=username,
                     result=str(result.status)
                 )
-                return msg
 
             case (Status.ERROR, "json"):
-                msg = identate(JSON_TEMPLATE_ERROR, self.ident).format(
+                return identate(JSON_TEMPLATE_ERROR, self.ident).format(
                     site_name=site_name,
                     username=username,
                     reason=result.get_reason()
                 )
-                return msg
 
+            case (_, "csv"):
+                return CSV_TEMPLATE.format(
+                    site_name=site_name,
+                    username=username,
+                    result=str(result.status),
+                    reason=result.get_reason()
+                )
+
+        return ""

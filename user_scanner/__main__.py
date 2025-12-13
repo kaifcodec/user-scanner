@@ -114,14 +114,14 @@ def main():
                 if site_name.lower() == args.module.lower():
                     from user_scanner.core.orchestrator import run_module_single
 
-                    Printer.print_json_start()
+                    Printer.print_start()
 
                     for i, name in enumerate(usernames):   # <-- permutation support here
                         run_module_single(module, name, Printer, is_last(i))
                         if args.delay > 0 and not is_last(i):
                             time.sleep(args.delay)
 
-                    Printer.print_json_end()    
+                    Printer.print_end()    
                     found = True
         if not found:
             print(
@@ -131,25 +131,25 @@ def main():
         category_package = load_categories().get(args.category)
         from user_scanner.core.orchestrator import run_checks_category
         
-        Printer.print_json_start()
+        Printer.print_start()
 
         for i, name in enumerate(usernames):   # <-- permutation support here
             run_checks_category(category_package, name, Printer, is_last(i))
             if args.delay > 0 and not is_last(i):
                 time.sleep(args.delay)
 
-        Printer.print_json_end()
+        Printer.print_end()
 
     else:
         # Full scan
-        Printer.print_json_start()
+        Printer.print_start()
 
         for i, name in enumerate(usernames):
             run_checks(name, Printer, is_last(i))
             if args.delay > 0 and not is_last(i):
                 time.sleep(args.delay)
 
-        Printer.print_json_end()
+        Printer.print_end()
 
 
 if __name__ == "__main__":
