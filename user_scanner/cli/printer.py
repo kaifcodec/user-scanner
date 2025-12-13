@@ -48,18 +48,18 @@ class Printer:
     def is_json(self) -> bool:
         return self.mode == "json"
 
-    def print_start(self) -> None:
+    def print_start(self, json_char: str = "[") -> None:
         if self.is_json:
             self.indent += 1
-            print(indentate("[", self.indent - 1))
+            print(indentate(json_char, self.indent - 1))
         elif self.is_csv:
             print(CSV_HEADER)
 
-    def print_end(self) -> None:
+    def print_end(self, json_char: str = "]") -> None:
         if not self.is_json:
             return
         self.indent = max(self.indent - 1, 0)
-        print(indentate("]", self.indent))
+        print(indentate(json_char, self.indent))
 
     def get_result_output(self, site_name: str, username: str, result: Result) -> str:
         if result == None:
@@ -104,3 +104,47 @@ class Printer:
                 )
 
         return ""
+
+    def print_modules(self, category: str | None = None):
+        from user_scanner.core.orchestrator import load_categories, load_modules
+        categories = load_categories()
+        categories_to_list = [category] if category else categories.keys()
+
+        # Print the start
+        if self.is_json:
+            self.print_start("{")
+        elif self.is_csv:
+            print("category,site_name")
+
+        for i, cat_name in enumerate(categories_to_list):
+            path = categories[cat_name]
+            modules = load_modules(path)
+
+            # Print for each category
+            match self.mode:
+                case "console":
+                    print(Fore.MAGENTA +
+                          f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
+                case "json":
+                    self.print_start(f"\"{cat_name}\": [")
+
+            for j, module in enumerate(modules):
+                is_last = j == len(modules) - 1
+                site_name = module.__name__.split(".")[-1].capitalize()
+
+                # Print for each site name
+                match self.mode:
+                    case "console":
+                        print(f"{INDENT}- {site_name}")
+                    case "json":
+                        msg = f"\"{site_name}\"" + ("" if is_last else ",")
+                        print(indentate(msg, self.indent))
+                    case "csv":
+                        print(f"{cat_name},{site_name}")
+
+            if self.is_json:
+                is_last = i == len(categories_to_list) - 1
+                self.print_end("]" if is_last else "],")
+
+        if self.is_json:
+            self.print_end("}")

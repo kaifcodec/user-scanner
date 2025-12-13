@@ -8,19 +8,6 @@ from user_scanner.cli.banner import print_banner
 
 MAX_PERMUTATIONS_LIMIT = 100 # To prevent excessive generation
 
-def list_modules(category=None):
-    categories = load_categories()
-    categories_to_list = [category] if category else categories.keys()
-
-    for cat_name in categories_to_list:
-        path = categories[cat_name]
-        modules = load_modules(path)
-        print(Fore.MAGENTA +
-            f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
-        for module in modules:
-            site_name = module.__name__.split(".")[-1]
-            print(f"  - {site_name}")
-
 def main():
     parser = argparse.ArgumentParser(
         prog="user-scanner",
@@ -60,15 +47,16 @@ def main():
     
     args = parser.parse_args()
         
+    Printer = printer.Printer(args.output_format)
+
     if args.list:
-        list_modules(args.category)
+        Printer.print_modules(args.category)
         return
     
     if not args.username:
         parser.print_help()
         return
     
-    Printer = printer.Printer(args.output_format)
 
     if Printer.is_console:
         print_banner()
