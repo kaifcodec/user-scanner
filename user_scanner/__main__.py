@@ -2,7 +2,7 @@ import argparse
 import time
 import re
 from user_scanner.cli import printer
-from user_scanner.core.orchestrator import run_checks, load_modules , generate_permutations, load_categories
+from user_scanner.core.orchestrator import load_modules , generate_permutations, load_categories
 from colorama import Fore, Style
 from user_scanner.cli.banner import print_banner
 
@@ -20,7 +20,6 @@ def list_modules(category=None):
         for module in modules:
             site_name = module.__name__.split(".")[-1]
             print(f"  - {site_name}")
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -102,54 +101,44 @@ def main():
     if args.module and "." in args.module:
         args.module = args.module.replace(".", "_")
 
-    is_last = lambda x: x == len(usernames) - 1 
+    def run_all_usernames(func, arg = None):
+        """
+        Executes a function for all given usernames.
+        Made in order to simplify main()
+        """
+        Printer.print_start()
+        for i, name in enumerate(usernames):
+            is_last = i == len(usernames) - 1
+            if arg == None:
+                func(name, Printer, is_last)
+            else:
+                func(arg, name, Printer, is_last)
+            if args.delay > 0 and not is_last:
+                time.sleep(args.delay)
+        Printer.print_end()
 
     if args.module:
         # Single module search across all categories
-        found = False
-        for cat_path in load_categories().values():
-            modules = load_modules(cat_path)
+        from user_scanner.core.orchestrator import run_module_single, find_module
+        modules = find_module(args.module)
+
+        if len(modules) > 0:
             for module in modules:
-                site_name = module.__name__.split(".")[-1]
-                if site_name.lower() == args.module.lower():
-                    from user_scanner.core.orchestrator import run_module_single
-
-                    Printer.print_start()
-
-                    for i, name in enumerate(usernames):   # <-- permutation support here
-                        run_module_single(module, name, Printer, is_last(i))
-                        if args.delay > 0 and not is_last(i):
-                            time.sleep(args.delay)
-
-                    Printer.print_end()    
-                    found = True
-        if not found:
+                run_all_usernames(run_module_single, module)
+        else:
             print(
                 Fore.RED + f"[!] Module '{args.module}' not found in any category." + Style.RESET_ALL)
+
     elif args.category:
         # Category-wise scan
         category_package = load_categories().get(args.category)
         from user_scanner.core.orchestrator import run_checks_category
-        
-        Printer.print_start()
-
-        for i, name in enumerate(usernames):   # <-- permutation support here
-            run_checks_category(category_package, name, Printer, is_last(i))
-            if args.delay > 0 and not is_last(i):
-                time.sleep(args.delay)
-
-        Printer.print_end()
+        run_all_usernames(run_checks_category, category_package)
 
     else:
         # Full scan
-        Printer.print_start()
-
-        for i, name in enumerate(usernames):
-            run_checks(name, Printer, is_last(i))
-            if args.delay > 0 and not is_last(i):
-                time.sleep(args.delay)
-
-        Printer.print_end()
+        from user_scanner.core.orchestrator import run_checks
+        run_all_usernames(run_checks)
 
 
 if __name__ == "__main__":

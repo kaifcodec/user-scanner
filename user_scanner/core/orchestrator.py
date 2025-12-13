@@ -40,6 +40,19 @@ def load_categories() -> Dict[str, Path]:
     return categories
 
 
+def find_module(name: str):
+    name = name.lower()
+
+    matches = [
+        module
+        for category_path in load_categories().values()
+        for module in load_modules(category_path)
+        if module.__name__.split(".")[-1].lower() == name
+    ]
+
+    return matches
+
+
 def worker_single(module, username: str, i: int, printer: Printer, last: bool = True) -> AnyResult:
     global print_queue
 
