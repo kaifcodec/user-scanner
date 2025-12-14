@@ -57,34 +57,34 @@ def worker_single(module, username: str) -> Result:
     site_name = get_site_name(module)
 
     if not func:
-        return Result.error(f"{site_name} has no validate_ function")
+        return Result.error(f"{site_name} has no validate_ function", site_name=site_name, username=username)
 
     try:
-        return func(username)
+        result: Result = func(username)
+        result.update(site_name=site_name, username=username)
+        return result
     except Exception as e:
-        return Result.error(e)
+        return Result.error(e, site_name=site_name, username=username)
 
 
-def run_module_single(module, username: str, printer: Printer, last: bool = True) -> Result:
+def run_module_single(module, username: str, printer: Printer, last: bool = True) -> List[Result]:
     # Just executes as if it was a thread
     result = worker_single(module, username)
 
     site_name = get_site_name(module)
-    msg = printer.get_result_output(
-        site_name, username, result
-    )
+    msg = printer.get_result_output(result)
     if last == False and printer.is_json:
         msg += ","
     print(msg)
 
-    return result
+    return [result]
 
 
 def run_checks_category(category_path: Path, username: str, printer: Printer, last: bool = True) -> List[Result]:
     modules = load_modules(category_path)
 
+    category_name = category_path.stem.capitalize()
     if printer.is_console:
-        category_name = category_path.stem.capitalize()
         print(f"\n{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
 
     results = []
@@ -92,13 +92,12 @@ def run_checks_category(category_path: Path, username: str, printer: Printer, la
     with ThreadPoolExecutor(max_workers=10) as executor:
         exec_map = executor.map(lambda m: worker_single(m, username), modules)
         for i, result in enumerate(exec_map):
+            result.update(category = category_name)
             results.append(result)
 
             is_last = last and is_last_value(modules, i)
             site_name = get_site_name(modules[i])
-            msg = printer.get_result_output(
-                site_name, username, result
-            )
+            msg = printer.get_result_output(result)
             if is_last == False and printer.is_json:
                 msg += ","
             print(msg)
@@ -144,9 +143,11 @@ def generic_validate(url: str, func: Callable[[httpx.Response], AnyResult], **kw
     """
     try:
         response = make_get_request(url, **kwargs)
-        return func(response)
+        result = func(response)
+        result.url = url
+        return result
     except Exception as e:
-        return Result.error(e)
+        return Result.error(e, url=url)
 
 
 def status_validate(url: str, available: int | List[int], taken: int | List[int], **kwargs) -> Result:

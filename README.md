@@ -51,12 +51,13 @@ user-scanner -l # Lists all available modules
 user-scanner -u <username> -m github
 ```
 
-Also, the output format can be specified: <br>
+Also, the output file and format can be specified: <br>
 \* Errors and warnings will only appear when the format is set to "console"
 ```bash
-user-scanner -u <username> -o console #Default format
-user-scanner -u <username> -o csv
-user-scanner -u <username> -o json
+user-scanner -u <username> -f console #Default format
+user-scanner -u <username> -f csv
+user-scanner -u <username> -f json
+user-scanner -u <username> -o <output-file>
 ```
 
 Generate multiple username variations by appending a suffix:

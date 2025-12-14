@@ -3,23 +3,7 @@ from typing import Literal
 from user_scanner.core.result import Result, Status
 
 INDENT = "  "
-
-JSON_TEMPLATE = """{{
-\t"site_name": "{site_name}",
-\t"username": "{username}",
-\t"result": "{result}"
-}}""".replace("\t", INDENT)
-
-JSON_TEMPLATE_ERROR = """{{
-\t"site_name": "{site_name}",
-\t"username": "{username}",
-\t"result": "Error",
-\t"reason": "{reason}"
-}}""".replace("\t", INDENT)
-
-
-CSV_HEADER = "site_name,username,result,reason"
-CSV_TEMPLATE = "{site_name},{username},{result},{reason}"
+CSV_HEADER = "username,category,site_name,status,url,reason"
 
 
 def indentate(msg: str, indent: int):
@@ -30,10 +14,10 @@ def indentate(msg: str, indent: int):
 
 
 class Printer:
-    def __init__(self, output_format: Literal["console", "csv", "json"]) -> None:
-        if not output_format in ["console", "csv", "json"]:
-            raise ValueError(f"Invalid output-format: {output_format}")
-        self.mode: str = output_format
+    def __init__(self, format: Literal["console", "csv", "json"]) -> None:
+        if not format in ["console", "csv", "json"]:
+            raise ValueError(f"Invalid output-format: {format}")
+        self.mode: str = format
         self.indent: int = 0
 
     @property
@@ -48,25 +32,23 @@ class Printer:
     def is_json(self) -> bool:
         return self.mode == "json"
 
-    def print_start(self, json_char: str = "[") -> None:
+    def get_start(self, json_char: str = "[") -> str:
         if self.is_json:
             self.indent += 1
-            print(indentate(json_char, self.indent - 1))
+            return indentate(json_char, self.indent - 1)
         elif self.is_csv:
-            print(CSV_HEADER)
+            return CSV_HEADER
 
-    def print_end(self, json_char: str = "]") -> None:
+    def get_end(self, json_char: str = "]") -> str:
         if not self.is_json:
             return
         self.indent = max(self.indent - 1, 0)
-        print(indentate(json_char, self.indent))
+        return indentate(json_char, self.indent)
 
-    def get_result_output(self, site_name: str, username: str, result: Result) -> str:
-        if result == None:
-            result = Result.error("Invalid return value: None")
-
-        if isinstance(result, int):
-            result = Result.from_number(result)
+    def get_result_output(self, result: Result) -> str:
+        #In principle result should always have this
+        site_name = result.site_name
+        username = result.username
 
         match (result.status, self.mode):
             case (Status.AVAILABLE, "console"):
@@ -81,27 +63,11 @@ class Printer:
                     reason = f" ({result.get_reason()})"
                 return f"{INDENT}{Fore.YELLOW}[!] {site_name} ({username}): Error{reason}{Style.RESET_ALL}"
 
-            case (Status.AVAILABLE, "json") | (Status.TAKEN, "json"):
-                return indentate(JSON_TEMPLATE, self.indent).format(
-                    site_name=site_name,
-                    username=username,
-                    result=str(result.status)
-                )
-
-            case (Status.ERROR, "json"):
-                return indentate(JSON_TEMPLATE_ERROR, self.indent).format(
-                    site_name=site_name,
-                    username=username,
-                    reason=result.get_reason()
-                )
+            case (_, "json"):
+                return indentate(result.to_json().replace("\t", INDENT), self.indent)
 
             case (_, "csv"):
-                return CSV_TEMPLATE.format(
-                    site_name=site_name,
-                    username=username,
-                    result=str(result.status),
-                    reason=result.get_reason()
-                )
+                return result.to_csv()
 
         return ""
 
@@ -112,7 +78,7 @@ class Printer:
 
         # Print the start
         if self.is_json:
-            self.print_start("{")
+            print(self.get_start("{"))
         elif self.is_csv:
             print("category,site_name")
 
@@ -126,7 +92,7 @@ class Printer:
                     print(Fore.MAGENTA +
                           f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
                 case "json":
-                    self.print_start(f"\"{cat_name}\": [")
+                    print(self.get_start(f"\"{cat_name}\": ["))
 
             for j, module in enumerate(modules):
                 is_last = j == len(modules) - 1
@@ -144,7 +110,7 @@ class Printer:
 
             if self.is_json:
                 is_last = i == len(categories_to_list) - 1
-                self.print_end("]" if is_last else "],")
+                print(self.get_end("]" if is_last else "],"))
 
         if self.is_json:
-            self.print_end("}")
+            print(self.get_end("}"))

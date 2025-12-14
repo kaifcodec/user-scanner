@@ -2,9 +2,12 @@ import argparse
 import time
 import re
 from user_scanner.cli import printer
-from user_scanner.core.orchestrator import load_modules , generate_permutations, load_categories
+from user_scanner.core.orchestrator import generate_permutations, load_categories
 from colorama import Fore, Style
 from user_scanner.cli.banner import print_banner
+from typing import List
+from user_scanner.core.result import Result
+from user_scanner.core.utils import is_last_value
 
 MAX_PERMUTATIONS_LIMIT = 100 # To prevent excessive generation
 
@@ -42,12 +45,16 @@ def main():
     )
 
     parser.add_argument(
-        "-o", "--output-format", choices=["console", "csv", "json"], default="console", help="Specify output format (default: console)"
+        "-f", "--format", choices=["console", "csv", "json"], default="console", help="Specify the output format (default: console)"
+    )
+
+    parser.add_argument(
+        "-o", "--output", type=str, help="Specify the output file"
     )
     
     args = parser.parse_args()
         
-    Printer = printer.Printer(args.output_format)
+    Printer = printer.Printer(args.format)
 
     if args.list:
         Printer.print_modules(args.category)
@@ -89,21 +96,26 @@ def main():
     if args.module and "." in args.module:
         args.module = args.module.replace(".", "_")
 
-    def run_all_usernames(func, arg = None):
+    def run_all_usernames(func, arg = None) -> List[Result]:
         """
         Executes a function for all given usernames.
         Made in order to simplify main()
         """
-        Printer.print_start()
+        results = []
+        print(Printer.get_start())
         for i, name in enumerate(usernames):
             is_last = i == len(usernames) - 1
             if arg == None:
-                func(name, Printer, is_last)
+                results.extend(func(name, Printer, is_last))
             else:
-                func(arg, name, Printer, is_last)
+                results.extend(func(arg, name, Printer, is_last))
             if args.delay > 0 and not is_last:
                 time.sleep(args.delay)
-        Printer.print_end()
+        if Printer.is_json:
+            print(Printer.get_end())
+        return results
+
+    results =  []
 
     if args.module:
         # Single module search across all categories
@@ -112,7 +124,7 @@ def main():
 
         if len(modules) > 0:
             for module in modules:
-                run_all_usernames(run_module_single, module)
+                results.extend(run_all_usernames(run_module_single, module))
         else:
             print(
                 Fore.RED + f"[!] Module '{args.module}' not found in any category." + Style.RESET_ALL)
@@ -121,12 +133,35 @@ def main():
         # Category-wise scan
         category_package = load_categories().get(args.category)
         from user_scanner.core.orchestrator import run_checks_category
-        run_all_usernames(run_checks_category, category_package)
+        results = run_all_usernames(run_checks_category, category_package)
 
     else:
         # Full scan
         from user_scanner.core.orchestrator import run_checks
-        run_all_usernames(run_checks)
+        results = run_all_usernames(run_checks)
+
+    if not args.output:
+        return
+
+    if args.output and Printer.is_console:
+        msg = (
+            "\n[!] The console format cannot be "
+            f"written to file: '{args.output}'."
+        )
+        print(Fore.RED + msg + Style.RESET_ALL)
+        return
+
+    content = Printer.get_start()
+
+    for i,result in enumerate(results):
+        char = "" if Printer.is_csv or is_last_value(results, i) else ","
+        content += "\n" + Printer.get_result_output(result) + char
+
+    if Printer.is_json:
+        content += "\n" + Printer.get_end()
+
+    with open(args.output, "a", encoding="utf-8") as f:
+        f.write(content)
 
 
 if __name__ == "__main__":
