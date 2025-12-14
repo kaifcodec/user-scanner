@@ -38,6 +38,7 @@ class Printer:
             return indentate(json_char, self.indent - 1)
         elif self.is_csv:
             return CSV_HEADER
+        return ""
 
     def get_end(self, json_char: str = "]") -> str:
         if not self.is_json:
