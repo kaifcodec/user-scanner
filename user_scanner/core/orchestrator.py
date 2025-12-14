@@ -1,17 +1,14 @@
 import importlib
 import importlib.util
 from colorama import Fore, Style
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from itertools import permutations
 import httpx
 from pathlib import Path
 from user_scanner.cli.printer import Printer
 from user_scanner.core.result import Result, AnyResult
 from typing import Callable, Dict, List
-
-lock = threading.Condition()
-# Basically which thread is the one to print
-print_queue = 0
+from user_scanner.core.utils import get_site_name, is_last_value
 
 
 def load_modules(category_path: Path):
@@ -53,74 +50,76 @@ def find_module(name: str):
     return matches
 
 
-def worker_single(module, username: str, i: int, printer: Printer, last: bool = True) -> AnyResult:
-    global print_queue
-
+def worker_single(module, username: str) -> Result:
     func = next((getattr(module, f) for f in dir(module)
                  if f.startswith("validate_") and callable(getattr(module, f))), None)
-    site_name = module.__name__.split('.')[-1].capitalize().replace("_", ".")
-    if site_name == "X":
-        site_name = "X (Twitter)"
 
-    output = ""
-    if func:
-        try:
-            result = func(username)
-            output = printer.get_result_output(site_name, username, result)
-            if last == False and printer.is_json:
-                output += ","
-        except Exception as e:
-            if Printer.is_console:
-                output = f"  {Fore.YELLOW}[!] {site_name}: Exception - {e}{Style.RESET_ALL}"
-    else:
-        if Printer.is_console:
-            output = f"  {Fore.YELLOW}[!] {site_name} has no validate_ function{Style.RESET_ALL}"
+    site_name = get_site_name(module)
 
-    with lock:
-        # Waits for in-order printing
-        while i != print_queue:
-            lock.wait()
+    if not func:
+        return Result.error(f"{site_name} has no validate_ function")
 
-        if output != "":
-            print(output)
-        print_queue += 1
-        lock.notify_all()
+    try:
+        return func(username)
+    except Exception as e:
+        return Result.error(e)
 
 
-def run_module_single(module, username: str, printer: Printer, last: bool = True) -> AnyResult:
+def run_module_single(module, username: str, printer: Printer, last: bool = True) -> Result:
     # Just executes as if it was a thread
-    return worker_single(module, username, print_queue, printer, last)
+    result = worker_single(module, username)
+
+    site_name = get_site_name(module)
+    msg = printer.get_result_output(
+        site_name, username, result
+    )
+    if last == False and printer.is_json:
+        msg += ","
+    print(msg)
+
+    return result
 
 
-def run_checks_category(category_path: Path, username: str, printer: Printer, last: bool = True):
-    global print_queue
-
+def run_checks_category(category_path: Path, username: str, printer: Printer, last: bool = True) -> List[Result]:
     modules = load_modules(category_path)
+
     if printer.is_console:
         category_name = category_path.stem.capitalize()
         print(f"\n{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
 
-    print_queue = 0
+    results = []
 
-    threads = []
-    for i, module in enumerate(modules):
-        last_thread = last and (i == len(modules) - 1)
-        t = threading.Thread(target=worker_single, args=(module, username, i, printer, last_thread))
-        threads.append(t)
-        t.start()
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        exec_map = executor.map(lambda m: worker_single(m, username), modules)
+        for i, result in enumerate(exec_map):
+            results.append(result)
 
-    for t in threads:
-        t.join()
+            is_last = last and is_last_value(modules, i)
+            site_name = get_site_name(modules[i])
+            msg = printer.get_result_output(
+                site_name, username, result
+            )
+            if is_last == False and printer.is_json:
+                msg += ","
+            print(msg)
+
+    return results
 
 
-def run_checks(username: str, printer: Printer, last:bool = True):
+def run_checks(username: str, printer: Printer, last: bool = True) -> List[Result]:
     if printer.is_console:
         print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}")
+
+    results = []
 
     categories = list(load_categories().values())
     for i, category_path in enumerate(categories):
         last_cat: int = last and (i == len(categories) - 1)
-        run_checks_category(category_path, username, printer, last_cat)
+        temp = run_checks_category(category_path, username, printer, last_cat)
+        results.extend(temp)
+
+    return results
+
 
 def make_get_request(url: str, **kwargs) -> httpx.Response:
     """Simple wrapper to **httpx.get** that predefines headers and timeout"""
@@ -173,6 +172,7 @@ def status_validate(url: str, available: int | List[int], taken: int | List[int]
         return Result.error("Status didn't match. Report this on Github.")
 
     return generic_validate(url, inner, **kwargs)
+
 
 def generate_permutations(username, pattern, limit=None):
     """
