@@ -32,14 +32,14 @@ def main():
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose output"
     )
-    
+
     parser.add_argument(
         "-p", "--permute",type=str,help="Generate username permutations using a string pattern (e.g -p 234)"
     )
     parser.add_argument(
         "-s", "--stop",type=int,default=MAX_PERMUTATIONS_LIMIT,help="Limit the number of username permutations generated"
     )
-    
+
     parser.add_argument(
         "-d", "--delay",type=float,default=0,help="Delay in seconds between requests (recommended: 1-2 seconds)"
     )
@@ -51,31 +51,22 @@ def main():
     parser.add_argument(
         "-o", "--output", type=str, help="Specify the output file"
     )
-    
+
     args = parser.parse_args()
-        
+
     Printer = printer.Printer(args.format)
 
     if args.list:
         Printer.print_modules(args.category)
         return
-    
+
     if not args.username:
         parser.print_help()
         return
-    
+
 
     if Printer.is_console:
         print_banner()
-        # Special username checks before run
-        if (args.module == "x" or args.category == "social"):
-            if re.search(r"[^a-zA-Z0-9._-]", args.username):
-                print(
-                    Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
-        if (args.module == "bluesky" or args.category == "social"):
-            if re.search(r"[^a-zA-Z0-9\.-]", args.username):
-                print(
-                    Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL + "\n")
 
     if args.permute and args.delay == 0 and Printer.is_console:
         print(
@@ -83,9 +74,9 @@ def main():
         + "[!] Warning: You're generating multiple usernames with NO delay between requests. "
         "This may trigger rate limits or IP bans. Use --delay 1 or higher. (Use only if the sites throw errors otherwise ignore)\n"
         + Style.RESET_ALL)
-        
+
     usernames = [args.username]  # Default single username list
-    
+
     #Added permutation support , generate all possible permutation of given sequence.
     if args.permute:
         usernames = generate_permutations(args.username, args.permute , args.stop)
