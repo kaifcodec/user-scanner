@@ -7,7 +7,6 @@ DEBUG_MSG = """Result {{
   username: "{username}",
   site_name: "{site_name}",
   category: "{category}",
-  url: "{url}",
 }}"""
 
 JSON_TEMPLATE = """{{
@@ -15,11 +14,10 @@ JSON_TEMPLATE = """{{
 \t"category": "{category}",
 \t"site_name": "{site_name}",
 \t"status": "{status}",
-\t"url": "{url}",
 \t"reason": "{reason}"
 }}"""
 
-CSV_TEMPLATE = "{username},{category},{site_name},{status},{url},{reason}"
+CSV_TEMPLATE = "{username},{category},{site_name},{status},{reason}"
 
 
 def humanize_exception(e: Exception) -> str:
@@ -50,11 +48,10 @@ class Result:
         self.username = None
         self.site_name = None
         self.category = None
-        self.url = None
         self.update(**kwargs)
 
     def update(self, **kwargs):
-        for field in ("username", "site_name", "category", "url"):
+        for field in ("username", "site_name", "category"):
             if field in kwargs and kwargs[field] is not None:
                 setattr(self, field, kwargs[field])
 
@@ -100,8 +97,7 @@ class Result:
             "reason": self.get_reason(),
             "username": self.username,
             "site_name": self.site_name,
-            "category": self.category,
-            "url": self.url
+            "category": self.category
         }
 
     def debug(self) -> str:
