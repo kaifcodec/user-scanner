@@ -20,12 +20,12 @@ def validate_discord(user):
         if response.status_code == 200:
             status = response.json().get("taken")
             if status is True:
-                return Result.taken(url=url)
+                return Result.taken()
             elif status is False:
-                return Result.available(url=url)
-        return Result.error("Invalid status code",url=url)
+                return Result.available()
+        return Result.error("Invalid status code")
     except Exception as e:
-        return Result.error(e,url=url)
+        return Result.error(e)
 
 
 if __name__ == "__main__":

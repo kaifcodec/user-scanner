@@ -26,17 +26,17 @@ def validate_hashnode(user):
 
             if 'status' in data:
                 if data['status'] == 1:
-                    return Result.available(url=url)
+                    return Result.available()
                 elif data['status'] == 0:
-                    return Result.taken(url=url)
+                    return Result.taken()
 
-            return Result.error("Status not found", url=url)
+            return Result.error("Status not found")
 
         else:
-            return Result.error("Invalid status code", url=url)
+            return Result.error("Invalid status code")
 
     except Exception as e:
-        return Result.error(e, url=url)
+        return Result.error(e)
 
 
 if __name__ == "__main__":
