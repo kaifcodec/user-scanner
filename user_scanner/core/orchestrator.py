@@ -138,7 +138,7 @@ def run_checks(username: str, printer: Printer, last: bool = True) -> List[Resul
     return results
 
 
-def make_get_request(url: str, **kwargs) -> httpx.Response:
+def make_request(url: str, **kwargs) -> httpx.Response:
     """Simple wrapper to **httpx.get** that predefines headers and timeout"""
     if not "headers" in kwargs:
         kwargs["headers"] = {
@@ -152,7 +152,9 @@ def make_get_request(url: str, **kwargs) -> httpx.Response:
     if not "timeout" in kwargs:
         kwargs["timeout"] = 5.0
 
-    return httpx.get(url, **kwargs)
+    method = kwargs.pop("method", "GET")
+
+    return httpx.request(method.upper(), url, **kwargs)
 
 
 def generic_validate(url: str, func: Callable[[httpx.Response], AnyResult], **kwargs) -> AnyResult:
@@ -160,7 +162,7 @@ def generic_validate(url: str, func: Callable[[httpx.Response], AnyResult], **kw
     A generic validate function that makes a request and executes the provided function on the response.
     """
     try:
-        response = make_get_request(url, **kwargs)
+        response = make_request(url, **kwargs)
         result = func(response)
         result.url = url
         return result
