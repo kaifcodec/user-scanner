@@ -18,14 +18,16 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 
 ### Features
 
-- ✅ Check usernames across **social networks**, **developer platforms**, and **creator communities**.
-- ✅ Clear **Available / Taken / Error** output for each platform.
+- ✅ Check usernames across **social networks**, **developer platforms**, and **creator communities**
+- ✅ Clear **Available / Taken / Error** output for each platform
 - ✅ Robust error handling: It prints the exact reason (e.g. Cannot use underscores, hyphens at the start/end)
-- ✅ Fully modular: add new platform modules easily.
+- ✅ Fully modular: add new platform modules easily
 - ✅ Wildcard-based username permutations for automatic variation generation using provided suffix
+- ✅ Selection of results format (e.g. json, csv, console (default))
+- ✅ Get the scanning results in preferred format (json/csv) in specified output file (suitable for power users)
 - ✅ Command-line interface ready: works directly after `pip install`
-- ✅ Can be used as username OSINT tool.
-- ✅ Very low and lightweight dependencies, can be run on any machine.
+- ✅ Can be used as username OSINT tool
+- ✅ Very low and lightweight dependencies, can be run on any machine
 ---
 
 ### Installation
@@ -49,15 +51,21 @@ Optionally, scan a specific category or single module:
 user-scanner -u <username> -c dev
 user-scanner -l # Lists all available modules
 user-scanner -u <username> -m github
-user-scanner -u <username> -p <suffix> 
+```
 
+Also, the output file and format can be specified: <br>
+\* Errors and warnings will only appear when the format is set to "console"
+```bash
+user-scanner -u <username> -f console #Default format
+user-scanner -u <username> -f csv
+user-scanner -u <username> -f json
+user-scanner -u <username> -f <format> -o <output-file>
 ```
 
 Generate multiple username variations by appending a suffix:
 
 ```bash
 user-scanner -u <username> -p <suffix> 
-
 ```
 Optionally, scan a specific category or single module with limit:
 
@@ -65,7 +73,7 @@ Optionally, scan a specific category or single module with limit:
 user-scanner -u <username> -p <suffix> -c dev
 user-scanner -u <username> -p <suffix> -m github
 user-scanner -u <username> -p <suffix> -s <number> # limit generation of usernames
-user-scanner -u <username> -p <suffix> -d <seconds> #delay to avoid rate-limits
+user-scanner -u <username> -p <suffix> -d <seconds> # delay to avoid rate-limits (can be 0s-1s)
 ```
 
 ---
@@ -80,6 +88,10 @@ user-scanner -u <username> -p <suffix> -d <seconds> #delay to avoid rate-limits
 ---
 
 <img width="1080" height="352" alt="1000140393" src="https://github.com/user-attachments/assets/578b248c-2a05-4917-aab3-6372a7c28045" />
+
+---
+
+<img width="992" height="556" alt="1000141265" src="https://github.com/user-attachments/assets/9babb19f-bc87-4e7b-abe5-c52b8b1b672c" />
 
 
 ### Contributing: 

@@ -1,16 +1,14 @@
 import importlib
 import importlib.util
 from colorama import Fore, Style
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from itertools import permutations
 import httpx
 from pathlib import Path
+from user_scanner.cli.printer import Printer
 from user_scanner.core.result import Result, AnyResult
 from typing import Callable, Dict, List
-
-lock = threading.Condition()
-# Basically which thread is the one to print
-print_queue = 0
+from user_scanner.core.utils import get_site_name, is_last_value
 
 
 def load_modules(category_path: Path):
@@ -39,75 +37,105 @@ def load_categories() -> Dict[str, Path]:
     return categories
 
 
-def worker_single(module, username, i):
-    global print_queue
+def find_module(name: str):
+    name = name.lower()
 
+    matches = [
+        module
+        for category_path in load_categories().values()
+        for module in load_modules(category_path)
+        if module.__name__.split(".")[-1].lower() == name
+    ]
+
+    return matches
+
+def find_category(module) -> str | None:
+
+    module_file = getattr(module, '__file__', None)
+    if not module_file:
+        return None
+
+    category = Path(module_file).parent.name.lower()
+    categories = load_categories()
+    if category in categories:
+        return category.capitalize()
+
+    return None
+
+
+
+def worker_single(module, username: str) -> Result:
     func = next((getattr(module, f) for f in dir(module)
                  if f.startswith("validate_") and callable(getattr(module, f))), None)
-    site_name = module.__name__.split('.')[-1].capitalize().replace("_", ".")
-    if site_name == "X":
-        site_name = "X (Twitter)"
 
-    output = ""
-    if func:
-        try:
-            result = func(username)
-            reason = ""
+    site_name = get_site_name(module)
 
-            if isinstance(result, Result) and result.has_reason():
-                reason = f" ({result.get_reason()})"
+    if not func:
+        return Result.error(f"{site_name} has no validate_ function", site_name=site_name, username=username)
 
-            if result == 1:
-                output = f"  {Fore.GREEN}[✔] {site_name} ({username}): Available{Style.RESET_ALL}"
-            elif result == 0:
-                output = f"  {Fore.RED}[✘] {site_name} ({username}): Taken{Style.RESET_ALL}"
-            else:
-                output = f"  {Fore.YELLOW}[!] {site_name} ({username}): Error{reason}{Style.RESET_ALL}"
-        except Exception as e:
-            output = f"  {Fore.YELLOW}[!] {site_name}: Exception - {e}{Style.RESET_ALL}"
-    else:
-        output = f"  {Fore.YELLOW}[!] {site_name} has no validate_ function{Style.RESET_ALL}"
-
-    with lock:
-        # Waits for in-order printing
-        while i != print_queue:
-            lock.wait()
-
-        print(output)
-        print_queue += 1
-        lock.notify_all()
+    try:
+        result: Result = func(username)
+        result.update(site_name=site_name, username=username)
+        return result
+    except Exception as e:
+        return Result.error(e, site_name=site_name, username=username)
 
 
-def run_module_single(module, username):
-    # Just executes as if it was a thread
-    worker_single(module, username, print_queue)
+def run_module_single(module, username: str, printer: Printer, last: bool = True) -> List[Result]:
+    result = worker_single(module, username)
+
+    category = find_category(module)
+    if category:
+        result.update(category=category)
+
+    site_name = get_site_name(module)
+    msg = printer.get_result_output(result)
+    if last == False and printer.is_json:
+        msg += ","
+    print(msg)
+
+    return [result]
 
 
-def run_checks_category(category_path:Path, username:str, verbose=False):
-    global print_queue
 
+def run_checks_category(category_path: Path, username: str, printer: Printer, last: bool = True) -> List[Result]:
     modules = load_modules(category_path)
+
     category_name = category_path.stem.capitalize()
-    print(f"{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
+    if printer.is_console:
+        print(f"\n{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
 
-    print_queue = 0
+    results = []
 
-    threads = []
-    for i, module in enumerate(modules):
-        t = threading.Thread(target=worker_single, args=(module, username, i))
-        threads.append(t)
-        t.start()
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        exec_map = executor.map(lambda m: worker_single(m, username), modules)
+        for i, result in enumerate(exec_map):
+            result.update(category = category_name)
+            results.append(result)
 
-    for t in threads:
-        t.join()
+            is_last = last and is_last_value(modules, i)
+            site_name = get_site_name(modules[i])
+            msg = printer.get_result_output(result)
+            if is_last == False and printer.is_json:
+                msg += ","
+            print(msg)
+
+    return results
 
 
-def run_checks(username):
-    print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}\n")
+def run_checks(username: str, printer: Printer, last: bool = True) -> List[Result]:
+    if printer.is_console:
+        print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}")
 
-    for category_path in load_categories().values():
-        run_checks_category(category_path, username)
-        print()
+    results = []
+
+    categories = list(load_categories().values())
+    for i, category_path in enumerate(categories):
+        last_cat: int = last and (i == len(categories) - 1)
+        temp = run_checks_category(category_path, username, printer, last_cat)
+        results.extend(temp)
+
+    return results
 
 
 def make_get_request(url: str, **kwargs) -> httpx.Response:
@@ -133,9 +161,11 @@ def generic_validate(url: str, func: Callable[[httpx.Response], AnyResult], **kw
     """
     try:
         response = make_get_request(url, **kwargs)
-        return func(response)
+        result = func(response)
+        result.url = url
+        return result
     except Exception as e:
-        return Result.error(e)
+        return Result.error(e, url=url)
 
 
 def status_validate(url: str, available: int | List[int], taken: int | List[int], **kwargs) -> Result:
@@ -161,6 +191,7 @@ def status_validate(url: str, available: int | List[int], taken: int | List[int]
         return Result.error("Status didn't match. Report this on Github.")
 
     return generic_validate(url, inner, **kwargs)
+
 
 def generate_permutations(username, pattern, limit=None):
     """

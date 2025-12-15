@@ -1,26 +1,15 @@
 import argparse
 import time
 import re
-from user_scanner.core.orchestrator import run_checks, load_modules , generate_permutations, load_categories
+from user_scanner.cli import printer
+from user_scanner.core.orchestrator import generate_permutations, load_categories
 from colorama import Fore, Style
-from .cli import banner
-from .cli.banner import print_banner
+from user_scanner.cli.banner import print_banner
+from typing import List
+from user_scanner.core.result import Result
+from user_scanner.core.utils import is_last_value
 
 MAX_PERMUTATIONS_LIMIT = 100 # To prevent excessive generation
-
-def list_modules(category=None):
-    categories = load_categories()
-    categories_to_list = [category] if category else categories.keys()
-
-    for cat_name in categories_to_list:
-        path = categories[cat_name]
-        modules = load_modules(path)
-        print(Fore.MAGENTA +
-            f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
-        for module in modules:
-            site_name = module.__name__.split(".")[-1]
-            print(f"  - {site_name}")
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -43,91 +32,127 @@ def main():
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose output"
     )
-    
+
     parser.add_argument(
         "-p", "--permute",type=str,help="Generate username permutations using a string pattern (e.g -p 234)"
     )
     parser.add_argument(
         "-s", "--stop",type=int,default=MAX_PERMUTATIONS_LIMIT,help="Limit the number of username permutations generated"
     )
-    
+
     parser.add_argument(
         "-d", "--delay",type=float,default=0,help="Delay in seconds between requests (recommended: 1-2 seconds)"
     )
-    
+
+    parser.add_argument(
+        "-f", "--format", choices=["console", "csv", "json"], default="console", help="Specify the output format (default: console)"
+    )
+
+    parser.add_argument(
+        "-o", "--output", type=str, help="Specify the output file"
+    )
+
     args = parser.parse_args()
-        
+
+    Printer = printer.Printer(args.format)
+
     if args.list:
-        list_modules(args.category)
+        Printer.print_modules(args.category)
         return
-    
+
     if not args.username:
         parser.print_help()
         return
-        
-    # Special username checks before run
-    if (args.module == "x" or args.category == "social"):
-        if re.search(r"[^a-zA-Z0-9._-]", args.username):
-            print(
-                Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. X (Twitter) doesn't support these." + Style.RESET_ALL)
-    if (args.module == "bluesky" or args.category == "social"):
-        if re.search(r"[^a-zA-Z0-9\.-]", args.username):
-            print(
-                Fore.RED + f"[!] Username '{args.username}' contains unsupported special characters. Bluesky will throw error. (Supported: only hyphens and digits)" + Style.RESET_ALL + "\n")
-    print_banner()
 
-    if args.permute and args.delay == 0:
+
+    if Printer.is_console:
+        print_banner()
+
+    if args.permute and args.delay == 0 and Printer.is_console:
         print(
         Fore.YELLOW
         + "[!] Warning: You're generating multiple usernames with NO delay between requests. "
         "This may trigger rate limits or IP bans. Use --delay 1 or higher. (Use only if the sites throw errors otherwise ignore)\n"
         + Style.RESET_ALL)
-        
+
     usernames = [args.username]  # Default single username list
-    
+
     #Added permutation support , generate all possible permutation of given sequence.
     if args.permute:
         usernames = generate_permutations(args.username, args.permute , args.stop)
-        print(Fore.CYAN + f"[+] Generated {len(usernames)} username permutations" + Style.RESET_ALL)
+        if Printer.is_console:
+            print(
+                Fore.CYAN + f"[+] Generated {len(usernames)} username permutations" + Style.RESET_ALL)
 
-    
-    
     if args.module and "." in args.module:
         args.module = args.module.replace(".", "_")
 
+    def run_all_usernames(func, arg = None) -> List[Result]:
+        """
+        Executes a function for all given usernames.
+        Made in order to simplify main()
+        """
+        results = []
+        print(Printer.get_start())
+        for i, name in enumerate(usernames):
+            is_last = i == len(usernames) - 1
+            if arg == None:
+                results.extend(func(name, Printer, is_last))
+            else:
+                results.extend(func(arg, name, Printer, is_last))
+            if args.delay > 0 and not is_last:
+                time.sleep(args.delay)
+        if Printer.is_json:
+            print(Printer.get_end())
+        return results
+
+    results =  []
 
     if args.module:
         # Single module search across all categories
-        found = False
-        for cat_path in load_categories().values():
-            modules = load_modules(cat_path)
+        from user_scanner.core.orchestrator import run_module_single, find_module
+        modules = find_module(args.module)
+
+        if len(modules) > 0:
             for module in modules:
-                site_name = module.__name__.split(".")[-1]
-                if site_name.lower() == args.module.lower():
-                    from user_scanner.core.orchestrator import run_module_single
-                    for name in usernames:   # <-- permutation support here
-                        run_module_single(module, name)
-                        if args.delay > 0:
-                            time.sleep(args.delay)
-                    found = True
-        if not found:
+                results.extend(run_all_usernames(run_module_single, module))
+        else:
             print(
                 Fore.RED + f"[!] Module '{args.module}' not found in any category." + Style.RESET_ALL)
+
     elif args.category:
         # Category-wise scan
         category_package = load_categories().get(args.category)
         from user_scanner.core.orchestrator import run_checks_category
-        
-        for name in usernames:   # <-- permutation support here
-            run_checks_category(category_package, name, args.verbose)
-            if args.delay > 0:
-                time.sleep(args.delay)
+        results = run_all_usernames(run_checks_category, category_package)
+
     else:
         # Full scan
-        for name in usernames:
-            run_checks(name)
-            if args.delay > 0:
-                time.sleep(args.delay)
+        from user_scanner.core.orchestrator import run_checks
+        results = run_all_usernames(run_checks)
+
+    if not args.output:
+        return
+
+    if args.output and Printer.is_console:
+        msg = (
+            "\n[!] The console format cannot be "
+            f"written to file: '{args.output}'."
+        )
+        print(Fore.RED + msg + Style.RESET_ALL)
+        return
+
+    content = Printer.get_start()
+
+    for i,result in enumerate(results):
+        char = "" if Printer.is_csv or is_last_value(results, i) else ","
+        content += "\n" + Printer.get_result_output(result) + char
+
+    if Printer.is_json:
+        content += "\n" + Printer.get_end()
+
+    with open(args.output, "a", encoding="utf-8") as f:
+        f.write(content)
 
 
 if __name__ == "__main__":
