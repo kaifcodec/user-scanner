@@ -49,6 +49,20 @@ def find_module(name: str):
 
     return matches
 
+def find_category(module) -> str | None:
+
+    module_file = getattr(module, '__file__', None)
+    if not module_file:
+        return None
+
+    category = Path(module_file).parent.name.lower()
+    categories = load_categories()
+    if category in categories:
+        return category.capitalize()
+
+    return None
+
+
 
 def worker_single(module, username: str) -> Result:
     func = next((getattr(module, f) for f in dir(module)
@@ -68,8 +82,11 @@ def worker_single(module, username: str) -> Result:
 
 
 def run_module_single(module, username: str, printer: Printer, last: bool = True) -> List[Result]:
-    # Just executes as if it was a thread
     result = worker_single(module, username)
+
+    category = find_category(module)
+    if category:
+        result.update(category=category)
 
     site_name = get_site_name(module)
     msg = printer.get_result_output(result)
@@ -78,6 +95,7 @@ def run_module_single(module, username: str, printer: Printer, last: bool = True
     print(msg)
 
     return [result]
+
 
 
 def run_checks_category(category_path: Path, username: str, printer: Printer, last: bool = True) -> List[Result]:
