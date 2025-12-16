@@ -31,7 +31,7 @@ def validate_twitch(user: str) -> Result:
 
     headers = {
       'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
-      'Accept-Encoding': "gzip, deflate, br, zstd",
+      'Accept-Encoding': "identity",
       'Content-Type': "application/json",
       'sec-ch-ua-platform': "\"Android\"",
       'accept-language': "en-US",
