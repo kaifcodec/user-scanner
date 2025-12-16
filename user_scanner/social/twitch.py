@@ -6,7 +6,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_twitch(user: str) -> Result:
     if not (4 <= len(user) <= 25):
-        return Result.error("Username must be between 4 and 25 characters long.")
+        return Result.error("Username must be between 4 and 25 characters long")
 
     if not re.match(r"^[a-zA-Z0-9]+$", user):
         return Result.error("Username can only contain alphanumeric characters (a-z, 0-9).")
