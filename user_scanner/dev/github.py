@@ -29,7 +29,7 @@ def validate_github(user):
 
         if response.status_code == 422:
             if GITHUB_INVALID_MSG in response.text:
-                return Result.error("Cannot start/end with hyphen or use double hyphens")
+                return Result.error("Cannot start/end with hyphen or use double hyphens, underscores")
 
             return Result.taken()
 
