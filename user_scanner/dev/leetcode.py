@@ -4,10 +4,10 @@ from user_scanner.core.orchestrator import status_validate, Result
 
 def validate_leetcode(user: str) -> Result:
     if not (3 <= len(user) <= 30):
-        return Result.error("Length must be between 3 and 30 characters.")
+        return Result.error("Length must be between 3 and 30 characters")
 
     if not re.match(r'^[a-zA-Z0-9._-]+$', user):
-        return Result.error("Can only use letters, numbers, underscores, periods, or hyphens.")
+        return Result.error("Can only use letters, numbers, underscores, periods, or hyphens")
 
     url = f"https://leetcode.com/u/{user}/"
 
