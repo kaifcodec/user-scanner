@@ -1,5 +1,6 @@
 import httpx
 from user_scanner.core.result import Result
+from user_scanner.core.orchestrator import generic_validate
 
 def validate_discord(user):
     url = "https://discord.com/api/v9/unique-username/username-attempt-unauthed"
@@ -15,8 +16,7 @@ def validate_discord(user):
 
     data = {"username": user}
 
-    try:
-        response = httpx.post(url, headers=headers, json=data, timeout=3.0)
+    def process(response):
         if response.status_code == 200:
             status = response.json().get("taken")
             if status is True:
@@ -24,8 +24,8 @@ def validate_discord(user):
             elif status is False:
                 return Result.available()
         return Result.error("Invalid status code")
-    except Exception as e:
-        return Result.error(e)
+
+    return generic_validate(url, process, method="POST", json=data, headers=headers, timeout=3.0)
 
 
 if __name__ == "__main__":

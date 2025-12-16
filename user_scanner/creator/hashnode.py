@@ -1,5 +1,6 @@
 import httpx
 from user_scanner.core.result import Result
+from user_scanner.core.orchestrator import generic_validate
 
 
 def validate_hashnode(user):
@@ -18,9 +19,7 @@ def validate_hashnode(user):
         'Referer': "https://hashnode.com/signup",
     }
 
-    try:
-        response = httpx.post(url, json=payload, headers=headers, timeout=3.0)
-
+    def process(response):
         if response.status_code == 200:
             data = response.json()
 
@@ -35,9 +34,7 @@ def validate_hashnode(user):
         else:
             return Result.error("Invalid status code")
 
-    except Exception as e:
-        return Result.error(e)
-
+    return generic_validate(url, process, method="POST", json=payload, headers=headers, timeout=3.0)
 
 if __name__ == "__main__":
     user = input("Username?: ").strip()
