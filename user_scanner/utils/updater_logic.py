@@ -1,25 +1,30 @@
-import httpx
-import re
 from pathlib import Path
+import json
 from user_scanner.core.version import get_pypi_version, load_local_version
 from user_scanner.utils.update import update_self
 
-CONFIG_PATH = Path(__file__).parent.parent / "config.py"
+CONFIG_PATH = Path(__file__).parent.parent / "config.json"
+
+
+def load_config() -> dict:
+    if CONFIG_PATH.exists():
+        return json.loads(CONFIG_PATH.read_text())
+
+    default = {
+        "auto_update_status": True
+    }
+    CONFIG_PATH.write_text(json.dumps(default))
+    return default
+
 
 def save_config_change(status):
-    if not CONFIG_PATH.exists():
-        return
-    content = CONFIG_PATH.read_text()
-    new_content = re.sub(r"auto_update_status\s*=\s*(True|False)", f"auto_update_status = {status}", content)
-    CONFIG_PATH.write_text(new_content)
+    content = load_config()
+    content["auto_update_status"] = status
+    CONFIG_PATH.write_text(json.dumps(content))
+
 
 def check_for_updates():
-    try:
-        from user_scanner import config
-    except ImportError:
-        return
-
-    if not getattr(config, 'auto_update_status', True):
+    if load_config().get("auto_update_status", False) != True:
         return
 
     try:
@@ -28,11 +33,14 @@ def check_for_updates():
         current_ver, _ = load_local_version()
 
         if current_ver != latest_ver:
-            print(f"\n[!] New version available: {current_ver} -> {latest_ver}")
-            choice = input("Do you want to update? (y/n/d: don't ask again): ").strip().lower()
+            print(
+                f"\n[!] New version available: {current_ver} -> {latest_ver}")
+            choice = input(
+                "Do you want to update? (y/n/d: don't ask again): ").strip().lower()
             if choice == "y":
                 update_self()
-                print("[+] Update successful. Please restart the tool to use the new version.")
+                print(
+                    "[+] Update successful. Please restart the tool to use the new version.")
                 import sys
                 sys.exit(0)
             elif choice == "d":
