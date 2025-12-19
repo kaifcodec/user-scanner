@@ -8,10 +8,13 @@ from user_scanner.cli.banner import print_banner
 from typing import List
 from user_scanner.core.result import Result
 from user_scanner.core.utils import is_last_value
+from user_scanner.utils.updater_logic import check_for_updates
+from user_scanner.utils.update import update_self
 
 MAX_PERMUTATIONS_LIMIT = 100 # To prevent excessive generation
 
 def main():
+
     parser = argparse.ArgumentParser(
         prog="user-scanner",
         description="Scan usernames across multiple platforms."
@@ -51,17 +54,24 @@ def main():
     parser.add_argument(
         "-o", "--output", type=str, help="Specify the output file"
     )
+    parser.add_argument(
+        "-U", "--update", action="store_true",  help="Update user-scanner to latest version"
+    )
 
     args = parser.parse_args()
 
     Printer = printer.Printer(args.format)
 
-    if args.list:
-        Printer.print_modules(args.category)
-        return
+    if args.update is True:
+        update_self()
+
+    check_for_updates()
 
     if not args.username:
         parser.print_help()
+        return
+    if args.list:
+        Printer.print_modules(args.category)
         return
 
 
@@ -77,7 +87,7 @@ def main():
 
     usernames = [args.username]  # Default single username list
 
-    #Added permutation support , generate all possible permutation of given sequence.
+    # Added permutation support , generate all possible permutation of given sequence.
     if args.permute:
         usernames = generate_permutations(args.username, args.permute , args.stop)
         if Printer.is_console:

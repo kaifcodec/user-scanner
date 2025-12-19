@@ -1,6 +1,6 @@
 import json
 from colorama import Fore, Style, init
-from ..utils.version import load_local_version
+from ..core.version import load_local_version
 
 
 version, version_type = load_local_version()
@@ -16,18 +16,9 @@ BANNER_ASCII = fr"""{C_CYAN}      _   _ ___  ___ _ __      ___  ___ __ _ _ __  _
       \__,_|___/\___|_|       |___/\___\__,_|_| |_|_| |_|\___|_| Version: {version}
 {Style.RESET_ALL}""".strip()
 
-INFO_BOX = f"""{C_MAGENTA}      ╔════════════════════════════════════════╗
-      ║ {C_RED}♚ {C_GREEN}Project Name{C_WHITE} : UserScanner           {C_MAGENTA}║
-      ║ {C_RED}♚ {C_GREEN}Author{C_WHITE} : Kaif                        {C_MAGENTA}║
-      ║ {C_RED}♚ {C_GREEN}Github{C_WHITE} : github.com/kaifcodec        {C_MAGENTA}║
-      ║ {C_RED}♚ {C_GREEN}Email{C_WHITE}  : kaifcodec@gmail.com         {C_MAGENTA}║
-      ══════════════════════════════════════════{Style.RESET_ALL}""".strip()
-
 
 def print_banner():
     print(BANNER_ASCII)
-    print(INFO_BOX)
-    print(" ")
 
 
 if __name__ == "__main__":
