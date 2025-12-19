@@ -16,7 +16,7 @@ def update_self():
             sys.executable, "-m", "pip", "uninstall", "user-scanner", "-y"
         ])
         subprocess.check_call([
-            sys.executable, "-m", "pip", "install", "--upgrade", "user-scanner"
+            sys.executable, "-m", "pip", "install", "user-scanner"
         ])
     except subprocess.CalledProcessError as e:
         print(f"{Fore.RED}Failed to update user-scanner: {e}{Fore.reset}")
