@@ -25,9 +25,8 @@ def update_self():
 
     user_scanner_ver = get_version("user-scanner")
 
-    print("\nInstalled Versions:")
+    print("\nInstalled Version:")
     print(f"   • user-scanner: {user_scanner_ver}")
-    print("\nUpdates completed!\n")
 
 if __name__ == "__main__":
     user_scanner_ver = get_version("user-scanner")
