@@ -1,6 +1,6 @@
 # User Scanner
 
-![1000136215](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
+![User Scanner Logo](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
 <p align="center">
   <img src="https://img.shields.io/badge/Version-1.0.9.1-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
@@ -19,6 +19,7 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 ### Features
 
 - ✅ Check usernames across **social networks**, **developer platforms**, and **creator communities**
+- ✅ Can be used as a username OSINT tool
 - ✅ Clear **Available / Taken / Error** output for each platform
 - ✅ Robust error handling: It prints the exact reason (e.g. Cannot use underscores, hyphens at the start/end)
 - ✅ Fully modular: add new platform modules easily
@@ -26,7 +27,6 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Selection of results format (e.g. json, csv, console (default))
 - ✅ Get the scanning results in preferred format (json/csv) in specified output file (suitable for power users)
 - ✅ Command-line interface ready: works directly after `pip install`
-- ✅ Can be used as username OSINT tool
 - ✅ Very low and lightweight dependencies, can be run on any machine
 ---
 
