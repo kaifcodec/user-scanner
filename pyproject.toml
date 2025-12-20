@@ -27,3 +27,7 @@ user-scanner = "user_scanner.__main__:main"
 
 [tool.flit.sdist]
 exclude = ["tests/", "docs/", ".github/", ".git", "rm_pycache.py", "che.py", ".gitignore"]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+testpaths = ["tests"]
