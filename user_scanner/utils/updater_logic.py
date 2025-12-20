@@ -59,4 +59,4 @@ def check_for_updates():
                 print(f"[{Y}*{X}] {R}Auto-update checks disabled.{X}")
 
     except Exception as e:
-        print(f"[!] Update check failed: {e}")
+        print(f"[{Y}!{X}] {R}Update check failed{X}: {e}")
