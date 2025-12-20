@@ -20,6 +20,7 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 
 - ✅ Check usernames across **social networks**, **developer platforms**, and **creator communities**
 - ✅ Can be used as a username OSINT tool
+- ✅ Smart auto-update system, Detects new releases on PyPI and interactively prompts the user to upgrade.
 - ✅ Clear **Available / Taken / Error** output for each platform
 - ✅ Robust error handling: It prints the exact reason (e.g. Cannot use underscores, hyphens at the start/end)
 - ✅ Fully modular: add new platform modules easily
@@ -65,7 +66,7 @@ user-scanner -u <username> -f <format> -o <output-file>
 Generate multiple username variations by appending a suffix:
 
 ```bash
-user-scanner -u <username> -p <suffix> 
+user-scanner -u <username> -p <suffix>
 ```
 Optionally, scan a specific category or single module with limit:
 
@@ -75,8 +76,19 @@ user-scanner -u <username> -p <suffix> -m github
 user-scanner -u <username> -p <suffix> -s <number> # limit generation of usernames
 user-scanner -u <username> -p <suffix> -d <seconds> # delay to avoid rate-limits (can be 0s-1s)
 ```
+---
+
+### Update
+
+Update the tool to the latest PyPI version:
+
+```bash
+user-scanner -U
+
+```
 
 ---
+
 ### Screenshot: 
 
 - Note*: New modules are constantly getting added so this might have only limited, outdated output:
