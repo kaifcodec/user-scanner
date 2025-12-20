@@ -1,6 +1,7 @@
 import argparse
 import time
 import re
+import sys
 from user_scanner.cli import printer
 from user_scanner.core.orchestrator import generate_permutations, load_categories
 from colorama import Fore, Style
@@ -11,7 +12,16 @@ from user_scanner.core.utils import is_last_value
 from user_scanner.utils.updater_logic import check_for_updates
 from user_scanner.utils.update import update_self
 
+# Color configs
+R = Fore.RED
+G = Fore.GREEN
+C = Fore.CYAN
+Y = Fore.YELLOW
+X = Fore.RESET
+
+
 MAX_PERMUTATIONS_LIMIT = 100 # To prevent excessive generation
+
 
 def main():
 
@@ -64,14 +74,17 @@ def main():
 
     if args.update is True:
         update_self()
+        print(f"[{G}+{X}] {G}Update successful. Please restart the tool.{X}")
+        sys.exit(0)
+
+    if args.list:
+        Printer.print_modules(args.category)
+        return
 
     check_for_updates()
 
     if not args.username:
         parser.print_help()
-        return
-    if args.list:
-        Printer.print_modules(args.category)
         return
 
 
@@ -80,7 +93,7 @@ def main():
 
     if args.permute and args.delay == 0 and Printer.is_console:
         print(
-        Fore.YELLOW
+        Y
         + "[!] Warning: You're generating multiple usernames with NO delay between requests. "
         "This may trigger rate limits or IP bans. Use --delay 1 or higher. (Use only if the sites throw errors otherwise ignore)\n"
         + Style.RESET_ALL)
@@ -92,7 +105,7 @@ def main():
         usernames = generate_permutations(args.username, args.permute , args.stop)
         if Printer.is_console:
             print(
-                Fore.CYAN + f"[+] Generated {len(usernames)} username permutations" + Style.RESET_ALL)
+                C + f"[+] Generated {len(usernames)} username permutations" + Style.RESET_ALL)
 
     if args.module and "." in args.module:
         args.module = args.module.replace(".", "_")
@@ -128,7 +141,7 @@ def main():
                 results.extend(run_all_usernames(run_module_single, module))
         else:
             print(
-                Fore.RED + f"[!] Module '{args.module}' not found in any category." + Style.RESET_ALL)
+                R + f"[!] Module '{args.module}' not found in any category." + Style.RESET_ALL)
 
     elif args.category:
         # Category-wise scan
@@ -149,7 +162,7 @@ def main():
             "\n[!] The console format cannot be "
             f"written to file: '{args.output}'."
         )
-        print(Fore.RED + msg + Style.RESET_ALL)
+        print(R + msg + Style.RESET_ALL)
         return
 
     content = Printer.get_start()
