@@ -15,10 +15,16 @@ def test_status_validate_available(monkeypatch):
 
 
 def test_generate_permutations():
-    perms = orchestrator.generate_permutations("user", "ab", limit=None)
-    assert "user" in perms
-    assert any(p.startswith("user") and len(p) > len("user") for p in perms)
-
+    perms = orchestrator.generate_permutations("user", "ab", limit=None)    
+    assert "user" in perms  
+    # All permutations must be valid
+    assert all(
+        p == "user" or
+        (p.startswith("user") and len(p) > len("user"))
+        for p in perms
+    )
+    
+    assert len(perms) > 1
 
 def test_run_module_single_prints_json_and_csv(capsys):
     module = types.ModuleType("fake.testsite")
