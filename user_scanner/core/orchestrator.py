@@ -6,7 +6,7 @@ from itertools import permutations
 import httpx
 from pathlib import Path
 from user_scanner.cli.printer import Printer
-from user_scanner.core.result import Result, AnyResult
+from user_scanner.core.result import Result
 from typing import Callable, Dict, List
 from user_scanner.core.utils import get_site_name, is_last_value
 
@@ -17,6 +17,8 @@ def load_modules(category_path: Path):
         if file.name == "__init__.py":
             continue
         spec = importlib.util.spec_from_file_location(file.stem, str(file))
+        if spec is None or spec.loader is None:
+            continue
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
@@ -131,7 +133,7 @@ def run_checks(username: str, printer: Printer, last: bool = True) -> List[Resul
 
     categories = list(load_categories().values())
     for i, category_path in enumerate(categories):
-        last_cat: int = last and (i == len(categories) - 1)
+        last_cat = last and (i == len(categories) - 1)
         temp = run_checks_category(category_path, username, printer, last_cat)
         results.extend(temp)
 
@@ -157,14 +159,13 @@ def make_request(url: str, **kwargs) -> httpx.Response:
     return httpx.request(method.upper(), url, **kwargs)
 
 
-def generic_validate(url: str, func: Callable[[httpx.Response], AnyResult], **kwargs) -> AnyResult:
+def generic_validate(url: str, func: Callable[[httpx.Response], Result], **kwargs) -> Result:
     """
     A generic validate function that makes a request and executes the provided function on the response.
     """
     try:
         response = make_request(url, **kwargs)
         result = func(response)
-        result.url = url
         return result
     except Exception as e:
         return Result.error(e, url=url)

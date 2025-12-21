@@ -124,5 +124,3 @@ class Result:
 
         return NotImplemented
 
-
-AnyResult = Literal[0, 1, 2] | Result

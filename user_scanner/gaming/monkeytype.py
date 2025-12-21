@@ -1,7 +1,8 @@
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
-def validate_monkeytype(user: str) -> int:
+
+def validate_monkeytype(user: str) -> Result:
 
     url = f"https://api.monkeytype.com/users/checkName/{user}"
 

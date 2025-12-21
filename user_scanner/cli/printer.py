@@ -42,7 +42,7 @@ class Printer:
 
     def get_end(self, json_char: str = "]") -> str:
         if not self.is_json:
-            return
+            return ""
         self.indent = max(self.indent - 1, 0)
         return indentate(json_char, self.indent)
 
