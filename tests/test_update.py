@@ -1,17 +1,24 @@
-from user_scanner.utils.updater_logic import load_config, save_config_change
+from user_scanner.utils import updater_logic as ul
 
 
-def test_config_json():
-    configs = load_config()
+def test_config_json(tmp_path, monkeypatch):
+    cfg = tmp_path / "config.json"
+    monkeypatch.setenv("USER_SCANNER_CONFIG", str(cfg))
+    configs = ul.load_config()
     assert "auto_update_status" in configs
-    # Shouldn't allow PR with this configuration set to False
-    # Need to be carefull if another test sets it to False
-    assert configs["auto_update_status"] == True
+    # Should be default True
+    assert configs["auto_update_status"] is True
 
 
-def test_config_set():
-    def get_status(): return load_config()["auto_update_status"]
-    save_config_change(False)
-    assert get_status() == False
-    save_config_change(True)
-    assert get_status() == True
+def test_config_set(tmp_path, monkeypatch):
+    cfg = tmp_path / "config.json"
+    monkeypatch.setenv("USER_SCANNER_CONFIG", str(cfg))
+
+    def get_status():
+        return ul.load_config()["auto_update_status"]
+
+    ul.save_config_change(False)
+    assert get_status() is False
+
+    ul.save_config_change(True)
+    assert get_status() is True
