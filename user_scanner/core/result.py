@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Literal
 
 DEBUG_MSG = """Result {{
   status: {status},
@@ -80,10 +79,10 @@ class Result:
         return self.status.value
 
     def has_reason(self) -> bool:
-        return self.reason != None
+        return self.reason is not None
 
     def get_reason(self) -> str:
-        if self.reason == None:
+        if self.reason is None:
             return ""
         if isinstance(self.reason, str):
             return self.reason

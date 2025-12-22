@@ -32,8 +32,8 @@ def load_categories() -> Dict[str, Path]:
 
     for subfolder in root.iterdir():
         if subfolder.is_dir() and \
-                not subfolder.name.lower() in ["cli", "utils", "core"] and \
-                not "__" in subfolder.name:  # Removes __pycache__
+                subfolder.name.lower() not in ["cli", "utils", "core"] and \
+                "__" not in subfolder.name:  # Removes __pycache__
             categories[subfolder.name] = subfolder.resolve()
 
     return categories
@@ -90,9 +90,9 @@ def run_module_single(module, username: str, printer: Printer, last: bool = True
     if category:
         result.update(category=category)
 
-    site_name = get_site_name(module)
+    get_site_name(module)
     msg = printer.get_result_output(result)
-    if last == False and printer.is_json:
+    if not last and printer.is_json:
         msg += ","
     print(msg)
 
@@ -116,9 +116,9 @@ def run_checks_category(category_path: Path, username: str, printer: Printer, la
             results.append(result)
 
             is_last = last and is_last_value(modules, i)
-            site_name = get_site_name(modules[i])
+            get_site_name(modules[i])
             msg = printer.get_result_output(result)
-            if is_last == False and printer.is_json:
+            if not is_last and printer.is_json:
                 msg += ","
             print(msg)
 
@@ -142,7 +142,7 @@ def run_checks(username: str, printer: Printer, last: bool = True) -> List[Resul
 
 def make_request(url: str, **kwargs) -> httpx.Response:
     """Simple wrapper to **httpx.get** that predefines headers and timeout"""
-    if not "headers" in kwargs:
+    if "headers" not in kwargs:
         kwargs["headers"] = {
             'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
             'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -151,7 +151,7 @@ def make_request(url: str, **kwargs) -> httpx.Response:
             'sec-fetch-dest': "document",
         }
 
-    if not "timeout" in kwargs:
+    if "timeout" not in kwargs:
         kwargs["timeout"] = 5.0
 
     method = kwargs.pop("method", "GET")

@@ -16,7 +16,7 @@ dependencies = [
   "colorama"
 ]
 
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 keywords = ["username", "checker", "availability", "social", "tech", "python", "user-scanner"]
 
 [project.urls]
