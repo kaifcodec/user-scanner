@@ -2,7 +2,7 @@ from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 from urllib.parse import quote
 
-def validate_monkeytype(user: str) -> int:
+def validate_monkeytype(user: str) -> Result:
     safe_user = quote(user, safe="")
     url = f"https://api.monkeytype.com/users/checkName/{safe_user}"
 
