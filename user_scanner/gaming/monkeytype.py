@@ -1,10 +1,10 @@
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
+from urllib.parse import quote
 
-
-def validate_monkeytype(user: str) -> Result:
-
-    url = f"https://api.monkeytype.com/users/checkName/{user}"
+def validate_monkeytype(user: str) -> int:
+    safe_user = quote(user, safe="")
+    url = f"https://api.monkeytype.com/users/checkName/{safe_user}"
 
     headers = {
         "User-Agent": (
@@ -29,6 +29,16 @@ def validate_monkeytype(user: str) -> Result:
                 return Result.available()
             elif available is False:
                 return Result.taken()
+
+        # Surface Monkeytype validation errors (e.g. special characters)
+        try:
+            data = response.json()
+            errors = data.get("validationErrors")
+            if errors:
+                return Result.error("; ".join(errors))
+        except Exception:
+            pass
+
         return Result.error("Invalid status code")
 
     return generic_validate(url, process, headers=headers)
@@ -43,4 +53,4 @@ if __name__ == "__main__":
     elif result == 0:
         print("Unavailable!")
     else:
-        print("Error occurred!")
+        print("Error occured!")
