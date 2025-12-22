@@ -16,7 +16,7 @@ dependencies = [
   "colorama"
 ]
 
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 keywords = ["username", "checker", "availability", "social", "tech", "python", "user-scanner"]
 
 [project.urls]
@@ -27,3 +27,7 @@ user-scanner = "user_scanner.__main__:main"
 
 [tool.flit.sdist]
 exclude = ["tests/", "docs/", ".github/", ".git", "rm_pycache.py", "che.py", ".gitignore"]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+testpaths = ["tests"]

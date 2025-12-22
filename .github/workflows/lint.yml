@@ -1,0 +1,54 @@
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint & types (ruff + mypy)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install httpx colorama types-colorama
+          pip install ruff mypy
+
+      - name: Show installed linters
+        run: |
+          ruff --version || true
+          mypy --version || true
+          pip freeze | sed -n '1,200p'
+
+      - name: Run ruff (style/lint)
+        run: |
+          echo "==== Running ruff ===="
+          ruff check . || { echo "Ruff failed"; exit 1; }
+
+      - name: Run mypy (type checks)
+        run: |
+          echo "==== Running mypy ===="
+          mypy user_scanner || { echo "Mypy found issues"; exit 1; }
+
+      - name: Upload lint logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-logs
+          path: |
+            .

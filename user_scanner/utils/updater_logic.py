@@ -2,6 +2,7 @@ from pathlib import Path
 from colorama import Fore
 import sys
 import json
+import os
 from user_scanner.core.version import get_pypi_version, load_local_version
 from user_scanner.utils.update import update_self
 
@@ -15,19 +16,39 @@ X = Fore.RESET
 CONFIG_PATH = Path(__file__).parent.parent / "config.json"
 
 
-def load_config() -> dict:
-    if CONFIG_PATH.exists():
-        return json.loads(CONFIG_PATH.read_text())
+def _get_config_path(path: str | Path | None = None) -> Path:
+    """
+    Determine the config path in this order:
+      1. explicit path argument (if provided)
+      2. environment variable USER_SCANNER_CONFIG (if set)
+      3. default CONFIG_PATH
+    """
+    if path:
+        return Path(path)
+    env = os.environ.get("USER_SCANNER_CONFIG")
+    if env:
+        return Path(env)
+    return CONFIG_PATH
+
+
+def load_config(path: str | Path | None = None) -> dict:
+    cp = _get_config_path(path)
+    if cp.exists():
+        return json.loads(cp.read_text())
 
     default = {"auto_update_status": True}
-    CONFIG_PATH.write_text(json.dumps(default, indent=2))
+    # Ensure parent exists
+    cp.parent.mkdir(parents=True, exist_ok=True)
+    cp.write_text(json.dumps(default, indent=2))
     return default
 
 
-def save_config_change(status: bool):
-    content = load_config()
+def save_config_change(status: bool, path: str | Path | None = None):
+    cp = _get_config_path(path)
+    content = load_config(path)
     content["auto_update_status"] = status
-    CONFIG_PATH.write_text(json.dumps(content, indent=2))
+    cp.parent.mkdir(parents=True, exist_ok=True)
+    cp.write_text(json.dumps(content, indent=2))
 
 
 def check_for_updates():

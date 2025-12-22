@@ -6,7 +6,7 @@ from itertools import permutations
 import httpx
 from pathlib import Path
 from user_scanner.cli.printer import Printer
-from user_scanner.core.result import Result, AnyResult
+from user_scanner.core.result import Result
 from typing import Callable, Dict, List
 from user_scanner.core.utils import get_site_name, is_last_value
 
@@ -17,6 +17,8 @@ def load_modules(category_path: Path):
         if file.name == "__init__.py":
             continue
         spec = importlib.util.spec_from_file_location(file.stem, str(file))
+        if spec is None or spec.loader is None:
+            continue
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
@@ -30,8 +32,8 @@ def load_categories() -> Dict[str, Path]:
 
     for subfolder in root.iterdir():
         if subfolder.is_dir() and \
-                not subfolder.name.lower() in ["cli", "utils", "core"] and \
-                not "__" in subfolder.name:  # Removes __pycache__
+                subfolder.name.lower() not in ["cli", "utils", "core"] and \
+                "__" not in subfolder.name:  # Removes __pycache__
             categories[subfolder.name] = subfolder.resolve()
 
     return categories
@@ -88,9 +90,9 @@ def run_module_single(module, username: str, printer: Printer, last: bool = True
     if category:
         result.update(category=category)
 
-    site_name = get_site_name(module)
+    get_site_name(module)
     msg = printer.get_result_output(result)
-    if last == False and printer.is_json:
+    if not last and printer.is_json:
         msg += ","
     print(msg)
 
@@ -114,9 +116,9 @@ def run_checks_category(category_path: Path, username: str, printer: Printer, la
             results.append(result)
 
             is_last = last and is_last_value(modules, i)
-            site_name = get_site_name(modules[i])
+            get_site_name(modules[i])
             msg = printer.get_result_output(result)
-            if is_last == False and printer.is_json:
+            if not is_last and printer.is_json:
                 msg += ","
             print(msg)
 
@@ -131,7 +133,7 @@ def run_checks(username: str, printer: Printer, last: bool = True) -> List[Resul
 
     categories = list(load_categories().values())
     for i, category_path in enumerate(categories):
-        last_cat: int = last and (i == len(categories) - 1)
+        last_cat = last and (i == len(categories) - 1)
         temp = run_checks_category(category_path, username, printer, last_cat)
         results.extend(temp)
 
@@ -140,7 +142,7 @@ def run_checks(username: str, printer: Printer, last: bool = True) -> List[Resul
 
 def make_request(url: str, **kwargs) -> httpx.Response:
     """Simple wrapper to **httpx.get** that predefines headers and timeout"""
-    if not "headers" in kwargs:
+    if "headers" not in kwargs:
         kwargs["headers"] = {
             'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
             'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -149,7 +151,7 @@ def make_request(url: str, **kwargs) -> httpx.Response:
             'sec-fetch-dest': "document",
         }
 
-    if not "timeout" in kwargs:
+    if "timeout" not in kwargs:
         kwargs["timeout"] = 5.0
 
     method = kwargs.pop("method", "GET")
@@ -157,14 +159,13 @@ def make_request(url: str, **kwargs) -> httpx.Response:
     return httpx.request(method.upper(), url, **kwargs)
 
 
-def generic_validate(url: str, func: Callable[[httpx.Response], AnyResult], **kwargs) -> AnyResult:
+def generic_validate(url: str, func: Callable[[httpx.Response], Result], **kwargs) -> Result:
     """
     A generic validate function that makes a request and executes the provided function on the response.
     """
     try:
         response = make_request(url, **kwargs)
         result = func(response)
-        result.url = url
         return result
     except Exception as e:
         return Result.error(e, url=url)

@@ -1,6 +1,5 @@
 import argparse
 import time
-import re
 import sys
 from user_scanner.cli import printer
 from user_scanner.core.orchestrator import generate_permutations, load_categories
@@ -119,7 +118,7 @@ def main():
         print(Printer.get_start())
         for i, name in enumerate(usernames):
             is_last = i == len(usernames) - 1
-            if arg == None:
+            if arg is None:
                 results.extend(func(name, Printer, is_last))
             else:
                 results.extend(func(arg, name, Printer, is_last))

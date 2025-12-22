@@ -1,4 +1,3 @@
-import json
 from colorama import Fore, Style, init
 from ..core.version import load_local_version
 

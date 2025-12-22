@@ -1,4 +1,3 @@
-import httpx
 from user_scanner.core.result import Result
 from user_scanner.core.orchestrator import generic_validate
 

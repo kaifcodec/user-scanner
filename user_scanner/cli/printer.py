@@ -15,7 +15,7 @@ def indentate(msg: str, indent: int):
 
 class Printer:
     def __init__(self, format: Literal["console", "csv", "json"]) -> None:
-        if not format in ["console", "csv", "json"]:
+        if format not in ["console", "csv", "json"]:
             raise ValueError(f"Invalid output-format: {format}")
         self.mode: str = format
         self.indent: int = 0
@@ -42,7 +42,7 @@ class Printer:
 
     def get_end(self, json_char: str = "]") -> str:
         if not self.is_json:
-            return
+            return ""
         self.indent = max(self.indent - 1, 0)
         return indentate(json_char, self.indent)
 
