@@ -36,8 +36,8 @@ def test_get_reason():
 
 
 def test_has_reason():
-    assert Result.available().has_reason() == False
-    assert Result.error("Has reason").has_reason() == True
+    assert not Result.available().has_reason()
+    assert Result.error("Has reason").has_reason()
 
 
 def test_to_number():
@@ -67,7 +67,7 @@ def test_update():
     a = Result.available()
     attrs = ("username", "site_name", "category")
     for attr in attrs:
-        assert getattr(a, attr) == None
+        assert getattr(a, attr) is None
 
     a.update(username="name")
     assert getattr(a, "username") == "name"

@@ -3,7 +3,6 @@ from types import SimpleNamespace
 from user_scanner.core import orchestrator
 from user_scanner.cli.printer import Printer
 from user_scanner.core.result import Result
-import pytest
 
 
 def test_status_validate_available(monkeypatch):

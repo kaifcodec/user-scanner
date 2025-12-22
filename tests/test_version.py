@@ -1,7 +1,6 @@
 import json
 from types import SimpleNamespace
 from user_scanner.core import version
-import pytest
 
 
 def test_load_local_version(tmp_path, monkeypatch):
