@@ -1,3 +1,5 @@
+name: Tests (pytest + coverage)
+
 on:
   push:
     branches: [ main ]
