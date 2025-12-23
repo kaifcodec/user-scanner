@@ -8,7 +8,7 @@ from pathlib import Path
 from user_scanner.cli.printer import Printer
 from user_scanner.core.result import Result
 from typing import Callable, Dict, List
-from user_scanner.core.utils import get_site_name, is_last_value
+from user_scanner.core.helpers import get_site_name, is_last_value
 
 
 def load_modules(category_path: Path):
