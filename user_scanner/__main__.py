@@ -7,7 +7,7 @@ from colorama import Fore, Style
 from user_scanner.cli.banner import print_banner
 from typing import List
 from user_scanner.core.result import Result
-from user_scanner.core.utils import is_last_value
+from user_scanner.core.helpers import is_last_value
 from user_scanner.utils.updater_logic import check_for_updates
 from user_scanner.utils.update import update_self
 
