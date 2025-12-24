@@ -93,8 +93,8 @@ user-scanner -U
 
 - Note*: New modules are constantly getting added so this might have only limited, outdated output:
 
+<img width="1072" height="848" alt="1000142215" src="https://github.com/user-attachments/assets/34e44ca6-e314-419e-9035-d951b493b47f" />
 
-<img width="1080" height="770" alt="1000140392" src="https://github.com/user-attachments/assets/4638c8f6-40c6-46f8-ae17-ac65cd199d81" />
 
 
 ---
