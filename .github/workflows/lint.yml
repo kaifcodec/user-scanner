@@ -1,9 +1,8 @@
 name: Lint & Type Checks
 
 on:
-  pull_request:
-    branches: [ main ]
   push:
+  pull_request:
     branches: [ main ]
 
 permissions:
@@ -46,11 +45,3 @@ jobs:
         run: |
           echo "==== Running mypy ===="
           mypy user_scanner || { echo "Mypy found issues"; exit 1; }
-
-      - name: Upload lint logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint-logs
-          path: |
-            .
