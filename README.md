@@ -93,17 +93,17 @@ user-scanner -U
 
 - Note*: New modules are constantly getting added so this might have only limited, outdated output:
 
-<img width="1072" height="848" alt="1000142215" src="https://github.com/user-attachments/assets/34e44ca6-e314-419e-9035-d951b493b47f" />
+<img width="1072" height="848" alt="user-scanner's main usage screenshot" src="https://github.com/user-attachments/assets/34e44ca6-e314-419e-9035-d951b493b47f" />
 
 
 
 ---
 
-<img width="1080" height="352" alt="1000140393" src="https://github.com/user-attachments/assets/578b248c-2a05-4917-aab3-6372a7c28045" />
+<img width="1080" height="352" alt="user-scanner's wildcard username feature" src="https://github.com/user-attachments/assets/578b248c-2a05-4917-aab3-6372a7c28045" />
 
 ---
 
-<img width="992" height="556" alt="1000141265" src="https://github.com/user-attachments/assets/9babb19f-bc87-4e7b-abe5-c52b8b1b672c" />
+<img width="992" height="556" alt="user-scanner's JSON output screenshot" src="https://github.com/user-attachments/assets/9babb19f-bc87-4e7b-abe5-c52b8b1b672c" />
 
 
 ### Contributing: 
