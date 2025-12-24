@@ -47,7 +47,7 @@ class Printer:
         return indentate(json_char, self.indent)
 
     def get_result_output(self, result: Result) -> str:
-        #In principle result should always have this
+        # In principle result should always have this
         site_name = result.site_name
         username = result.username
 
