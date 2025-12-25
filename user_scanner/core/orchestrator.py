@@ -27,7 +27,7 @@ def load_modules(category_path: Path):
 
 
 def load_categories() -> Dict[str, Path]:
-    root = Path(__file__).resolve().parent.parent  # Should be user_scanner
+    root = Path(__file__).resolve().parent.parent / "user_scan"
     categories = {}
 
     for subfolder in root.iterdir():
