@@ -1,16 +1,13 @@
 name: Lint & Type Checks
 
 on:
-  push:
   pull_request:
-    branches: [ main ]
 
 permissions:
   contents: read
 
 jobs:
   lint:
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     name: Lint & types (ruff + mypy)
     runs-on: ubuntu-latest
     strategy:
@@ -31,18 +28,8 @@ jobs:
           pip install httpx colorama types-colorama
           pip install ruff mypy
 
-      - name: Show installed linters
-        run: |
-          ruff --version || true
-          mypy --version || true
-          pip freeze | sed -n '1,200p'
+      - name: Run ruff
+        run: ruff check .
 
-      - name: Run ruff (style/lint)
-        run: |
-          echo "==== Running ruff ===="
-          ruff check . || { echo "Ruff failed"; exit 1; }
-
-      - name: Run mypy (type checks)
-        run: |
-          echo "==== Running mypy ===="
-          mypy user_scanner || { echo "Mypy found issues"; exit 1; }
+      - name: Run mypy
+        run: mypy user_scanner

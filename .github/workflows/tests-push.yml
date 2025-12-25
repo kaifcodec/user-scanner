@@ -2,7 +2,6 @@ name: Tests (pytest + coverage)
 
 on:
   push:
-  pull_request:
     branches: [ main ]
 
 permissions:
@@ -10,12 +9,12 @@ permissions:
 
 jobs:
   test:
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     name: Test (pytest + coverage) — ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10"]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,43 +44,21 @@ jobs:
           pip install .
           pip install pytest pytest-cov
 
-      - name: Show installed packages (top)
-        run: |
-          pip freeze | sed -n '1,200p'
+      - name: Show installed packages
+        run: pip freeze | sed -n '1,200p'
 
-      - name: Run pytest (verbose) with coverage and generate JUnit XML
+      - name: Run pytest with coverage
         run: |
           mkdir -p test-output
           pytest -vv --maxfail=1 --disable-warnings \
             --junitxml=test-output/report.xml \
-            --cov=user_scanner --cov-report=xml:test-output/coverage.xml --cov-report=term
+            --cov=user_scanner \
+            --cov-report=xml:test-output/coverage.xml \
+            --cov-report=term
 
-      - name: Show pytest junit xml (head)
-        if: always()
-        run: |
-          echo "==== JUnit report (head) ===="
-          sed -n '1,200p' test-output/report.xml || true
-          echo "==== JUnit report (tail) ===="
-          sed -n '200,400p' test-output/report.xml || true
-
-      - name: Show coverage xml (head)
-        if: always()
-        run: |
-          echo "==== Coverage XML (head) ===="
-          sed -n '1,200p' test-output/coverage.xml || true
-
-      - name: Upload test & coverage artifacts
+      - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports-${{ matrix.python-version }}
           path: test-output
-
-      - name: (Optional) Upload coverage to Codecov
-        if: success() && env.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v4
-        with:
-          files: test-output/coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
