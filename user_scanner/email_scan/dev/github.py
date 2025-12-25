@@ -26,7 +26,7 @@ async def check_email(email):
         post_headers = {"accept": "*/*", "x-requested-with": "XMLHttpRequest"}
         response = await client.post("https://github.com/email_validity_checks", data=data, headers=post_headers)
 
-        if not "The email you have provided is already associated with an account."  in response.text:
+        if "The email you have provided is already associated with an account." not in response.text:
             return f"[+] {email} is not REGISTERED"
         else:
             return f"[-] {email} is Registerd"
