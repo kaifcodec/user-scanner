@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   test:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     name: Test (pytest + coverage) — ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:

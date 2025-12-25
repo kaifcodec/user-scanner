@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   lint:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     name: Lint & types (ruff + mypy)
     runs-on: ubuntu-latest
     strategy:
