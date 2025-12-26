@@ -25,6 +25,16 @@ def test_generate_permutations():
     
     assert len(perms) > 1
 
+def test_generate_permutations_email():
+    perms = orchestrator.generate_permutations("john@email.com", "abc", limit=None, is_email=True)    
+    assert "john@email.com" in perms  
+    assert all(
+        p == "john@email.com" or
+        (p.startswith("john") and len(p) > len("john@email.com") and p.endswith("@email.com"))
+        for p in perms
+    )
+    assert len(perms) > 1
+
 def test_run_module_single_prints_json_and_csv(capsys):
     module = types.ModuleType("fake.testsite")
     module.__file__ = "<in-memory>/fake/testsite.py"

@@ -1,6 +1,7 @@
 import argparse
 import time
 import sys
+import re
 from user_scanner.cli import printer
 from user_scanner.core.orchestrator import generate_permutations, load_categories
 from colorama import Fore, Style
@@ -28,8 +29,14 @@ def main():
         prog="user-scanner",
         description="Scan usernames across multiple platforms."
     )
-    parser.add_argument(
+
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    group.add_argument(
         "-u", "--username",  help="Username to scan across platforms"
+    )
+    group.add_argument(
+        "-e", "--email",  help="Email to scan across platforms"
     )
     parser.add_argument(
         "-c", "--category", choices=load_categories().keys(),
@@ -44,22 +51,18 @@ def main():
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose output"
     )
-
     parser.add_argument(
         "-p", "--permute",type=str,help="Generate username permutations using a string pattern (e.g -p 234)"
     )
     parser.add_argument(
         "-s", "--stop",type=int,default=MAX_PERMUTATIONS_LIMIT,help="Limit the number of username permutations generated"
     )
-
     parser.add_argument(
         "-d", "--delay",type=float,default=0,help="Delay in seconds between requests (recommended: 1-2 seconds)"
     )
-
     parser.add_argument(
         "-f", "--format", choices=["console", "csv", "json"], default="console", help="Specify the output format (default: console)"
     )
-
     parser.add_argument(
         "-o", "--output", type=str, help="Specify the output file"
     )
@@ -82,13 +85,13 @@ def main():
 
     check_for_updates()
 
-    if not args.username:
-        parser.print_help()
-        return
-
-
     if Printer.is_console:
         print_banner()
+
+    is_email = args.email is not None
+    if is_email and not re.findall(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", args.email):
+        print(R + "[✘] Error: Invalid email." + X)
+        sys.exit(1)
 
     if args.permute and args.delay == 0 and Printer.is_console:
         print(
@@ -97,11 +100,12 @@ def main():
         "This may trigger rate limits or IP bans. Use --delay 1 or higher. (Use only if the sites throw errors otherwise ignore)\n"
         + Style.RESET_ALL)
 
-    usernames = [args.username]  # Default single username list
+    name = args.username or args.email #Username or email
+    usernames = [name]  # Default single username list
 
     # Added permutation support , generate all possible permutation of given sequence.
     if args.permute:
-        usernames = generate_permutations(args.username, args.permute , args.stop)
+        usernames = generate_permutations(name, args.permute , args.stop, is_email)
         if Printer.is_console:
             print(
                 C + f"[+] Generated {len(usernames)} username permutations" + Style.RESET_ALL)
