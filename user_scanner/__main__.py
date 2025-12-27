@@ -8,6 +8,7 @@ from colorama import Fore, Style
 from user_scanner.cli.banner import print_banner
 from typing import List
 from user_scanner.core.result import Result
+from user_scanner.core.version import load_local_version
 from user_scanner.core.helpers import is_last_value
 from user_scanner.utils.updater_logic import check_for_updates
 from user_scanner.utils.update import update_self
@@ -30,7 +31,7 @@ def main():
         description="Scan usernames across multiple platforms."
     )
 
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group(required=False)
 
     group.add_argument(
         "-u", "--username",  help="Username to scan across platforms"
@@ -69,7 +70,9 @@ def main():
     parser.add_argument(
         "-U", "--update", action="store_true",  help="Update user-scanner to latest version"
     )
-
+    parser.add_argument(
+        "--version", action="store_true", help="Print the current pypi version of the tool"
+    )
     args = parser.parse_args()
 
     Printer = printer.Printer(args.format)
@@ -83,7 +86,15 @@ def main():
         Printer.print_modules(args.category)
         return
 
+    if args.version:
+        version, _ = load_local_version()
+        print(f"user-scanner current version -> {G}{version}{X}")
+        sys.exit(0)
     check_for_updates()
+
+    if not (args.username or args.email):
+       parser.print_help()
+       return
 
     if Printer.is_console:
         print_banner()
