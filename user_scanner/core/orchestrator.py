@@ -7,11 +7,12 @@ import httpx
 from pathlib import Path
 from user_scanner.cli.printer import Printer
 from user_scanner.core.result import Result
+from types import ModuleType
 from typing import Callable, Dict, List
 from user_scanner.core.helpers import get_site_name, is_last_value
 
 
-def load_modules(category_path: Path):
+def load_modules(category_path: Path) -> List[ModuleType]:
     modules = []
     for file in category_path.glob("*.py"):
         if file.name == "__init__.py":
@@ -26,8 +27,9 @@ def load_modules(category_path: Path):
     return modules
 
 
-def load_categories() -> Dict[str, Path]:
-    root = Path(__file__).resolve().parent.parent / "user_scan"
+def load_categories(is_email: bool = False) -> Dict[str, Path]:
+    folder_name = "email_scan" if is_email else "user_scan"
+    root = Path(__file__).resolve().parent.parent / folder_name
     categories = {}
 
     for subfolder in root.iterdir():
@@ -39,31 +41,28 @@ def load_categories() -> Dict[str, Path]:
     return categories
 
 
-def find_module(name: str):
+def find_module(name: str, is_email: bool = False) -> List[ModuleType]:
     name = name.lower()
 
-    matches = [
+    return [
         module
-        for category_path in load_categories().values()
+        for category_path in load_categories(is_email).values()
         for module in load_modules(category_path)
         if module.__name__.split(".")[-1].lower() == name
     ]
 
-    return matches
 
-def find_category(module) -> str | None:
+def find_category(module: ModuleType) -> str | None:
 
     module_file = getattr(module, '__file__', None)
     if not module_file:
         return None
 
     category = Path(module_file).parent.name.lower()
-    categories = load_categories()
-    if category in categories:
+    if category in load_categories(False) or category in load_categories(True):
         return category.capitalize()
 
     return None
-
 
 
 def worker_single(module, username: str) -> Result:
@@ -97,7 +96,6 @@ def run_module_single(module, username: str, printer: Printer, last: bool = True
     print(msg)
 
     return [result]
-
 
 
 def run_checks_category(category_path: Path, username: str, printer: Printer, last: bool = True) -> List[Result]:
@@ -196,20 +194,30 @@ def status_validate(url: str, available: int | List[int], taken: int | List[int]
     return generic_validate(url, inner, **kwargs)
 
 
-def generate_permutations(username, pattern, limit=None):
+def generate_permutations(username: str, pattern: str, limit: int | None = None, is_email: bool = False) -> List[str]:
     """
     Generate all order-based permutations of characters in `pattern`
     appended after `username`.
     """
-    permutations_set = {username}
 
+    if limit and limit <= 0:
+        return []
+
+    permutations_set = {username}
     chars = list(pattern)
 
+    domain = ""
+    if is_email:
+        username, domain = username.strip().split("@")
+
     # generate permutations of length 1 → len(chars)
-    for r in range(1, len(chars) + 1):
+    for r in range(len(chars)):
         for combo in permutations(chars, r):
-            permutations_set.add(username + ''.join(combo))
+            new = username + ''.join(combo)
+            if is_email:
+                new += "@" + domain
+            permutations_set.add(new)
             if limit and len(permutations_set) >= limit:
-                return list(permutations_set)[:limit]
+                return sorted(permutations_set)
 
     return sorted(permutations_set)
