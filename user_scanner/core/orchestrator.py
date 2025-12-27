@@ -5,11 +5,10 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import permutations
 import httpx
 from pathlib import Path
-from user_scanner.cli.printer import Printer
 from user_scanner.core.result import Result
 from types import ModuleType
 from typing import Callable, Dict, List
-from user_scanner.core.helpers import get_site_name, is_last_value
+from user_scanner.core.helpers import get_site_name
 
 
 def load_modules(category_path: Path) -> List[ModuleType]:
@@ -82,57 +81,46 @@ def worker_single(module, username: str) -> Result:
         return Result.error(e, site_name=site_name, username=username)
 
 
-def run_module_single(module, username: str, printer: Printer, last: bool = True) -> List[Result]:
+def run_module_single(module, username: str) -> List[Result]:
     result = worker_single(module, username)
 
     category = find_category(module)
     if category:
         result.update(category=category)
 
-    get_site_name(module)
-    msg = printer.get_result_output(result)
-    if not last and printer.is_json:
-        msg += ","
-    print(msg)
+    print(result.get_console_output())
 
     return [result]
 
 
-def run_checks_category(category_path: Path, username: str, printer: Printer, last: bool = True) -> List[Result]:
+def run_checks_category(category_path: Path, username: str) -> List[Result]:
     modules = load_modules(category_path)
 
     category_name = category_path.stem.capitalize()
-    if printer.is_console:
-        print(f"\n{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
+    print(f"\n{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
 
     results = []
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         exec_map = executor.map(lambda m: worker_single(m, username), modules)
-        for i, result in enumerate(exec_map):
-            result.update(category = category_name)
+        for result in exec_map:
+            result.update(category=category_name)
             results.append(result)
 
-            is_last = last and is_last_value(modules, i)
-            get_site_name(modules[i])
-            msg = printer.get_result_output(result)
-            if not is_last and printer.is_json:
-                msg += ","
-            print(msg)
+            print(result.get_console_output())
 
     return results
 
 
-def run_checks(username: str, printer: Printer, last: bool = True) -> List[Result]:
-    if printer.is_console:
-        print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}")
+def run_checks(username: str) -> List[Result]:
+
+    print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}")
 
     results = []
 
     categories = list(load_categories().values())
-    for i, category_path in enumerate(categories):
-        last_cat = last and (i == len(categories) - 1)
-        temp = run_checks_category(category_path, username, printer, last_cat)
+    for category_path in categories:
+        temp = run_checks_category(category_path, username)
         results.extend(temp)
 
     return results

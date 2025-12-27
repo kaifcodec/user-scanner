@@ -1,4 +1,5 @@
 from enum import Enum
+from colorama import Fore, Style
 
 DEBUG_MSG = """Result {{
   status: {status},
@@ -123,3 +124,18 @@ class Result:
 
         return NotImplemented
 
+    def get_console_output(self) -> str:
+        site_name = self.site_name
+        username = self.username
+
+        if self == Status.AVAILABLE:
+            return f"  {Fore.GREEN}[✔] {site_name} ({username}): Available{Style.RESET_ALL}"
+        elif self == Status.TAKEN:
+            return f"  {Fore.RED}[✘] {site_name} ({username}): Taken{Style.RESET_ALL}"
+        elif self == Status.ERROR:
+            reason = ""
+            if isinstance(self, Result) and self.has_reason():
+                reason = f" ({self.get_reason()})"
+            return f"  {Fore.YELLOW}[!] {site_name} ({username}): Error{reason}{Style.RESET_ALL}"
+        
+        return ""

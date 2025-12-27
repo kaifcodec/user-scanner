@@ -1,7 +1,6 @@
 import types
 from types import SimpleNamespace
 from user_scanner.core import orchestrator
-from user_scanner.cli.printer import Printer
 from user_scanner.core.result import Result
 
 
@@ -44,16 +43,10 @@ def test_run_module_single_prints_json_and_csv(capsys):
 
     setattr(module, "validate_testsite", validate_testsite)
 
-    p_json = Printer("json")
-    orchestrator.run_module_single(module, "bob", p_json, last=True)
+    orchestrator.run_module_single(module, "bob")
     out = capsys.readouterr().out
-    assert '"username": "bob"' in out
+    assert 'bob' in out #Needs to be improved
 
-    p_csv = Printer("csv")
-    orchestrator.run_module_single(module, "bob", p_csv, last=True)
-    out2 = capsys.readouterr().out
-    assert "bob" in out2
-    assert "Testsite" in out2 or "testsite" in out2
 
 
 def test_run_checks_category_threaded(monkeypatch, tmp_path):
@@ -70,8 +63,7 @@ def test_run_checks_category_threaded(monkeypatch, tmp_path):
     monkeypatch.setattr(orchestrator, "load_modules", lambda p: [module])
     monkeypatch.setattr(orchestrator, "get_site_name", lambda m: "Testsite")
 
-    p = Printer("console")
-    results = orchestrator.run_checks_category(tmp_path, "someone", p, last=True)
+    results = orchestrator.run_checks_category(tmp_path, "someone")
     assert isinstance(results, list)
     assert len(results) == 1
     assert results[0].to_number() == 0  # TAKEN

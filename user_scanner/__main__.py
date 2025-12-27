@@ -2,14 +2,14 @@ import argparse
 import time
 import sys
 import re
-from user_scanner.cli import printer
-from user_scanner.core.orchestrator import generate_permutations, load_categories
+from user_scanner.core.orchestrator import generate_permutations, load_categories, load_modules
 from colorama import Fore, Style
 from user_scanner.cli.banner import print_banner
 from typing import List
 from user_scanner.core.result import Result
 from user_scanner.core.version import load_local_version
 from user_scanner.core.helpers import is_last_value
+from user_scanner.core import formatter
 from user_scanner.utils.updater_logic import check_for_updates
 from user_scanner.utils.update import update_self
 
@@ -21,7 +21,7 @@ Y = Fore.YELLOW
 X = Fore.RESET
 
 
-MAX_PERMUTATIONS_LIMIT = 100 # To prevent excessive generation
+MAX_PERMUTATIONS_LIMIT = 100  # To prevent excessive generation
 
 
 def main():
@@ -53,13 +53,13 @@ def main():
         "-v", "--verbose", action="store_true", help="Enable verbose output"
     )
     parser.add_argument(
-        "-p", "--permute",type=str,help="Generate username permutations using a string pattern (e.g -p 234)"
+        "-p", "--permute", type=str, help="Generate username permutations using a string pattern (e.g -p 234)"
     )
     parser.add_argument(
-        "-s", "--stop",type=int,default=MAX_PERMUTATIONS_LIMIT,help="Limit the number of username permutations generated"
+        "-s", "--stop", type=int, default=MAX_PERMUTATIONS_LIMIT, help="Limit the number of username permutations generated"
     )
     parser.add_argument(
-        "-d", "--delay",type=float,default=0,help="Delay in seconds between requests (recommended: 1-2 seconds)"
+        "-d", "--delay", type=float, default=0, help="Delay in seconds between requests (recommended: 1-2 seconds)"
     )
     parser.add_argument(
         "-f", "--format", choices=["console", "csv", "json"], default="console", help="Specify the output format (default: console)"
@@ -75,15 +75,21 @@ def main():
     )
     args = parser.parse_args()
 
-    Printer = printer.Printer(args.format)
-
     if args.update is True:
         update_self()
         print(f"[{G}+{X}] {G}Update successful. Please restart the tool.{X}")
         sys.exit(0)
 
     if args.list:
-        Printer.print_modules(args.category)
+        categories = load_categories()
+        for cat_name, cat_path in categories.items():
+            modules = load_modules(cat_path)
+            print(Fore.MAGENTA +
+                  f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
+            for module in modules:
+                site_name = module.__name__.split(".")[-1].capitalize()
+                print(f"  - {site_name}")
+
         return
 
     if args.version:
@@ -93,57 +99,53 @@ def main():
     check_for_updates()
 
     if not (args.username or args.email):
-       parser.print_help()
-       return
+        parser.print_help()
+        return
 
-    if Printer.is_console:
-        print_banner()
+    print_banner()
 
     is_email = args.email is not None
     if is_email and not re.findall(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", args.email):
         print(R + "[✘] Error: Invalid email." + X)
         sys.exit(1)
 
-    if args.permute and args.delay == 0 and Printer.is_console:
+    if args.permute and args.delay == 0:
         print(
-        Y
-        + "[!] Warning: You're generating multiple usernames with NO delay between requests. "
-        "This may trigger rate limits or IP bans. Use --delay 1 or higher. (Use only if the sites throw errors otherwise ignore)\n"
-        + Style.RESET_ALL)
+            Y
+            + "[!] Warning: You're generating multiple usernames with NO delay between requests. "
+            "This may trigger rate limits or IP bans. Use --delay 1 or higher. (Use only if the sites throw errors otherwise ignore)\n"
+            + Style.RESET_ALL)
 
-    name = args.username or args.email #Username or email
+    name = args.username or args.email  # Username or email
     usernames = [name]  # Default single username list
 
     # Added permutation support , generate all possible permutation of given sequence.
     if args.permute:
-        usernames = generate_permutations(name, args.permute , args.stop, is_email)
-        if Printer.is_console:
-            print(
-                C + f"[+] Generated {len(usernames)} username permutations" + Style.RESET_ALL)
+        usernames = generate_permutations(
+            name, args.permute, args.stop, is_email)
+        print(
+            C + f"[+] Generated {len(usernames)} username permutations" + Style.RESET_ALL)
 
     if args.module and "." in args.module:
         args.module = args.module.replace(".", "_")
 
-    def run_all_usernames(func, arg = None) -> List[Result]:
+    def run_all_usernames(func, arg=None) -> List[Result]:
         """
         Executes a function for all given usernames.
         Made in order to simplify main()
         """
         results = []
-        print(Printer.get_start())
         for i, name in enumerate(usernames):
-            is_last = i == len(usernames) - 1
+            is_last = is_last_value(usernames, i)
             if arg is None:
-                results.extend(func(name, Printer, is_last))
+                results.extend(func(name))
             else:
-                results.extend(func(arg, name, Printer, is_last))
+                results.extend(func(arg, name))
             if args.delay > 0 and not is_last:
                 time.sleep(args.delay)
-        if Printer.is_json:
-            print(Printer.get_end())
         return results
 
-    results =  []
+    results = []
 
     if args.module:
         # Single module search across all categories
@@ -171,7 +173,7 @@ def main():
     if not args.output:
         return
 
-    if args.output and Printer.is_console:
+    if args.output and args.format == "console":
         msg = (
             "\n[!] The console format cannot be "
             f"written to file: '{args.output}'."
@@ -179,14 +181,8 @@ def main():
         print(R + msg + Style.RESET_ALL)
         return
 
-    content = Printer.get_start()
-
-    for i,result in enumerate(results):
-        char = "" if Printer.is_csv or is_last_value(results, i) else ","
-        content += "\n" + Printer.get_result_output(result) + char
-
-    if Printer.is_json:
-        content += "\n" + Printer.get_end()
+        
+    content = formatter.into_csv(results) if args.format == "csv" else formatter.into_json(results)
 
     with open(args.output, "a", encoding="utf-8") as f:
         f.write(content)
