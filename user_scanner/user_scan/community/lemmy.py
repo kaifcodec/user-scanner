@@ -7,13 +7,6 @@ def validate_lemmy(user: str) -> Result:
     """
     Check username availability on Lemmy (lemmy.world instance).
 
-    Lemmy is a federated Reddit alternative with many instances.
-    This validator checks lemmy.world, the largest public instance.
-    Federation-wide checking is out of scope for this implementation.
-
-    API behavior:
-        - 400/404: Username does not exist (available)
-        - 200: Username exists (taken)
     """
     # Lemmy username rules: 3-20 chars, alphanumeric and underscores only
     if not (3 <= len(user) <= 20):
