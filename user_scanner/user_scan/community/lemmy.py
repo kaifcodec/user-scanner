@@ -4,7 +4,7 @@ from user_scanner.core.result import Result
 
 
 def validate_lemmy(user: str) -> Result:
-    """ Check username availability on Lemmy (lemmy.world instance)"""
+    """Check username availability on Lemmy (lemmy.world instance)"""
 
     # Lemmy username rules: 3-20 chars, alphanumeric and underscores only
     if not (3 <= len(user) <= 20):
