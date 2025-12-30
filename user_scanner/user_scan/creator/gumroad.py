@@ -1,14 +1,9 @@
+import re
 from user_scanner.core.orchestrator import status_validate, Result
 
 def validate_gumroad(user: str) -> Result:
-    if not 3 <= len(user) <= 20:
-        return Result.error("Username must be between 3 and 20 characters.")
-
-    if user != user.lower():
-        return Result.error("Use lowercase letters only.")
-
-    if not user.isascii() or not user.isalnum():
-        return Result.error("Only use lowercase letters and numbers only.")
+    if not re.fullmatch(r"[a-z0-9]{3,20}", user):
+        return Result.error("Username must be between 3 and 20 lowercase alphanumeric characters")
 
     url = f"https://{user}.gumroad.com/"
     return status_validate(url, 404, 200, follow_redirects=True)
@@ -24,3 +19,4 @@ if __name__ == "__main__":
         print("Unavailable!")
     else:
         print(f"Error occurred! Reason: {result.get_reason()}")
+
