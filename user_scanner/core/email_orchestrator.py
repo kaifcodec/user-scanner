@@ -77,20 +77,3 @@ def run_email_full_batch(emails: List[str]) -> List[Result]:
         all_results.extend(cat_results)
 
     return all_results
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
