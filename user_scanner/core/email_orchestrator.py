@@ -7,7 +7,7 @@ from user_scanner.core.helpers import load_categories, load_modules, find_catego
 from user_scanner.core.result import Result
 
 
-MAX_CONCURRENT_REQUESTS = 10
+MAX_CONCURRENT_REQUESTS = 15
 
 
 async def _async_worker(module: ModuleType, email: str, sem: asyncio.Semaphore) -> Result:
@@ -26,7 +26,7 @@ async def _async_worker(module: ModuleType, email: str, sem: asyncio.Semaphore) 
         except Exception as e:
             result = Result.error(e)
 
-        cat_name = find_category(module) or "Email"
+        cat_name = find_category(module)
         result.update(
             site_name=module_name.capitalize(),
             username=email,
