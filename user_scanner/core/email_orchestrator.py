@@ -2,17 +2,18 @@ import asyncio
 from pathlib import Path
 from typing import List
 from types import ModuleType
+from colorama import Fore, Style
 
 from user_scanner.core.helpers import load_categories, load_modules, find_category
 from user_scanner.core.result import Result
 
-
+# Concurrency control
 MAX_CONCURRENT_REQUESTS = 15
 
 
 async def _async_worker(module: ModuleType, email: str, sem: asyncio.Semaphore) -> Result:
     async with sem:
-        module_name = module.__name__.split(".")[-1]
+        module_name = module.__name__.split('.')[-1]
         func_name = f"validate_{module_name}"
 
         if not hasattr(module, func_name):
@@ -26,12 +27,14 @@ async def _async_worker(module: ModuleType, email: str, sem: asyncio.Semaphore) 
         except Exception as e:
             result = Result.error(e)
 
-        cat_name = find_category(module)
+        # Use helper to get actual dir name for the Result object
+        actual_cat = find_category(module) or "Email"
+
         result.update(
             site_name=module_name.capitalize(),
             username=email,
-            category=cat_name,
-            is_email=True,
+            category=actual_cat,
+            is_email=True
         )
 
         print(result.get_console_output())
@@ -41,14 +44,12 @@ async def _async_worker(module: ModuleType, email: str, sem: asyncio.Semaphore) 
 async def _run_batch(modules: List[ModuleType], emails: List[str]) -> List[Result]:
     sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     tasks = []
-
     for module in modules:
         for email in emails:
             tasks.append(_async_worker(module, email, sem))
 
     if not tasks:
         return []
-
     return list(await asyncio.gather(*tasks))
 
 
@@ -57,6 +58,9 @@ def run_email_module_batch(module: ModuleType, emails: List[str]) -> List[Result
 
 
 def run_email_category_batch(category_path: Path, emails: List[str]) -> List[Result]:
+    cat_name = category_path.name.upper()
+    print(f"\n{Fore.MAGENTA}== {cat_name} SITES =={Style.RESET_ALL}")
+
     modules = load_modules(category_path)
     return asyncio.run(_run_batch(modules, emails))
 
@@ -65,9 +69,28 @@ def run_email_full_batch(emails: List[str]) -> List[Result]:
     categories = load_categories(is_email=True)
     all_results = []
 
-    for cat_path in categories.values():
+    for cat_name, cat_path in categories.items():
+        print(f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}")
+
         modules = load_modules(cat_path)
         cat_results = asyncio.run(_run_batch(modules, emails))
         all_results.extend(cat_results)
 
     return all_results
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
