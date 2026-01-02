@@ -36,8 +36,16 @@ class Status(Enum):
     AVAILABLE = 1
     ERROR = 2
 
+    def to_label(self, is_email=False):
+        """Returns the appropriate text label based on the scan type"""
+        if self == Status.ERROR:
+            return "Error"
+        if is_email:
+            return "Registered" if self == Status.TAKEN else "Not Registered"
+        return "Taken" if self == Status.TAKEN else "Available"
+
     def __str__(self):
-        return super().__str__().split(".")[1].capitalize()
+        return self.to_label(is_email=False)
 
 
 class Result:
@@ -48,10 +56,11 @@ class Result:
         self.username = None
         self.site_name = None
         self.category = None
+        self.is_email = False # Track if this is an email result
         self.update(**kwargs)
 
     def update(self, **kwargs):
-        for field in ("username", "site_name", "category"):
+        for field in ("username", "site_name", "category", "is_email"):
             if field in kwargs and kwargs[field] is not None:
                 setattr(self, field, kwargs[field])
 
@@ -93,7 +102,7 @@ class Result:
 
     def as_dict(self) -> dict:
         return {
-            "status": self.status,
+            "status": self.status.to_label(self.is_email), # Use dynamic labels
             "reason": self.get_reason(),
             "username": self.username,
             "site_name": self.site_name,
@@ -127,15 +136,16 @@ class Result:
     def get_console_output(self) -> str:
         site_name = self.site_name
         username = self.username
+        status_text = self.status.to_label(self.is_email)
 
         if self == Status.AVAILABLE:
-            return f"  {Fore.GREEN}[✔] {site_name} ({username}): Available{Style.RESET_ALL}"
+            return f"  {Fore.GREEN}[✔] {site_name} ({username}): {status_text}{Style.RESET_ALL}"
         elif self == Status.TAKEN:
-            return f"  {Fore.RED}[✘] {site_name} ({username}): Taken{Style.RESET_ALL}"
+            return f"  {Fore.RED}[✘] {site_name} ({username}): {status_text}{Style.RESET_ALL}"
         elif self == Status.ERROR:
             reason = ""
             if isinstance(self, Result) and self.has_reason():
                 reason = f" ({self.get_reason()})"
-            return f"  {Fore.YELLOW}[!] {site_name} ({username}): Error{reason}{Style.RESET_ALL}"
-        
+            return f"  {Fore.YELLOW}[!] {site_name} ({username}): {status_text}{reason}{Style.RESET_ALL}"
+
         return ""
