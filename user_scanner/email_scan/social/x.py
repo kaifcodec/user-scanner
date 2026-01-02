@@ -13,26 +13,26 @@ async def _check(email):
         "sec-ch-ua-mobile": "?1",
         "x-twitter-active-user": "yes",
         "origin": "https://x.com",
-        "sec-fetch-site": "same-site",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-dest": "empty",
-        "referer": "https://x.com/",
-        "accept-language": "en-US,en;q=0.9",
         "priority": "u=1, i"
     }
 
     async with httpx.AsyncClient(http2=True) as client:
         try:
             response = await client.get(url, params=params, headers=headers)
+
+            if response.status_code == 429:
+                return Result.error("Rate limited wait for few minutes")
+
             data = response.json()
-            taken_bool= data["taken"]
+            taken_bool = data.get("taken")
+
             if taken_bool is True:
                 return Result.taken()
-
-            elif taken_bool is False:
+            else:
                 return Result.available()
+
         except Exception as e:
-            return Result.error(e)
+            return Result.error(str(e))
 
 def validate_x(email: str) -> Result:
     return _check(email)
