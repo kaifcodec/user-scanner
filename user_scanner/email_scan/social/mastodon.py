@@ -46,7 +46,7 @@ async def _check(email):
                 return Result.available()
 
         except Exception as e:
-            return Result.error(str(e))
+            return Result.error(e)
 
 
 def validate_mastodon(email: str) -> Result:

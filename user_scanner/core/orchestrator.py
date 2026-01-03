@@ -5,10 +5,11 @@ import httpx
 from pathlib import Path
 from user_scanner.core.result import Result
 from typing import Callable, List
+from types import ModuleType
 from user_scanner.core.helpers import find_category,  get_site_name, load_categories, load_modules
 
 
-def worker_single(module, username: str) -> Result:
+def _worker_single(module: ModuleType, username: str) -> Result:
     func = next((getattr(module, f) for f in dir(module)
                  if f.startswith("validate_") and callable(getattr(module, f))), None)
 
@@ -23,10 +24,9 @@ def worker_single(module, username: str) -> Result:
         return result
     except Exception as e:
         return Result.error(e, site_name=site_name, username=username)
-
-
-def run_module_single(module, username: str) -> List[Result]:
-    result = worker_single(module, username)
+    
+def run_user_module(module: ModuleType, username: str) -> List[Result]:
+    result = _worker_single(module, username)
 
     category = find_category(module)
     if category:
@@ -37,16 +37,15 @@ def run_module_single(module, username: str) -> List[Result]:
     return [result]
 
 
-def run_checks_category(category_path: Path, username: str) -> List[Result]:
-    modules = load_modules(category_path)
-
+def run_user_category(category_path: Path, username: str) -> List[Result]:
     category_name = category_path.stem.capitalize()
     print(f"\n{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
 
     results = []
+    modules = load_modules(category_path)
 
     with ThreadPoolExecutor(max_workers=10) as executor:
-        exec_map = executor.map(lambda m: worker_single(m, username), modules)
+        exec_map = executor.map(lambda m: _worker_single(m, username), modules)
         for result in exec_map:
             result.update(category=category_name)
             results.append(result)
@@ -56,15 +55,12 @@ def run_checks_category(category_path: Path, username: str) -> List[Result]:
     return results
 
 
-def run_checks(username: str) -> List[Result]:
-
-    print(f"\n{Fore.CYAN} Checking username: {username}{Style.RESET_ALL}")
-
+def run_user_full(username: str) -> List[Result]:
     results = []
 
     categories = list(load_categories().values())
     for category_path in categories:
-        temp = run_checks_category(category_path, username)
+        temp = run_user_category(category_path, username)
         results.extend(temp)
 
     return results

@@ -41,31 +41,30 @@ async def _async_worker(module: ModuleType, email: str, sem: asyncio.Semaphore) 
         return result
 
 
-async def _run_batch(modules: List[ModuleType], emails: List[str]) -> List[Result]:
+async def _run_batch(modules: List[ModuleType], email:str) -> List[Result]:
     sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     tasks = []
     for module in modules:
-        for email in emails:
-            tasks.append(_async_worker(module, email, sem))
+        tasks.append(_async_worker(module, email, sem))
 
     if not tasks:
         return []
     return list(await asyncio.gather(*tasks))
 
 
-def run_email_module_batch(module: ModuleType, emails: List[str]) -> List[Result]:
-    return asyncio.run(_run_batch([module], emails))
+def run_email_module_batch(module: ModuleType, email: str) -> List[Result]:
+    return asyncio.run(_run_batch([module], email))
 
 
-def run_email_category_batch(category_path: Path, emails: List[str]) -> List[Result]:
-    cat_name = category_path.name.upper()
+def run_email_category_batch(category_path: Path, email: str) -> List[Result]:
+    cat_name = category_path.stem.capitalize()
     print(f"\n{Fore.MAGENTA}== {cat_name} SITES =={Style.RESET_ALL}")
 
     modules = load_modules(category_path)
-    return asyncio.run(_run_batch(modules, emails))
+    return asyncio.run(_run_batch(modules, email))
 
 
-def run_email_full_batch(emails: List[str]) -> List[Result]:
+def run_email_full_batch(email: str) -> List[Result]:
     categories = load_categories(is_email=True)
     all_results = []
 
@@ -73,7 +72,7 @@ def run_email_full_batch(emails: List[str]) -> List[Result]:
         print(f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}")
 
         modules = load_modules(cat_path)
-        cat_results = asyncio.run(_run_batch(modules, emails))
+        cat_results = asyncio.run(_run_batch(modules, email))
         all_results.extend(cat_results)
 
     return all_results

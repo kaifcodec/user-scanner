@@ -3,10 +3,8 @@ import time
 import sys
 import re
 from colorama import Fore, Style
-from typing import List
 
 from user_scanner.cli.banner import print_banner
-from user_scanner.core.result import Result
 from user_scanner.core.version import load_local_version
 from user_scanner.core import formatter
 from user_scanner.utils.updater_logic import check_for_updates
@@ -16,15 +14,14 @@ from user_scanner.core.helpers import (
     load_categories,
     load_modules,
     find_module,
-    is_last_value,
     get_site_name
 )
 
 from user_scanner.core.orchestrator import (
     generate_permutations,
-    run_checks,
-    run_checks_category,
-    run_module_single
+    run_user_full,
+    run_user_category,
+    run_user_module
 )
 
 from user_scanner.core.email_orchestrator import (
@@ -130,55 +127,42 @@ def main():
 
     results = []
 
-    if is_email:
-        if args.module:
-            modules = find_module(args.module, is_email=True)
-            if modules:
-                for module in modules:
-                    results.extend(run_email_module_batch(module, targets))
-            else:
-                print(
-                    R + f"[!] Email module '{args.module}' not found." + Style.RESET_ALL)
-        elif args.category:
-            cat_path = load_categories(is_email=True).get(args.category)
-            if cat_path:
-                results.extend(run_email_category_batch(cat_path, targets))
-            else:
-                print(
-                    R + f"[!] Email category '{args.category}' not found." + Style.RESET_ALL)
+    for i, target in enumerate(targets):
+        if i != 0 and args.delay:
+            time.sleep(args.delay)
+
+        if is_email:
+            print(f"\n{Fore.CYAN} Checking email: {target}{Style.RESET_ALL}")
         else:
-            results = run_email_full_batch(targets)
-    else:
-        def run_all_targets(func, arg=None) -> List[Result]:
-            all_results = []
-            for i, name in enumerate(targets):
-                is_last = is_last_value(targets, i)
-                res = func(name) if arg is None else func(arg, name)
-                if isinstance(res, list):
-                    all_results.extend(res)
-                else:
-                    all_results.append(res)
-                if args.delay > 0 and not is_last:
-                    time.sleep(args.delay)
-            return all_results
+            print(f"\n{Fore.CYAN} Checking username: {target}{Style.RESET_ALL}")
 
         if args.module:
-            modules = find_module(args.module, is_email=False)
+            modules = find_module(args.module, is_email)
+            fn = run_email_module_batch if is_email else run_user_module
             if modules:
-                for mod in modules:
-                    results.extend(run_all_targets(run_module_single, mod))
+                for module in modules:
+                    results.extend(fn(module, target))
             else:
                 print(
-                    R + f"[!] Module '{args.module}' not found." + Style.RESET_ALL)
+                    R +
+                    f"[!] {'Email' if is_email else 'User'} module '{args.module}' not found." +
+                    Style.RESET_ALL
+                )
+        
         elif args.category:
-            cat_path = load_categories(is_email=False).get(args.category)
+            cat_path = load_categories(is_email).get(args.category)
+            fn = run_email_category_batch if is_email else run_user_category
             if cat_path:
-                results.extend(run_all_targets(run_checks_category, cat_path))
+                results.extend(fn(cat_path, target))
             else:
                 print(
-                    R + f"[!] Category '{args.category}' not found." + Style.RESET_ALL)
+                    R +
+                    f"[!] {'Email' if is_email else 'User'} category '{args.module}' not found." +
+                    Style.RESET_ALL
+                )
         else:
-            results = run_all_targets(run_checks)
+            fn = run_email_full_batch if is_email else run_user_full
+            results.extend(fn(target))
 
     if args.output:
         if args.format == "console":
