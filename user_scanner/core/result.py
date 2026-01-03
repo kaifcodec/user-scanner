@@ -7,6 +7,7 @@ DEBUG_MSG = """Result {{
   username: "{username}",
   site_name: "{site_name}",
   category: "{category}",
+  is_email: "{is_email}"
 }}"""
 
 JSON_TEMPLATE = """{{
@@ -106,14 +107,18 @@ class Result:
             "reason": self.get_reason(),
             "username": self.username,
             "site_name": self.site_name,
-            "category": self.category
+            "category": self.category,
+            "is_email": self.is_email
         }
 
     def debug(self) -> str:
         return DEBUG_MSG.format(**self.as_dict())
 
     def to_json(self) -> str:
-        return JSON_TEMPLATE.format(**self.as_dict())
+        msg = JSON_TEMPLATE.format(**self.as_dict())
+        if self.is_email:
+            msg = msg.replace("\t\"username\":", "\t\"email\":")
+        return msg
 
     def to_csv(self) -> str:
         return CSV_TEMPLATE.format(**self.as_dict())
