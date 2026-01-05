@@ -12,7 +12,7 @@
 
 ---
 
-Scan a username across multiple social, developer, and creator platforms to see if it’s available.  
+Scan a username across multiple social, developer, creator, gaming etc. platforms to see if it’s available.  
 Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instagram, and more, all in one command.
 
 
