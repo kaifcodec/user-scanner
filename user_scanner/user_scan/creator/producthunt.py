@@ -1,7 +1,15 @@
-from user_scanner.core.orchestrator import status_validate
+import re
+from user_scanner.core.orchestrator import status_validate, Result
 
 
-def validate_producthunt(user):
+def validate_producthunt(user: str) -> Result:
+    if not (2 <= len(user) <= 32):
+        return Result.error("Length must be 2-32 characters.")
+
+    # Rules: Letters, numbers, and underscores only.
+    if not re.match(r'^[a-zA-Z0-9_]+$', user):
+        return Result.error("Only use letters, numbers, and underscores.")
+
     url = f"https://www.producthunt.com/@{user}"
 
     headers = {
@@ -11,7 +19,8 @@ def validate_producthunt(user):
         'Accept-Language': "en-US,en;q=0.9",
     }
 
-    status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+    return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+
 
 if __name__ == "__main__":
     user = input("Username?: ").strip()
@@ -22,4 +31,4 @@ if __name__ == "__main__":
     elif result == 0:
         print("Unavailable!")
     else:
-        print("Error occured!")
+        print(f"Error occurred! Reason: {result.get_reason()}")
