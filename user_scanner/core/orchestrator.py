@@ -1,6 +1,5 @@
 from colorama import Fore, Style
 from concurrent.futures import ThreadPoolExecutor
-from itertools import permutations
 import httpx
 from pathlib import Path
 from user_scanner.core.result import Result
@@ -120,32 +119,3 @@ def status_validate(url: str, available: int | List[int], taken: int | List[int]
         return Result.error("Status didn't match. Report this on Github.")
 
     return generic_validate(url, inner, **kwargs)
-
-
-def generate_permutations(username: str, pattern: str, limit: int | None = None, is_email: bool = False) -> List[str]:
-    """
-    Generate all order-based permutations of characters in `pattern`
-    appended after `username`.
-    """
-
-    if limit and limit <= 0:
-        return []
-
-    permutations_set = {username}
-    chars = list(pattern)
-
-    domain = ""
-    if is_email:
-        username, domain = username.strip().split("@")
-
-    # generate permutations of length 1 → len(chars)
-    for r in range(len(chars)):
-        for combo in permutations(chars, r):
-            new = username + ''.join(combo)
-            if is_email:
-                new += "@" + domain
-            permutations_set.add(new)
-            if limit and len(permutations_set) >= limit:
-                return sorted(permutations_set)
-
-    return sorted(permutations_set)

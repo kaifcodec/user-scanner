@@ -14,11 +14,11 @@ from user_scanner.core.helpers import (
     load_categories,
     load_modules,
     find_module,
-    get_site_name
+    get_site_name,
+    generate_permutations
 )
 
 from user_scanner.core.orchestrator import (
-    generate_permutations,
     run_user_full,
     run_user_category,
     run_user_module

@@ -1,15 +1,17 @@
-# helpers.py
 import importlib
 import importlib.util
+from itertools import permutations
 from types import ModuleType
 from pathlib import Path
 from typing import Dict, List
+
 
 def get_site_name(module) -> str:
     name = module.__name__.split('.')[-1].capitalize().replace("_", ".")
     if name == "X":
         return "X (Twitter)"
     return name
+
 
 def load_modules(category_path: Path) -> List[ModuleType]:
     modules = []
@@ -64,5 +66,30 @@ def find_category(module: ModuleType) -> str | None:
     return None
 
 
-def is_last_value(values, i: int) -> bool:
-    return i == len(values) - 1
+def generate_permutations(username: str, pattern: str, limit: int | None = None, is_email: bool = False) -> List[str]:
+    """
+    Generate all order-based permutations of characters in `pattern`
+    appended after `username`.
+    """
+
+    if limit and limit <= 0:
+        return []
+
+    permutations_set = {username}
+    chars = list(pattern)
+
+    domain = ""
+    if is_email:
+        username, domain = username.strip().split("@")
+
+    # generate permutations of length 1 → len(chars)
+    for r in range(len(chars)):
+        for combo in permutations(chars, r):
+            new = username + ''.join(combo)
+            if is_email:
+                new += "@" + domain
+            permutations_set.add(new)
+            if limit and len(permutations_set) >= limit:
+                return sorted(permutations_set)
+
+    return sorted(permutations_set)
