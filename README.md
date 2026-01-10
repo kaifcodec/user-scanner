@@ -12,15 +12,15 @@
 
 ---
 
-Scan a username across multiple social, developer, and creator platforms to see if it’s available.  
-Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instagram, and more, all in one command.
+Scan a username or email across multiple social, developer, and creator platforms to see if it’s available.  
+Perfect for finding a **unique username or email** across GitHub, Twitter, Reddit, Instagram, and more, all in one command.
 
 
-### Features
+## Features
 
 - ✅ Check usernames across **social networks**, **developer platforms**, and **creator communities**
-- ✅ Can be used as a username OSINT tool
-- ✅ Smart auto-update system, Detects new releases on PyPI and interactively prompts the user to upgrade.
+- ✅ Can be used as a username and email OSINT tool
+- ✅ Smart auto-update system detects new releases on PyPI and interactively prompts the user to upgrade.
 - ✅ Clear **Available / Taken / Error** output for each platform
 - ✅ Robust error handling: It prints the exact reason (e.g. Cannot use underscores, hyphens at the start/end)
 - ✅ Fully modular: add new platform modules easily
@@ -31,7 +31,7 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Very low and lightweight dependencies, can be run on any machine
 ---
 
-### Installation
+## Installation
 
 ```bash
 pip install user-scanner
@@ -39,43 +39,59 @@ pip install user-scanner
 
 ---
 
-### Usage
+## Usage
 
-Scan a username across all platforms:
+### Basic username/email scan
 
-```bash
-user-scanner -u <username>
-```
-Optionally, scan a specific category or single module:
+Scan a signle username across **all** available modules/platforms:
 
 ```bash
-user-scanner -u <username> -c dev
-user-scanner -l # Lists all available modules
-user-scanner -u <username> -m github
+user-scanner -u john_doe
+user-scanner --username john_doe # long version
+
+user-scanner -e john_doe@gmail.com
+user-scanner --email john_doe@gmail.com # long version
 ```
 
-Also, the output file and format can be specified: <br>
+### Selective scanning
+
+Scan only specific category or single modules:
 
 ```bash
-user-scanner -u <username> -f console #Default format
-user-scanner -u <username> -f csv
-user-scanner -u <username> -f json
-user-scanner -u <username> -f <format> -o <output-file>
+user-scanner -u john_doe -c dev # developer platforms only
+user-scanner -u john_doe -m github # only Github
 ```
 
-Generate multiple username variations by appending a suffix:
+List all available modules/categories:
 
 ```bash
-user-scanner -u <username> -p <suffix>
+user-scanner -l
+user-scanner --list # long version
 ```
-Optionally, scan a specific category or single module with limit:
+
+### Username/Email variations (only suffix)
+
+Generate & check usernames variations with a permutation from the given suffix:
 
 ```bash
-user-scanner -u <username> -p <suffix> -c dev
-user-scanner -u <username> -p <suffix> -m github
-user-scanner -u <username> -p <suffix> -s <number> # limit generation of usernames
-user-scanner -u <username> -p <suffix> -d <seconds> # delay to avoid rate-limits (can be 0s-1s)
+user-scanner -u john_ -p ab #john_a, ..., john_ab, john_ba
 ```
+
+Control variation generation:
+
+```bash
+-s 30 # How many variations to generate
+-d 1.0 #Delay between username checking
+```
+
+### Output control
+
+```bash
+-f csv
+-f json
+-o result.json # output to file
+```
+
 ---
 
 ### Update
@@ -84,12 +100,11 @@ Update the tool to the latest PyPI version:
 
 ```bash
 user-scanner -U
-
 ```
 
 ---
 
-### Screenshot: 
+## Screenshot: 
 
 - Note*: New modules are constantly getting added so this might have only limited, outdated output:
 
@@ -105,8 +120,9 @@ user-scanner -U
 
 <img width="992" height="556" alt="user-scanner's JSON output screenshot" src="https://github.com/user-attachments/assets/9babb19f-bc87-4e7b-abe5-c52b8b1b672c" />
 
+---
 
-### Contributing: 
+## Contributing: 
 
 Modules are organized by category:
 
@@ -134,20 +150,20 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 
 ---
 
-### Dependencies: 
+## Dependencies: 
 - [httpx](https://pypi.org/project/httpx/)
 - [colorama](https://pypi.org/project/colorama/)
 
 ---
 
-### License
+## License
 
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 
 ---
 
-### Star History
+## Star History
 
 <a href="https://www.star-history.com/#kaifcodec/user-scanner&type=date&legend=top-left">
  <picture>
