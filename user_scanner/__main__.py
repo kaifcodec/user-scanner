@@ -72,7 +72,7 @@ def main():
                         default=0, help="Delay between requests")
 
     parser.add_argument(
-        "-f", "--format", choices=["console", "csv", "json"], default="console", help="Output format")
+        "-f", "--format", choices=["csv", "json"], help="Output format")
 
     parser.add_argument("-o", "--output", type=str, help="Output file path")
 
@@ -165,11 +165,6 @@ def main():
             results.extend(fn(target))
 
     if args.output:
-        if args.format == "console":
-            print(
-                R + f"\n[!] Console format cannot be saved to '{args.output}'." + Style.RESET_ALL)
-            return
-
         content = formatter.into_csv(
             results) if args.format == "csv" else formatter.into_json(results)
         with open(args.output, "a", encoding="utf-8") as f:
