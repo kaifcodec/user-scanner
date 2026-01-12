@@ -12,23 +12,27 @@
 
 ---
 
-Scan a username or email across multiple social, developer, and creator platforms to see if it’s available.  
-Perfect for finding a **unique username or email** across GitHub, Twitter, Reddit, Instagram, and more, all in one command.
+A powerful *Email OSINT tool* that checks if a specific email is registered on various sites, combined with *username scanning* — 2-in-1 solution.  
 
+Perfect for fast, accurate and lightweight email OSINT
+
+Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instagram, and more, all in a single command.  
 
 ## Features
 
-- ✅ Check usernames across **social networks**, **developer platforms**, and **creator communities**
-- ✅ Can be used as a username and email OSINT tool
-- ✅ Smart auto-update system detects new releases on PyPI and interactively prompts the user to upgrade.
-- ✅ Clear **Available / Taken / Error** output for each platform
-- ✅ Robust error handling: It prints the exact reason (e.g. Cannot use underscores, hyphens at the start/end)
-- ✅ Fully modular: add new platform modules easily
-- ✅ Wildcard-based username permutations for automatic variation generation using provided suffix
-- ✅ Selection of results format (e.g. json, csv, console (default))
-- ✅ Get the scanning results in preferred format (json/csv) in specified output file (suitable for power users)
-- ✅ Command-line interface ready: works directly after `pip install`
-- ✅ Very low and lightweight dependencies, can be run on any machine
+- ✅ Check an email across multiple sites to see if it’s registered.  
+- ✅ Scan usernames across **social networks**, **developer platforms**, **creator communities**, and more.  
+- ✅ Can be used purely as a username tool.  
+- ✅ Smart auto-update system detects new releases on PyPI and prompts the user to upgrade interactively.  
+- ✅ Clear `Registered` and `Not Registered` for email scanning `Available` / `Taken` / `Error` output for username scans
+- ✅ Robust error handling: displays the exact reason a username or email cannot be used (e.g., underscores or hyphens at the start/end).  
+- ✅ Fully modular: easily add new platform modules.  
+- ✅ Wildcard-based username permutations for automatic variation generation using a provided suffix.  
+- ✅ Option to select results format (**JSON**, **CSV**, console).  
+- ✅ Save scanning and OSINT results in the preferred format and output file (ideal for power users).  
+- ✅ Command-line interface ready: works immediately after `pip install`.  
+- ✅ Lightweight with minimal dependencies; runs on any machine.
+
 ---
 
 ## Installation
@@ -43,54 +47,54 @@ pip install user-scanner
 
 ### Basic username/email scan
 
-Scan a signle username across **all** available modules/platforms:
+Scan a single username across **all** available modules/platforms:
 
 ```bash
+user-scanner -e john_doe@gmail.com
+user-scanner --email john_doe@gmail.com # long version
+
 user-scanner -u john_doe
 user-scanner --username john_doe # long version
 
-user-scanner -e john_doe@gmail.com
-user-scanner --email john_doe@gmail.com # long version
 ```
 
 ### Selective scanning
 
-Scan only specific category or single modules:
+Scan only specific categories or single modules:
 
 ```bash
 user-scanner -u john_doe -c dev # developer platforms only
-user-scanner -u john_doe -m github # only Github
+user-scanner -u john_doe -m github # only GitHub
+
 ```
 
 List all available modules/categories:
 
 ```bash
 user-scanner -l
-user-scanner --list # long version
+
 ```
 
-### Username/Email variations (only suffix)
+### Username/Email variations (suffix only)
 
-Generate & check usernames variations with a permutation from the given suffix:
+Generate & check username variations using a permutation from the given suffix:
 
 ```bash
-user-scanner -u john_ -p ab #john_a, ..., john_ab, john_ba
+user-scanner -u john_ -p ab # john_a, ..., john_ab, john_ba
 ```
 
-Control variation generation:
+## Important Flags
 
-```bash
--s 30 # How many variations to generate
--d 1.0 #Delay between username checking
-```
-
-### Output control
-
-```bash
--f csv
--f json
--o result.json # output to file
-```
+| Flag | Description |
+|------|-------------|
+| `-c, --category CATEGORY` | Scan all platforms in a specific category |
+| `-l, --list` | List all available modules for username scanning |
+| `-m, --module MODULE`     | Scan a single specific module |
+| `-p, --permute PERMUTE`   | Generate username permutations using a pattern/suffix |
+| `-s, --stop STOP`         | Limit the number of permutations generated |
+| `-d, --delay DELAY`       | Delay (in seconds) between requests |
+| `-f, --format {csv,json}` | Select output format |
+| `-o, --output OUTPUT`     | Save results to a file |
 
 ---
 
@@ -101,7 +105,6 @@ Update the tool to the latest PyPI version:
 ```bash
 user-scanner -U
 ```
-
 ---
 
 ## Screenshot: 
@@ -122,18 +125,23 @@ user-scanner -U
 
 ---
 
-## Contributing: 
+## Contributing
 
-Modules are organized by category:
+Modules are organized under `user_scanner/`:
 
 ```
 user_scanner/
-├── dev/        # Developer platforms (GitHub, GitLab, etc.)
-├── social/     # Social platforms (Twitter/X, Reddit, Instagram, etc.)
-├── creator/    # Creator platforms (Hashnode, Dev.to, Medium, etc.)
-├── community/  # Community platforms (forums, niche sites)
-├── gaming/     # Gaming sites (chess.com, roblox, monkeytype etc.)
-├── donation/   # Donation taking sites (buymeacoffe.com, similar...)
+├── email_scan/       # Currently in development
+│   └── social/       # Social email scan modules (Instagram, Mastodon, X, etc.)
+|    ...               # New sites to be added soon
+├── user_scan/
+│   ├── dev/          # Developer platforms (GitHub, GitLab, npm, etc.)
+│   ├── social/       # Social platforms (Twitter/X, Reddit, Instagram, Discord, etc.)
+│   ├── creator/      # Creator platforms (Hashnode, Dev.to, Medium, Patreon, etc.)
+│   ├── community/    # Community platforms (forums, StackOverflow, HackerNews, etc.)
+│   ├── gaming/       # Gaming sites (chess.com, Lichess, Roblox, Minecraft, etc.)
+│   └── donation/     # Donation platforms (BuyMeACoffee, Liberapay)
+|...
 ```
 
 **Module guidelines:**
