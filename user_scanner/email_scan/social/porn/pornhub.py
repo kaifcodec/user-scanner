@@ -58,5 +58,5 @@ async def _check(email: str) -> Result:
             return Result.error(e)
 
 
-def validate_pornhub(email: str) -> Result:
-    return _check(email)
+async def validate_pornhub(email: str) -> Result:
+    return await _check(email)
