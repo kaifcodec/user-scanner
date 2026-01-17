@@ -44,5 +44,5 @@ async def _check(email):
 
 
 
-def validate_instagram(email: str) -> Result:
-    return _check(email)
+async def validate_instagram(email: str) -> Result:
+    return await _check(email)

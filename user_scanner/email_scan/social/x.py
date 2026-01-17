@@ -35,5 +35,5 @@ async def _check(email):
             return Result.error(e)
 
 
-def validate_x(email: str) -> Result:
-    return _check(email)
+async def validate_x(email: str) -> Result:
+    return await _check(email)
