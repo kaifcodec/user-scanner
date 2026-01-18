@@ -1,4 +1,5 @@
 from enum import Enum
+from colorama import Fore, Style
 
 DEBUG_MSG = """Result {{
   status: {status},
@@ -6,6 +7,7 @@ DEBUG_MSG = """Result {{
   username: "{username}",
   site_name: "{site_name}",
   category: "{category}",
+  is_email: "{is_email}"
 }}"""
 
 JSON_TEMPLATE = """{{
@@ -35,8 +37,16 @@ class Status(Enum):
     AVAILABLE = 1
     ERROR = 2
 
+    def to_label(self, is_email=False):
+        """Returns the appropriate text label based on the scan type"""
+        if self == Status.ERROR:
+            return "Error"
+        if is_email:
+            return "Registered" if self == Status.TAKEN else "Not Registered"
+        return "Taken" if self == Status.TAKEN else "Available"
+
     def __str__(self):
-        return super().__str__().split(".")[1].capitalize()
+        return self.to_label(is_email=False)
 
 
 class Result:
@@ -47,10 +57,11 @@ class Result:
         self.username = None
         self.site_name = None
         self.category = None
+        self.is_email = False # Track if this is an email result
         self.update(**kwargs)
 
     def update(self, **kwargs):
-        for field in ("username", "site_name", "category"):
+        for field in ("username", "site_name", "category", "is_email"):
             if field in kwargs and kwargs[field] is not None:
                 setattr(self, field, kwargs[field])
 
@@ -92,18 +103,22 @@ class Result:
 
     def as_dict(self) -> dict:
         return {
-            "status": self.status,
+            "status": self.status.to_label(self.is_email), # Use dynamic labels
             "reason": self.get_reason(),
             "username": self.username,
             "site_name": self.site_name,
-            "category": self.category
+            "category": self.category,
+            "is_email": self.is_email
         }
 
     def debug(self) -> str:
         return DEBUG_MSG.format(**self.as_dict())
 
     def to_json(self) -> str:
-        return JSON_TEMPLATE.format(**self.as_dict())
+        msg = JSON_TEMPLATE.format(**self.as_dict())
+        if self.is_email:
+            msg = msg.replace("\t\"username\":", "\t\"email\":")
+        return msg
 
     def to_csv(self) -> str:
         return CSV_TEMPLATE.format(**self.as_dict())
@@ -123,3 +138,19 @@ class Result:
 
         return NotImplemented
 
+    def get_console_output(self) -> str:
+        site_name = self.site_name
+        username = self.username
+        status_text = self.status.to_label(self.is_email)
+
+        if self == Status.AVAILABLE:
+            return f"  {Fore.GREEN}[✔] {site_name} ({username}): {status_text}{Style.RESET_ALL}"
+        elif self == Status.TAKEN:
+            return f"  {Fore.RED}[✘] {site_name} ({username}): {status_text}{Style.RESET_ALL}"
+        elif self == Status.ERROR:
+            reason = ""
+            if isinstance(self, Result) and self.has_reason():
+                reason = f" ({self.get_reason()})"
+            return f"  {Fore.YELLOW}[!] {site_name} ({username}): {status_text}{reason}{Style.RESET_ALL}"
+
+        return ""
