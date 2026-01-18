@@ -1,55 +1,113 @@
 # Contributing to user-scanner
 
-Thanks for contributing! This guide explains how to add or modify platform validators correctly, and it includes the orchestrator helpers (generic_validate and status_validate) used to keep validators small and consistent.
+---
+
+This project separates two kinds of checks:
+
+- Username availability checks (under `user_scanner/user_scan/*`) — synchronous validators that the main username scanner uses.
+- Email OSINT checks (under `user_scanner/email_scan/`) — asynchronous, multi-step flows that probe signup pages or email-focused APIs. Put email-focused modules in `user_scanner/email_scan/` (subfolders like `social/`, `dev/`, `community`, `creator` etc. are fine — follow the existing tree).
+
 
 ---
 
-## Overview
-
-This project contains small "validator" modules that check whether a username exists on a given platform. Each validator is a single function that returns a Result object (see core/orchestrator.py).
-
-Result semantics:
-- Result.available() → available
-- Result.taken() → taken
-- Result.error(message: Optional[str]) → error, blocked, unknown, or request failure (include short diagnostic message when helpful)
-
-Follow this document when adding or updating validators.
-
----
-
-## Folder structure
-
-- `social/` -> Social media platforms (Instagram, Reddit, X, etc.)
-- `dev/` -> Developer platforms (GitHub, GitLab, Kaggle, etc.)
-- `community/` -> Miscellaneous or community-specific platforms
-- Add new directories for new categories as needed.
-
-Example:
-```
-user_scanner/
-├── social/
-|   └── reddit.py
-|    ...
-├── dev/
-|   └── launchpad.py
-|    ...
-└── core/
-    └── orchestrator.py
-     ...
-```
-
-Place each new module in the most relevant folder.
-
----
-
-## Module naming
+## Module naming for both `email_scan` and `user_scan` modules
 
 - File name must be the platform name in lowercase (no spaces or special characters).
   - Examples: `github.py`, `reddit.py`, `x.py`, `pinterest.py`
 
 ---
 
-## Validator function
+
+## Email-scan (email_scan) — guide for contributors
+
+Minimal best-practices checklist for email modules
+- [ ] Put file in `user_scanner/email_scan/<category>/service.py`.
+- [ ] Export `async def validate_<service>(email: str) -> Result`.
+- [ ] Use `httpx.AsyncClient` for requests, with sensible timeouts and follow_redirects when needed.
+- [ ] Add a short docstring describing environment variables (api keys), rate limits, and responsible-use note (if required)
+
+### Example: Mastodon async example:
+
+```python name=user_scanner/email_scan/social/mastodon.py
+import httpx
+import re
+from user_scanner.core.result import Result
+
+
+async def _check(email: str) -> Result:
+    """
+    Internal helper that performs the multi-step signup probe.
+    Returns: Result.available(), Result.taken(), or Result.error(msg)
+    """
+    base_url = "https://mastodon.social"
+    signup_url = f"{base_url}/auth/sign_up"
+    post_url = f"{base_url}/auth"
+
+    headers = {
+        "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "referer": "https://mastodon.social/explore",
+        "origin": "https://mastodon.social",
+    }
+
+    async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=True) as client:
+        try:
+            initial_resp = await client.get(signup_url, timeout=15.0)
+            if initial_resp.status_code != 200:
+                return Result.error(f"Failed to access signup page: {initial_resp.status_code}")
+
+            # Look for CSRF/auth token in the signup HTML
+            token_match = re.search(r'name="csrf-token" content="([^"]+)"', initial_resp.text)
+            if not token_match:
+                return Result.error("Could not find authenticity token")
+
+            csrf_token = token_match.group(1)
+
+            # Use a dummy username & password for the signup probe
+            payload = {
+                "authenticity_token": csrf_token,
+                "user[account_attributes][username]": "no3motions_robot_020102",
+                "user[email]": email,
+                "user[password]": "Theleftalone@me",
+                "user[password_confirmation]": "Theleftalone@me",
+                "user[agreement]": "1",
+                "button": ""
+            }
+
+            response = await client.post(post_url, data=payload, timeout=15.0)
+
+            # Check the response HTML for the "already taken" phrase
+            if "has already been taken" in response.text:
+                return Result.taken()
+            else:
+                # If the response does not show taken, treat as available.
+                # Be aware: services can change wording; prefer explicit checks.
+                return Result.available()
+
+        except Exception as exc:
+            # Convert exception to string so Result.error is stable/serializable
+            return Result.error(str(exc))
+
+
+async def validate_mastodon(email: str) -> Result:
+    """
+    Public validator used by the email mode.
+    - Do basic local validation before network calls.
+    - Return Result.* helpers described above.
+    """
+    if not EMAIL_RE.match(email):
+        return Result.error("Invalid email format")
+    return await _check(email)
+```
+
+
+---
+
+## Username availability check guide:
+
+
+### Validator function (user_scan/)
 
 Each module must expose exactly one validator function named:
 
@@ -66,7 +124,7 @@ Rules:
 
 ---
 
-## Orchestrator helpers
+## Orchestrator helpers (user_scan)
 
 To keep validators DRY, the repository provides helper functions in `core/orchestrator.py`. Use these where appropriate.
 
@@ -177,18 +235,16 @@ Note: The exact parameter names and behavior of the orchestrator functions are d
 - When providing headers, include a User-Agent and reasonable Accept headers.
 - Timeouts should be reasonable (3–10 seconds). The orchestrator will usually expose a timeout parameter.
 
-Example common headers:
-```py
-   headers = {
-      'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
-      'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9",
-      'Accept-Encoding': "gzip, deflate, br, zstd",
-      'Upgrade-Insecure-Requests': "1",
-   }
+---
 
-```
+## When to implement custom logic (user_scan)
+
+- Use `status_validate` when availability is determined by HTTP status codes (e.g., 404 vs 200).
+- Use `generic_validate` when you need to inspect response content or headers and decide availability via a short callback that returns a Result.
+- If a platform requires API keys, OAuth, or heavy JS rendering, document it in the PR and consider an "advanced" module that can be enabled separately.
 
 ---
+
 
 ## Return values and error handling
 
@@ -216,28 +272,6 @@ except Exception:
 - Keep code readable and small.
 - Add docstrings to explain non-obvious heuristics.
 - Run linters and formatters before opening a PR (pre-commit is recommended).
-
----
-
-## Pull request checklist
-
-Before opening a PR:
-- [x] Add the new validator file in the appropriate folder.
-- [x] Prefer using `generic_validate` or `status_validate` where applicable.
-- [x] Ensure imports are valid and package can be imported.
-
-When opening the PR:
-- Describe the approach, any heuristics used, and potential edge cases.
-- If the platform has rate limits or anti-bot measures, note them and recommend a testing approach.
-- If you return Result.error with a message, include why and any reproducible steps if available.
-
----
-
-## When to implement custom logic
-
-- Use `status_validate` when availability is determined by HTTP status codes (e.g., 404 vs 200).
-- Use `generic_validate` when you need to inspect response content or headers and decide availability via a short callback that returns a Result.
-- If a platform requires API keys, OAuth, or heavy JS rendering, document it in the PR and consider an "advanced" module that can be enabled separately.
 
 ---
 
