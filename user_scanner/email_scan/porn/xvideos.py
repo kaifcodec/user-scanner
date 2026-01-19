@@ -43,8 +43,5 @@ async def _check(email: str) -> Result:
             return Result.error(e)
 
 
-def validate_xvideos(email: str) -> Result:
-    """
-    Standard entry point for the XVideos email scanner.
-    """
-    return _check(email)
+async def validate_xvideos(email: str) -> Result:
+    return await _check(email)

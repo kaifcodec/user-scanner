@@ -40,5 +40,5 @@ async def _check(email: str) -> Result:
         except Exception as e:
             return Result.error(e)
 
-def validate_xnxx(email: str) -> Result:
-    return _check(email)
+async def validate_xnxx(email: str) -> Result:
+    return await _check(email)
