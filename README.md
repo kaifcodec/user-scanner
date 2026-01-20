@@ -33,8 +33,7 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Option to select results format (**JSON**, **CSV**, console).  
 - ✅ Save scanning and OSINT results in the preferred format and output file (ideal for power users).  
 - ✅ Command-line interface ready: works immediately after `pip install`.  
-- ✅ Lightweight with minimal dependencies; runs on any machine.
-
+- ✅ Lightweight with minimal dependencies; runs on any machine.- ✅ **Proxy support** with round-robin rotation (contributed by [moh-saidi](https://github.com/moh-saidi))
 ---
 
 ## Installation
