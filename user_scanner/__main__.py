@@ -52,6 +52,8 @@ def main():
     group.add_argument("-u", "--username",
                        help="Username to scan across platforms")
     group.add_argument("-e", "--email", help="Email to scan across platforms")
+    group.add_argument("-uf", "--username-file",
+                       help="File containing usernames (one per line)")
 
     parser.add_argument("-c", "--category",
                         help="Scan all platforms in a category")
@@ -109,7 +111,7 @@ def main():
                 print(f"  - {get_site_name(module)}")
         return
 
-    if not (args.username or args.email):
+    if not (args.username or args.email or args.username_file):
         parser.print_help()
         return
 
@@ -126,19 +128,42 @@ def main():
     check_for_updates()
     print_banner()
 
-    is_email = args.email is not None
-    if is_email and not re.findall(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", args.email):
-        print(R + "[✘] Error: Invalid email format." + X)
-        sys.exit(1)
+    # Handle bulk username file
+    if args.username_file:
+        try:
+            with open(args.username_file, 'r', encoding='utf-8') as f:
+                usernames = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+            if not usernames:
+                print(f"{R}[✘] Error: No valid usernames found in {args.username_file}{X}")
+                sys.exit(1)
+            print(f"{C}[+] Loaded {len(usernames)} usernames from {args.username_file}{X}")
+            is_email = False
+            targets = usernames
+        except FileNotFoundError:
+            print(f"{R}[✘] Error: File not found: {args.username_file}{X}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"{R}[✘] Error reading username file: {e}{X}")
+            sys.exit(1)
+    else:
+        is_email = args.email is not None
+        if is_email and not re.findall(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", args.email):
+            print(R + "[✘] Error: Invalid email format." + X)
+            sys.exit(1)
 
-    target_name = args.username or args.email
-    targets = [target_name]
+        target_name = args.username or args.email
+        targets = [target_name]
 
-    if args.permute:
+    # Handle permutations (only for single username/email)
+    if args.permute and not args.username_file:
+        target_name = args.username or args.email
         targets = generate_permutations(
             target_name, args.permute, args.stop, is_email)
         print(
             C + f"[+] Generated {len(targets)} permutations" + Style.RESET_ALL)
+    elif args.permute and args.username_file:
+        print(f"{R}[✘] Error: Permutations not supported with username file{X}")
+        sys.exit(1)
 
     results = []
 

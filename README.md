@@ -33,7 +33,9 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Option to select results format (**JSON**, **CSV**, console).  
 - ✅ Save scanning and OSINT results in the preferred format and output file (ideal for power users).  
 - ✅ Command-line interface ready: works immediately after `pip install`.  
-- ✅ Lightweight with minimal dependencies; runs on any machine.- ✅ **Proxy support** with round-robin rotation (contributed by [moh-saidi](https://github.com/moh-saidi))
+- ✅ Lightweight with minimal dependencies; runs on any machine.
+- ✅ **Proxy support** with round-robin rotation (contributed by [moh-saidi](https://github.com/moh-saidi))
+- ✅ **Bulk username scanning** from file support for checking multiple usernames at once (contributed by [moh-saidi](https://github.com/moh-saidi))
 ---
 
 ## Installation
@@ -57,6 +59,22 @@ user-scanner --email john_doe@gmail.com # long version
 user-scanner -u john_doe
 user-scanner --username john_doe # long version
 
+```
+
+### Bulk username scanning
+
+Scan multiple usernames from a file (one username per line):
+
+```bash
+user-scanner -uf usernames.txt
+user-scanner --username-file usernames.txt # long version
+```
+
+Combine with categories or modules:
+
+```bash
+user-scanner -uf usernames.txt -c dev # scan multiple users on dev platforms only
+user-scanner -uf usernames.txt -m github # scan multiple users on GitHub only
 ```
 
 ### Selective scanning
@@ -98,6 +116,9 @@ See [PROXY_USAGE.md](PROXY_USAGE.md) for detailed proxy configuration and usage.
 
 | Flag | Description |
 |------|-------------|
+| `-u, --username USERNAME` | Scan a single username across platforms |
+| `-e, --email EMAIL`       | Scan a single email across platforms |
+| `-uf, --username-file FILE` | Scan multiple usernames from file (one per line) |
 | `-c, --category CATEGORY` | Scan all platforms in a specific category |
 | `-l, --list` | List all available modules for username scanning |
 | `-m, --module MODULE`     | Scan a single specific module |
