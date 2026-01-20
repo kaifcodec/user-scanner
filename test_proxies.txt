@@ -1,5 +1,0 @@
-# Test proxy file
-http://proxy1.test.com:8080
-http://proxy2.test.com:3128
-https://proxy3.test.com:443
-192.168.1.100:8888
