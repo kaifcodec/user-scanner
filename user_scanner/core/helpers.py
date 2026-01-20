@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import random
 import threading
+import httpx
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def get_site_name(module) -> str:
@@ -95,6 +97,30 @@ def generate_permutations(username: str, pattern: str, limit: int | None = None,
                 return sorted(permutations_set)
 
     return sorted(permutations_set)
+
+
+def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int = 50) -> List[str]:
+    """Validate proxies by testing them against google.com. Returns list of working proxies."""
+    working_proxies = []
+    
+    def test_proxy(proxy: str) -> Optional[str]:
+        try:
+            with httpx.Client(proxy=proxy, timeout=timeout) as client:
+                response = client.get("https://www.google.com")
+                if response.status_code == 200:
+                    return proxy
+        except:
+            pass
+        return None
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(test_proxy, proxy): proxy for proxy in proxy_list}
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                working_proxies.append(result)
+    
+    return working_proxies
 
 
 class ProxyManager:

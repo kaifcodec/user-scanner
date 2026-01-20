@@ -1,0 +1,7 @@
+# Test emails for bulk scanning
+john.doe@gmail.com
+alice.smith@yahoo.com
+testuser@outlook.com
+developer123@proton.me
+invalid-email-no-at
+coder@example.com

@@ -35,7 +35,9 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Command-line interface ready: works immediately after `pip install`.  
 - ✅ Lightweight with minimal dependencies; runs on any machine.
 - ✅ **Proxy support** with round-robin rotation (contributed by [moh-saidi](https://github.com/moh-saidi))
+- ✅ **Proxy validation** to test and filter working proxies before scanning (contributed by [moh-saidi](https://github.com/moh-saidi))
 - ✅ **Bulk username scanning** from file support for checking multiple usernames at once (contributed by [moh-saidi](https://github.com/moh-saidi))
+- ✅ **Bulk email scanning** from file support for checking multiple emails at once (contributed by [moh-saidi](https://github.com/moh-saidi))
 ---
 
 ## Installation
@@ -77,6 +79,22 @@ user-scanner -uf usernames.txt -c dev # scan multiple users on dev platforms onl
 user-scanner -uf usernames.txt -m github # scan multiple users on GitHub only
 ```
 
+### Bulk email scanning
+
+Scan multiple emails from a file (one email per line):
+
+```bash
+user-scanner -ef emails.txt
+user-scanner --email-file emails.txt # long version
+```
+
+Combine with categories or modules:
+
+```bash
+user-scanner -ef emails.txt -c social # scan multiple emails on social platforms
+user-scanner -ef emails.txt -m instagram # scan multiple emails on Instagram
+```
+
 ### Selective scanning
 
 Scan only specific categories or single modules:
@@ -110,6 +128,18 @@ Route requests through proxy servers:
 user-scanner -u john_doe -P proxies.txt
 ```
 
+Validate proxies before scanning (tests each proxy against google.com):
+
+```bash
+user-scanner -u john_doe -P proxies.txt --validate-proxies
+```
+
+This will:
+1. Test all proxies from the file
+2. Filter out non-working proxies
+3. Save working proxies to `validated_proxies.txt`
+4. Use only validated proxies for scanning
+
 See [PROXY_USAGE.md](PROXY_USAGE.md) for detailed proxy configuration and usage.
 
 ## Important Flags
@@ -119,11 +149,13 @@ See [PROXY_USAGE.md](PROXY_USAGE.md) for detailed proxy configuration and usage.
 | `-u, --username USERNAME` | Scan a single username across platforms |
 | `-e, --email EMAIL`       | Scan a single email across platforms |
 | `-uf, --username-file FILE` | Scan multiple usernames from file (one per line) |
+| `-ef, --email-file FILE`  | Scan multiple emails from file (one per line) |
 | `-c, --category CATEGORY` | Scan all platforms in a specific category |
 | `-l, --list` | List all available modules for username scanning |
 | `-m, --module MODULE`     | Scan a single specific module |
 | `-p, --permute PERMUTE`   | Generate username permutations using a pattern/suffix |
 | `-P, --proxy-file FILE`   | Use proxies from file (one per line) |
+| `--validate-proxies`      | Validate proxies before scanning (tests against google.com) |
 | `-s, --stop STOP`         | Limit the number of permutations generated |
 | `-d, --delay DELAY`       | Delay (in seconds) between requests |
 | `-f, --format {csv,json}` | Select output format |
