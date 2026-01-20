@@ -4,7 +4,7 @@ from typing import List
 from types import ModuleType
 from colorama import Fore, Style
 
-from user_scanner.core.helpers import load_categories, load_modules, find_category
+from user_scanner.core.helpers import load_categories, load_modules, find_category, get_proxy
 from user_scanner.core.result import Result
 
 # Concurrency control

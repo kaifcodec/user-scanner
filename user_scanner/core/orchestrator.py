@@ -5,7 +5,7 @@ from pathlib import Path
 from user_scanner.core.result import Result
 from typing import Callable, List
 from types import ModuleType
-from user_scanner.core.helpers import find_category,  get_site_name, load_categories, load_modules
+from user_scanner.core.helpers import find_category,  get_site_name, load_categories, load_modules, get_proxy
 
 
 def _worker_single(module: ModuleType, username: str) -> Result:
@@ -78,6 +78,12 @@ def make_request(url: str, **kwargs) -> httpx.Response:
 
     if "timeout" not in kwargs:
         kwargs["timeout"] = 5.0
+
+    # Add proxy if available and not already set
+    if "proxy" not in kwargs:
+        proxy = get_proxy()
+        if proxy:
+            kwargs["proxy"] = proxy
 
     method = kwargs.pop("method", "GET")
 

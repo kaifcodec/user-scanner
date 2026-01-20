@@ -15,7 +15,9 @@ from user_scanner.core.helpers import (
     load_modules,
     find_module,
     get_site_name,
-    generate_permutations
+    generate_permutations,
+    set_proxy_manager,
+    get_proxy_count
 )
 
 from user_scanner.core.orchestrator import (
@@ -77,6 +79,9 @@ def main():
     parser.add_argument("-o", "--output", type=str, help="Output file path")
 
     parser.add_argument(
+        "-P", "--proxy-file", type=str, help="Path to proxy list file (one proxy per line)")
+
+    parser.add_argument(
         "-U", "--update", action="store_true", help="Update the tool")
 
     parser.add_argument("--version", action="store_true", help="Print version")
@@ -107,6 +112,16 @@ def main():
     if not (args.username or args.email):
         parser.print_help()
         return
+
+    # Initialize proxy manager if proxy file is provided
+    if args.proxy_file:
+        try:
+            set_proxy_manager(args.proxy_file)
+            proxy_count = get_proxy_count()
+            print(f"{G}[+] Loaded {proxy_count} proxies from {args.proxy_file}{X}")
+        except Exception as e:
+            print(f"{R}[✘] Error loading proxies: {e}{X}")
+            sys.exit(1)
 
     check_for_updates()
     print_banner()

@@ -85,6 +85,16 @@ Generate & check username variations using a permutation from the given suffix:
 user-scanner -u john_ -p ab # john_a, ..., john_ab, john_ba
 ```
 
+### Using Proxies
+
+Route requests through proxy servers:
+
+```bash
+user-scanner -u john_doe -P proxies.txt
+```
+
+See [PROXY_USAGE.md](PROXY_USAGE.md) for detailed proxy configuration and usage.
+
 ## Important Flags
 
 | Flag | Description |
@@ -93,6 +103,7 @@ user-scanner -u john_ -p ab # john_a, ..., john_ab, john_ba
 | `-l, --list` | List all available modules for username scanning |
 | `-m, --module MODULE`     | Scan a single specific module |
 | `-p, --permute PERMUTE`   | Generate username permutations using a pattern/suffix |
+| `-P, --proxy-file FILE`   | Use proxies from file (one per line) |
 | `-s, --stop STOP`         | Limit the number of permutations generated |
 | `-d, --delay DELAY`       | Delay (in seconds) between requests |
 | `-f, --format {csv,json}` | Select output format |
