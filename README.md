@@ -20,8 +20,6 @@ Perfect for fast, accurate and lightweight email OSINT
 
 Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instagram, and more, all in a single command.  
 
-> **Note:** Originally based on [user-scanner](https://github.com/kaifcodec/user-scanner) by kaifcodec, significantly enhanced with proxy support, bulk scanning, and email validation.
-
 ## Features
 
 - ✅ Check an email across multiple sites to see if it’s registered.  
@@ -36,10 +34,10 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Save scanning and OSINT results in the preferred format and output file (ideal for power users).  
 - ✅ Command-line interface ready: works immediately after `pip install`.  
 - ✅ Lightweight with minimal dependencies; runs on any machine.
-- ✅ **Proxy support** with round-robin rotation (contributed by [moh-saidi](https://github.com/moh-saidi))
-- ✅ **Proxy validation** to test and filter working proxies before scanning (contributed by [moh-saidi](https://github.com/moh-saidi))
-- ✅ **Bulk username scanning** from file support for checking multiple usernames at once (contributed by [moh-saidi](https://github.com/moh-saidi))
-- ✅ **Bulk email scanning** from file support for checking multiple emails at once (contributed by [moh-saidi](https://github.com/moh-saidi))
+- ✅ **Proxy support** with round-robin rotation
+- ✅ **Proxy validation** to test and filter working proxies before scanning
+- ✅ **Bulk username scanning** from file support for checking multiple usernames at once
+- ✅ **Bulk email scanning** from file support for checking multiple emails at once
 ---
 
 ## Installation
