@@ -140,8 +140,6 @@ This will:
 3. Save working proxies to `validated_proxies.txt`
 4. Use only validated proxies for scanning
 
-See [PROXY_USAGE.md](PROXY_USAGE.md) for detailed proxy configuration and usage.
-
 ## Important Flags
 
 | Flag | Description |
