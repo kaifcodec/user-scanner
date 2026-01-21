@@ -109,7 +109,7 @@ def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int =
                 response = client.get("https://www.google.com")
                 if response.status_code == 200:
                     return proxy
-        except:
+        except Exception:
             pass
         return None
     
