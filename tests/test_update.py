@@ -1,5 +1,10 @@
 from user_scanner.utils import updater_logic as ul
 
+def test_default_config():
+    configs = ul.load_config()
+    assert "auto_update_status" in configs
+    # Make sure config.json has "auto_update_status" set to true
+    assert configs["auto_update_status"]
 
 def test_config_json(tmp_path, monkeypatch):
     cfg = tmp_path / "config.json"
