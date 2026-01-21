@@ -15,7 +15,7 @@ async def _check(email):
         "origin": "https://mastodon.social"
     }
 
-    async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=True) as client:
+    async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=False) as client:
         try:
             initial_resp = await client.get(signup_url)
             if initial_resp.status_code != 200:
@@ -39,12 +39,16 @@ async def _check(email):
             }
 
             response = await client.post(post_url, data=payload)
-
-            if "has already been taken" in response.text:
+            res_text = response.text
+            res_status = response.status_code
+            if "has already been taken" in res_text:
                 return Result.taken()
-            else:
+            elif "has already been taken" not in res_text and res_status == 200:
                 return Result.available()
-
+            elif res_status == 429:
+                return Result.error("Rate limited, use '-d' flag to avoid bot detection")
+            else:
+                return Result.error("Unexpected error, report it via GitHub issues")
         except Exception as e:
             return Result.error(e)
 
