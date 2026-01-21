@@ -127,7 +127,7 @@ class ProxyManager:
     """Thread-safe proxy manager that loads and rotates proxies from a file."""
     
     def __init__(self, proxy_file: str):
-        self.proxies = []
+        self.proxies: list[str] = []
         self.current_index = 0
         self.lock = threading.Lock()
         self._load_proxies(proxy_file)
