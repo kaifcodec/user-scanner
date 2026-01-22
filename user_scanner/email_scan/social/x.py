@@ -21,15 +21,17 @@ async def _check(email):
             response = await client.get(url, params=params, headers=headers)
 
             if response.status_code == 429:
-                return Result.error("Rate limited wait for few minutes")
+                return Result.error("Rate limited wait for few minutes or use '-d' flag")
 
             data = response.json()
             taken_bool = data.get("taken")
 
             if taken_bool is True:
                 return Result.taken()
-            else:
+            elif taken_bool is False:
                 return Result.available()
+            else:
+                return Result.error("Unexpected error, report it via GitHub issues")
 
         except Exception as e:
             return Result.error(e)

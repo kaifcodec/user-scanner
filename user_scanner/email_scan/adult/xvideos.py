@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     url = "https://www.xvideos.com/account/checkemail"
     params = {'email': email}
@@ -8,7 +9,7 @@ async def _check(email: str) -> Result:
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
         'Accept': "application/json, text/javascript, */*; q=0.01",
-        'Accept-Encoding': "gzip, deflate, br, zstd",
+        'Accept-Encoding': "identity",
         'X-Requested-With': "XMLHttpRequest",
         'sec-ch-ua-platform': "\"Android\"",
         'sec-ch-ua': "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
@@ -32,12 +33,14 @@ async def _check(email: str) -> Result:
 
             data = response.json()
 
-            is_taken = data.get("result") is False and data.get("code") == 1
+            exists_bool = data.get("result")
 
-            if is_taken:
+            if exists_bool is True:
+                return Result.available()
+            elif exists_bool is False:
                 return Result.taken()
             else:
-                return Result.available()
+                return Result.error("Unexpected error, report it via GitHub issues")
 
         except Exception as e:
             return Result.error(e)
