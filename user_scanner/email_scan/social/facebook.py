@@ -11,16 +11,6 @@ async def _check(email: str) -> Result:
                 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
                 'Accept-Encoding': "identity",
                 'sec-ch-ua': '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
-                'sec-ch-ua-mobile': "?0",
-                'sec-ch-ua-platform': '"Linux"',
-                'upgrade-insecure-requests': "1",
-                'sec-fetch-site': "cross-site",
-                'sec-fetch-mode': "navigate",
-                'sec-fetch-user': "?1",
-                'sec-fetch-dest': "document",
-                'referer': "https://www.google.com/",
-                'accept-language': "en-US,en;q=0.9",
-                'priority': "u=0, i"
             }
             await client.get(url1, headers=headers1)
 
@@ -93,13 +83,14 @@ async def _check(email: str) -> Result:
 
             if "redirectPageTo" in body and "ServerRedirect" in body:
                 return Result.taken()
-            elif "No search results" in body:
+            elif "No search results" in body or "Your search did not return any results." in body:
                 return Result.available()
             else:
-                return Result.error("Unexpected error, Report it via github issues")
+                return Result.error("Unexpected error, report it via GitHub issues")
 
         except Exception as e:
             return Result.error(f"Unexpected exception: {e}")
 
 async def validate_facebook(email: str) -> Result:
     return await _check(email)
+
