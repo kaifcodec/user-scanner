@@ -48,6 +48,27 @@ pip install user-scanner
 
 ---
 
+## Important Flags
+
+| Flag | Description |
+|------|-------------|
+| `-u, --username USERNAME` | Scan a single username across platforms |
+| `-e, --email EMAIL`       | Scan a single email across platforms |
+| `-uf, --username-file FILE` | Scan multiple usernames from file (one per line) |
+| `-ef, --email-file FILE`  | Scan multiple emails from file (one per line) |
+| `-c, --category CATEGORY` | Scan all platforms in a specific category |
+| `-l, --list` | List all available modules for username scanning |
+| `-m, --module MODULE`     | Scan a single specific module |
+| `-p, --permute PERMUTE`   | Generate username permutations using a pattern/suffix |
+| `-P, --proxy-file FILE`   | Use proxies from file (one per line) |
+| `--validate-proxies`      | Validate proxies before scanning (tests against google.com) |
+| `-s, --stop STOP`         | Limit the number of permutations generated |
+| `-d, --delay DELAY`       | Delay (in seconds) between requests |
+| `-f, --format {csv,json}` | Select output format |
+| `-o, --output OUTPUT`     | Save results to a file |
+
+---
+
 ## Usage
 
 ### Basic username/email scan
@@ -60,39 +81,6 @@ user-scanner --email john_doe@gmail.com # long version
 
 user-scanner -u john_doe
 user-scanner --username john_doe # long version
-
-```
-
-### Bulk username scanning
-
-Scan multiple usernames from a file (one username per line):
-
-```bash
-user-scanner -uf usernames.txt
-user-scanner --username-file usernames.txt # long version
-```
-
-Combine with categories or modules:
-
-```bash
-user-scanner -uf usernames.txt -c dev # scan multiple users on dev platforms only
-user-scanner -uf usernames.txt -m github # scan multiple users on GitHub only
-```
-
-### Bulk email scanning
-
-Scan multiple emails from a file (one email per line):
-
-```bash
-user-scanner -ef emails.txt
-user-scanner --email-file emails.txt # long version
-```
-
-Combine with categories or modules:
-
-```bash
-user-scanner -ef emails.txt -c social # scan multiple emails on social platforms
-user-scanner -ef emails.txt -m instagram # scan multiple emails on Instagram
 ```
 
 ### Selective scanning
@@ -102,14 +90,25 @@ Scan only specific categories or single modules:
 ```bash
 user-scanner -u john_doe -c dev # developer platforms only
 user-scanner -u john_doe -m github # only GitHub
-
 ```
 
-List all available modules/categories:
+### Bulk username scanning
+
+Scan multiple usernames from a file (one username per line):
+- Can also be combined with categories or modules using `-c` and `-m` flags
 
 ```bash
-user-scanner -l
+user-scanner -uf usernames.txt
+```
 
+
+### Bulk email scanning
+
+Scan multiple emails from a file (one email per line):
+- Can also be combined with categories or modules using `-c` and `-m` flags
+
+```bash
+user-scanner -ef emails.txt
 ```
 
 ### Username/Email variations (suffix only)
@@ -131,7 +130,7 @@ user-scanner -u john_doe -P proxies.txt
 Validate proxies before scanning (tests each proxy against google.com):
 
 ```bash
-user-scanner -u john_doe -P proxies.txt --validate-proxies
+user-scanner -u john_doe -P proxies.txt --validate-proxies # recommended
 ```
 
 This will:
@@ -139,25 +138,6 @@ This will:
 2. Filter out non-working proxies
 3. Save working proxies to `validated_proxies.txt`
 4. Use only validated proxies for scanning
-
-## Important Flags
-
-| Flag | Description |
-|------|-------------|
-| `-u, --username USERNAME` | Scan a single username across platforms |
-| `-e, --email EMAIL`       | Scan a single email across platforms |
-| `-uf, --username-file FILE` | Scan multiple usernames from file (one per line) |
-| `-ef, --email-file FILE`  | Scan multiple emails from file (one per line) |
-| `-c, --category CATEGORY` | Scan all platforms in a specific category |
-| `-l, --list` | List all available modules for username scanning |
-| `-m, --module MODULE`     | Scan a single specific module |
-| `-p, --permute PERMUTE`   | Generate username permutations using a pattern/suffix |
-| `-P, --proxy-file FILE`   | Use proxies from file (one per line) |
-| `--validate-proxies`      | Validate proxies before scanning (tests against google.com) |
-| `-s, --stop STOP`         | Limit the number of permutations generated |
-| `-d, --delay DELAY`       | Delay (in seconds) between requests |
-| `-f, --format {csv,json}` | Select output format |
-| `-o, --output OUTPUT`     | Save results to a file |
 
 ---
 
@@ -192,7 +172,8 @@ Modules are organized under `user_scanner/`:
 ```
 user_scanner/
 ├── email_scan/       # Currently in development
-│   └── social/       # Social email scan modules (Instagram, Mastodon, X, etc.)
+│   ├── social/       # Social email scan modules (Instagram, Mastodon, X, etc.)
+|   ├── adult/        # Adult sites 
 |    ...               # New sites to be added soon
 ├── user_scan/
 │   ├── dev/          # Developer platforms (GitHub, GitLab, npm, etc.)
