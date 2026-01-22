@@ -49,9 +49,11 @@ def main():
     )
 
     group = parser.add_mutually_exclusive_group(required=False)
+
     group.add_argument("-u", "--username",
                        help="Username to scan across platforms")
     group.add_argument("-e", "--email", help="Email to scan across platforms")
+
     group.add_argument("-uf", "--username-file",
                        help="File containing usernames (one per line)")
     group.add_argument("-ef", "--email-file",
@@ -62,8 +64,12 @@ def main():
 
     parser.add_argument("-m", "--module", help="Scan a single specific module")
 
-    parser.add_argument("-l", "--list", action="store_true",
+
+    parser.add_argument("-lu", "--list-user", action="store_true",
                         help="List all available modules for username scanning")
+
+    parser.add_argument("-le", "--list-email", action="store_true",
+                        help="List all available modules for email scanning")
 
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Enable verbose output")
@@ -106,9 +112,18 @@ def main():
         print(f"user-scanner current version -> {G}{version}{X}")
         sys.exit(0)
 
-    if args.list:
-        is_email_list = args.email is not None
-        categories = load_categories(is_email_list)
+    if args.list_user:
+        categories = load_categories()
+        for cat_name, cat_path in categories.items():
+            modules = load_modules(cat_path)
+            print(Fore.MAGENTA +
+                  f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
+            for module in modules:
+                print(f"  - {get_site_name(module)}")
+        return
+
+    if args.list_email:
+        categories = load_categories(is_email=True)
         for cat_name, cat_path in categories.items():
             modules = load_modules(cat_path)
             print(Fore.MAGENTA +
