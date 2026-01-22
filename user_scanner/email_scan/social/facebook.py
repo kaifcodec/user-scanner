@@ -45,8 +45,14 @@ async def _check(email: str) -> Result:
             res2 = await client.get(url2, params=params2, headers=headers2)
             html = res2.text
 
-            jazoest = re.search(r'name="jazoest" value="(\d+)"', html).group(1)
-            lsd = re.search(r'name="lsd" value="([^"]+)"', html).group(1)
+            j_match = re.search(r'name="jazoest" value="(\d+)"', html)
+            l_match = re.search(r'name="lsd" value="([^"]+)"', html)
+
+            if not j_match or not l_match:
+                return Result.error("Failed to extract tokens (LSD/Jazoest)")
+
+            jazoest = j_match.group(1)
+            lsd = l_match.group(1)
 
             url3 = "https://www.facebook.com/ajax/login/help/identify.php"
             params3 = {'ctx': "recover"}
@@ -93,7 +99,7 @@ async def _check(email: str) -> Result:
                 return Result.error("Unexpected error, Report it via github issues")
 
         except Exception as e:
-            return Result.error(f"Unexpected exception: {e} ")
+            return Result.error(f"Unexpected exception: {e}")
 
 async def validate_facebook(email: str) -> Result:
     return await _check(email)
