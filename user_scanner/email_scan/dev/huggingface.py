@@ -14,7 +14,7 @@ async def _check(email: str) -> Result:
 
     async with httpx.AsyncClient(http2=True) as client:
         try:
-            response = await client.get(url, params=params, headers=headers)
+            response = await client.get(url, params=params, headers=headers, timeout=5)
 
             if response.status_code == 429:
                 return Result.error("Rate limited wait for few minutes")
