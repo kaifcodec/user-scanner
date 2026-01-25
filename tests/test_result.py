@@ -1,4 +1,4 @@
-from user_scanner.core.result import Status, Result
+from user_scanner.core.result import Result, Status
 
 
 def test_status():
@@ -32,11 +32,26 @@ def test_equality():
 
 def test_get_reason():
     assert Result.available().get_reason() == ""
-    assert Result.error("An error").get_reason() == "An error"
+    assert Result.available("reason").get_reason() == "reason"
+    assert Result.available(Exception("reason")).get_reason() == "Exception: Reason"
+
+    assert Result.taken().get_reason() == ""
+    assert Result.taken("reason").get_reason() == "reason"
+    assert Result.taken(Exception("reason")).get_reason() == "Exception: Reason"
+
+    assert Result.error().get_reason() == ""
+    assert Result.error("reason").get_reason() == "reason"
+    assert Result.error(Exception("reason")).get_reason() == "Exception: Reason"
 
 
 def test_has_reason():
     assert not Result.available().has_reason()
+    assert Result.available("Has reason").has_reason()
+
+    assert not Result.taken().has_reason()
+    assert Result.taken("Has reason").has_reason()
+
+    assert not Result.error().has_reason()
     assert Result.error("Has reason").has_reason()
 
 

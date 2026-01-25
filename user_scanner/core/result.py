@@ -1,4 +1,5 @@
 from enum import Enum
+
 from colorama import Fore, Style
 
 DEBUG_MSG = """Result {{
@@ -53,7 +54,7 @@ class Result:
         self.username = None
         self.site_name = None
         self.category = None
-        self.is_email = False 
+        self.is_email = False
         self.update(**kwargs)
 
     def update(self, **kwargs):
@@ -62,12 +63,12 @@ class Result:
                 setattr(self, field, kwargs[field])
 
     @classmethod
-    def taken(cls, **kwargs):
-        return cls(Status.TAKEN, **kwargs)
+    def taken(cls, reason: str | Exception | None = None, **kwargs):
+        return cls(Status.TAKEN, reason, **kwargs)
 
     @classmethod
-    def available(cls, **kwargs):
-        return cls(Status.AVAILABLE, **kwargs)
+    def available(cls, reason: str | Exception | None = None, **kwargs):
+        return cls(Status.AVAILABLE, reason, **kwargs)
 
     @classmethod
     def error(cls, reason: str | Exception | None = None, **kwargs):
@@ -79,7 +80,7 @@ class Result:
             status = Status(i)
         except ValueError:
             return cls(Status.ERROR, "Invalid status. Please contact maintainers.")
-        return cls(status,  reason if status == Status.ERROR else None)
+        return cls(status, reason)
 
     def to_number(self) -> int:
         return self.status.value
@@ -102,7 +103,7 @@ class Result:
             "username": self.username,
             "site_name": self.site_name,
             "category": self.category,
-            "is_email": self.is_email
+            "is_email": self.is_email,
         }
 
     def debug(self) -> str:
@@ -111,7 +112,7 @@ class Result:
     def to_json(self) -> str:
         msg = JSON_TEMPLATE.format(**self.as_dict())
         if self.is_email:
-            msg = msg.replace("\t\"username\":", "\t\"email\":")
+            msg = msg.replace('\t"username":', '\t"email":')
         return msg
 
     def to_csv(self) -> str:
@@ -129,22 +130,29 @@ class Result:
             return self.to_number() == other
         return NotImplemented
 
+    def get_output_color(self) -> str:
+        if self == Status.ERROR:
+            return Fore.YELLOW
+        elif self.is_email:
+            return Fore.GREEN if self == Status.TAKEN else Fore.RED
+        else:
+            return Fore.GREEN if self == Status.AVAILABLE else Fore.RED
+
+    def get_output_icon(self) -> str:
+        if self == Status.ERROR:
+            return "[!]"
+        elif self.is_email:
+            return "[✔]" if self == Status.TAKEN else "[✘]"
+        else:
+            return "[✔]" if self == Status.AVAILABLE else "[✘]"
+
     def get_console_output(self) -> str:
         site_name = self.site_name
         username = self.username
         status_text = self.status.to_label(self.is_email)
 
-        if self.is_email:
-            color = Fore.GREEN if self == Status.TAKEN else Fore.RED
-            icon = "[✔]" if self == Status.TAKEN else "[✘]"
-        else:
-            color = Fore.GREEN if self == Status.AVAILABLE else Fore.RED
-            icon = "[✔]" if self == Status.AVAILABLE else "[✘]"
+        color = self.get_output_color()
+        icon = self.get_output_icon()
 
-        if self == Status.AVAILABLE or self == Status.TAKEN:
-            return f"  {color}{icon} {site_name} ({username}): {status_text}{Style.RESET_ALL}"
-        elif self == Status.ERROR:
-            reason = f" ({self.get_reason()})" if self.has_reason() else ""
-            return f"  {Fore.YELLOW}[!] {site_name} ({username}): {status_text}{reason}{Style.RESET_ALL}"
-
-        return ""
+        reason = f" ({self.get_reason()})" if self.has_reason() else ""
+        return f"  {color}{icon} {site_name} ({username}): {status_text}{reason}{Style.RESET_ALL}"
