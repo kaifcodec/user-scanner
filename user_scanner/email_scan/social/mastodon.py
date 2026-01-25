@@ -43,12 +43,14 @@ async def _check(email):
             res_status = response.status_code
             if "has already been taken" in res_text:
                 return Result.taken()
-            elif "has already been taken" not in res_text and res_status == 200:
-                return Result.available()
             elif res_status == 429:
                 return Result.error("Rate limited, use '-d' flag to avoid bot detection")
+            elif res_status in [200, 302]:
+                # 302 indicates successful form submission with redirect (normal signup flow)
+                # 200 indicates success without redirect
+                return Result.available()
             else:
-                return Result.error("Unexpected error, report it via GitHub issues")
+                return Result.error(f"Unexpected response: {res_status}")
         except Exception as e:
             return Result.error(e)
 
