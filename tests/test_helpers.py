@@ -39,13 +39,14 @@ def test_get_site_name():
 def run_main(monkeypatch):
     def _run(args):
         monkeypatch.setattr(sys, "argv", ["user-scanner"] + args)
-        monkeypatch.setattr("user_scanner.utils.updater_logic.check_for_updates", lambda: None)
-        monkeypatch.setattr("user_scanner.utils.update.update_self", lambda: None)
+        monkeypatch.setattr("user_scanner.__main__.check_for_updates", lambda: None)
+        monkeypatch.setattr("user_scanner.__main__.update_self", lambda: None)
+        monkeypatch.setattr("user_scanner.__main__.print_banner", lambda: None)
         monkeypatch.setattr(
-            "user_scanner.core.email_orchestrator.run_email_module_batch",
+            "user_scanner.__main__.run_email_module_batch",
             lambda m, t: [Result.taken(username=t, site_name=m, is_email=True)])
         monkeypatch.setattr(
-        "user_scanner.core.orchestrator.run_user_module",
+        "user_scanner.__main__.run_user_module",
         lambda module, target: [Result.taken(username=target, site_name=module, is_email=False)]
         )
         try:
