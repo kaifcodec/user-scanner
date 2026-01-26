@@ -50,7 +50,7 @@ async def _check(email):
                 # 200 indicates success without redirect
                 return Result.available()
             else:
-                return Result.error(f"Unexpected response: {res_status}")
+                return Result.error(f"[{res_status}] Unexpected response, report it via GitHub issues")
         except Exception as e:
             return Result.error(e)
 
