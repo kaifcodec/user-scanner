@@ -2,7 +2,7 @@
 
 ![User Scanner Logo](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.1.0-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.1.0.1-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
@@ -12,7 +12,9 @@
 
 ---
 
-A powerful *Email OSINT tool* that checks if a specific email is registered on various sites, combined with *username scanning* for branding or OSINT— 2-in-1 tool.  
+### ⚠️ Email OSINT mode had not been implemented yet, still in progress 
+
+A powerful *Email OSINT tool* that checks if a specific email is registered on various sites, combined with *username scanning* for branding or OSINT — 2-in-1 tool.  
 
 Perfect for fast, accurate and lightweight email OSINT
 
