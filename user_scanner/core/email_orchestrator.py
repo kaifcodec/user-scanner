@@ -1,10 +1,11 @@
 import asyncio
 from pathlib import Path
-from typing import List
 from types import ModuleType
+from typing import List
+
 from colorama import Fore, Style
 
-from user_scanner.core.helpers import load_categories, load_modules, find_category
+from user_scanner.core.helpers import find_category, load_categories, load_modules
 from user_scanner.core.result import Result
 
 # Concurrency control
@@ -13,11 +14,21 @@ MAX_CONCURRENT_REQUESTS = 15
 
 async def _async_worker(module: ModuleType, email: str, sem: asyncio.Semaphore) -> Result:
     async with sem:
-        module_name = module.__name__.split('.')[-1]
+        module_name = module.__name__.split(".")[-1]
         func_name = f"validate_{module_name}"
+        actual_cat = find_category(module) or "Email"
+
+        params = {
+            "site_name": module_name.capitalize(),
+            "username": email,
+            "category": actual_cat,
+            "is_email": True,
+        }
 
         if not hasattr(module, func_name):
-            return Result.error(f"Function {func_name} not found")
+            return (
+                Result.error(f"Function {func_name} not found").update(**params).show()
+            )
 
         func = getattr(module, func_name)
 
@@ -27,21 +38,10 @@ async def _async_worker(module: ModuleType, email: str, sem: asyncio.Semaphore) 
         except Exception as e:
             result = Result.error(e)
 
-        # Use helper to get actual dir name for the Result object
-        actual_cat = find_category(module) or "Email"
-
-        result.update(
-            site_name=module_name.capitalize(),
-            username=email,
-            category=actual_cat,
-            is_email=True
-        )
-
-        print(result.get_console_output())
-        return result
+        return result.update(**params).show()
 
 
-async def _run_batch(modules: List[ModuleType], email:str) -> List[Result]:
+async def _run_batch(modules: List[ModuleType], email: str) -> List[Result]:
     sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     tasks = []
     for module in modules:

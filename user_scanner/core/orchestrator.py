@@ -15,7 +15,11 @@ def _worker_single(module: ModuleType, username: str) -> Result:
     site_name = get_site_name(module)
 
     if not func:
-        return Result.error(f"{site_name} has no validate_ function", site_name=site_name, username=username)
+        return Result.error(
+            f"{site_name} has no validate_ function",
+            site_name=site_name,
+            username=username,
+        )
 
     try:
         result: Result = func(username)
@@ -48,8 +52,7 @@ def run_user_category(category_path: Path, username: str) -> List[Result]:
         for result in exec_map:
             result.update(category=category_name)
             results.append(result)
-
-            print(result.get_console_output())
+            result.show()
 
     return results
 

@@ -61,6 +61,7 @@ class Result:
         for field in ("username", "site_name", "category", "is_email"):
             if field in kwargs and kwargs[field] is not None:
                 setattr(self, field, kwargs[field])
+        return self
 
     @classmethod
     def taken(cls, reason: str | Exception | None = None, **kwargs):
@@ -148,11 +149,18 @@ class Result:
 
     def get_console_output(self) -> str:
         site_name = self.site_name
-        username = self.username
         status_text = self.status.to_label(self.is_email)
+        username = ""
+        if self.username:
+            username = f"({self.username})"
 
         color = self.get_output_color()
         icon = self.get_output_icon()
 
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
-        return f"  {color}{icon} {site_name} ({username}): {status_text}{reason}{Style.RESET_ALL}"
+        return f"  {color}{icon} {site_name} {username}: {status_text}{reason}{Style.RESET_ALL}"
+
+    def show(self):
+        """Prints the console output and returns itself for chaining"""
+        print(self.get_console_output())
+        return self
