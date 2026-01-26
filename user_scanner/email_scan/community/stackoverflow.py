@@ -9,7 +9,7 @@ async def _check(email: str) -> Result:
             payload = {
                 'ssrc': "login",
                 'email': email,
-                'password': "jejeieie8eh3i8",
+                'password': "Password109-grt",
                 'oauth_version': "",
                 'oauth_server': ""
             }
