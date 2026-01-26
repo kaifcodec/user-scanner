@@ -12,8 +12,6 @@
 
 ---
 
-### ⚠️ Email OSINT mode had not been implemented yet, still in progress 
-
 A powerful *Email OSINT tool* that checks if a specific email is registered on various sites, combined with *username scanning* for branding or OSINT — 2-in-1 tool.  
 
 Perfect for fast, accurate and lightweight email OSINT
