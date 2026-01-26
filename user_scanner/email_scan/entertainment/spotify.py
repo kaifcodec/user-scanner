@@ -2,6 +2,7 @@ import httpx
 import json
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=False, follow_redirects=True) as client:
         try:
@@ -23,7 +24,7 @@ async def _check(email: str) -> Result:
                 'priority': "u=0, i"
             }
 
-            res_get = await client.get(get_url, headers=get_headers)
+            await client.get(get_url, headers=get_headers)
 
             post_url = "https://spclient.wg.spotify.com/signup/public/v2/account/validate"
 
@@ -76,10 +77,11 @@ async def _check(email: str) -> Result:
             elif "success" in data:
                 return Result.available()
 
-            return Result.error(f"Unexpected error [{resposnse.status_code}], report it via GitHub issues")
+            return Result.error(f"Unexpected error [{response.status_code}], report it via GitHub issues")
 
         except Exception as e:
             return Result.error(f"Exception: {e}")
+
 
 async def validate_spotify(email: str) -> Result:
     return await _check(email)
