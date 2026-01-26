@@ -134,9 +134,55 @@ def test_email_file_unreadable(tmp_path, run_main):
     code = run_main(["-ef", str(email_file), "-m", "github"])
     assert code == 1
 
+def test_bulk_usernames_valid(tmp_path, run_main, capsys):
+    username_file = tmp_path / "test_usernames.txt"
+    username_file.write_text("""user1
+    user2
+    user3""")
+   
+    exit_code = run_main(["-uf", str(username_file), "-m", "github"])
+    out = capsys.readouterr().out
 
+    assert "Loaded 3 usernames" in out
+    assert exit_code == 0
 
+def test_bulk_usernames_single_valid(tmp_path, run_main, capsys):
+    username_file = tmp_path / "test_usernames.txt"
+    username_file.write_text("user1")
 
+    exit_code = run_main(["-uf", str(username_file), "-m", "github"])
+    out = capsys.readouterr().out
 
+    assert "Loaded 1 usernames" in out
+    assert exit_code == 0
+
+def test_bulk_usernames_empty_file(tmp_path, run_main):
+    username_file = tmp_path / "test_usernames.txt"
+    username_file.write_text("")
+    exit_code = run_main(["-uf", str(username_file), "-m", "github"])
+    assert exit_code == 1
+
+def test_bulk_usernames_no_file(run_main):
+    exit_code = run_main(["-uf", "no_file.txt", "-m", "github"])
+    assert exit_code == 1
+
+def test_bulk_usernames_skip_comments_blank_lines(tmp_path, run_main, capsys):
+    username_file = tmp_path / "test_usernames.txt"
+    username_file.write_text("""user1
+# comment
+                             
+    user2""")
     
+    exit_code = run_main(["-uf", str(username_file), "-m", "github"])
+    out = capsys.readouterr().out
+
+    assert "Loaded 2 usernames" in out
+    assert exit_code == 0
+
+def test_username_file_unreadable(tmp_path, run_main):
+    username_file = tmp_path / "test_usernames.txt"
+    username_file.write_text("user")
+    username_file.chmod(0)
+    code = run_main(["-uf", str(username_file), "-m", "github"])
+    assert code == 1
 
