@@ -15,10 +15,10 @@ async def _check(email):
         "origin": "https://mastodon.social"
     }
 
-    async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=False) as client:
+    async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=True) as client:
         try:
             initial_resp = await client.get(signup_url)
-            if initial_resp.status_code != 200:
+            if initial_resp.status_code not in [200, 302]:
                 return Result.error(f"Failed to access signup page: {initial_resp.status_code}")
 
             token_match = re.search(
@@ -43,7 +43,9 @@ async def _check(email):
             res_status = response.status_code
             if "has already been taken" in res_text:
                 return Result.taken()
-            elif "has already been taken" not in res_text and res_status == 200:
+            elif "registration attempt has been blocked" in res_text:
+                return Result.error("Your IP has been flagged by mastodon, try after some time")
+            elif "has already been taken" not in res_text and res_status in [200, 302]:
                 return Result.available()
             elif res_status == 429:
                 return Result.error("Rate limited, use '-d' flag to avoid bot detection")
