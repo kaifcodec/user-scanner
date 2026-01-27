@@ -4,6 +4,8 @@ from user_scanner.core import helpers
 from user_scanner.__main__ import main
 from user_scanner.core.result import Result
 from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+import threading
 
 def test_generate_permutations():
     perms = helpers.generate_permutations("user", "ab", limit=None)    
@@ -186,3 +188,137 @@ def test_username_file_unreadable(tmp_path, run_main):
     code = run_main(["-uf", str(username_file), "-m", "github"])
     assert code == 1
 
+@patch('httpx.Client')
+def test_validate_proxy_all_invalid(mock_client):
+    instance = mock_client.return_value.__enter__.return_value
+    response = MagicMock()
+    response.status_code = 302
+    instance.get.return_value = response
+
+    proxies = ["http://proxy1.example.com:8080",
+               "http://proxy2.example.com:3128"]
+    result = helpers.validate_proxies(proxies)
+    assert result == []
+
+@patch('httpx.Client')
+def test_validate_proxy_partially_invalid(mock_client):
+    def side_effect(*args, **kwargs):
+        proxy = kwargs.get("proxy")
+        instance = MagicMock()
+        if "invalid" in proxy:
+            instance.get.side_effect = Exception("connection failed")
+        else:
+            response = MagicMock()
+            response.status_code = 200
+            instance.get.return_value = response
+        instance.__enter__.return_value = instance
+        instance.__exit__.return_value = None
+        return instance
+    
+    mock_client.side_effect = side_effect
+    proxies = ["http://invalid",
+               "socks5://socks-proxy.example.com:1080"]
+    result = helpers.validate_proxies(proxies)
+    assert result == ["socks5://socks-proxy.example.com:1080"]
+
+def test_validate_proxy_empty_list():
+    result = helpers.validate_proxies([])
+    assert result == []
+
+@patch('httpx.Client')
+def test_validate_proxy_timeout(mock_client):
+    instance = mock_client.return_value.__enter__.return_value
+    instance.get.side_effect = helpers.httpx.TimeoutException("timeout")
+    proxies = ["http://proxy1.example.com:8080"]
+    
+    result = helpers.validate_proxies(proxies, timeout=1)
+    assert result == []
+
+@patch("httpx.Client")
+def test_validate_proxy_single_worker(mock_client):
+    instance = mock_client.return_value.__enter__.return_value
+    response = MagicMock()
+    response.status_code = 200
+    instance.get.return_value = response
+
+    proxies = ["http://proxy1.example.com:8080",
+               "http://proxy2.example.com:3128"]
+    result = helpers.validate_proxies(proxies, max_workers=1)
+
+    assert result == proxies
+
+def test_proxy_manager_add_protocol(tmp_path):
+    proxy_file = tmp_path / "test_proxies.txt"
+    proxy_file.write_text("""proxy1.example.com:8080
+socks5://socks-proxy.example.com:1080""")
+
+    manager = helpers.ProxyManager(str(proxy_file))
+
+    assert manager.count() == 2
+    assert manager.proxies[0].startswith("http://")
+    assert manager.proxies[1].startswith("socks5://")
+
+def test_proxy_manager_no_poxy_file(tmp_path):
+    with pytest.raises(FileNotFoundError) as exc_info:
+        helpers.ProxyManager("no_proxy_file.txt")
+    assert exc_info.type is FileNotFoundError
+
+def test_proxy_manager_empty_file_only_comments(tmp_path):
+    proxy_file = tmp_path / "test_proxy.txt"
+    proxy_file.write_text("""#comment
+                          
+    """)
+    with pytest.raises(Exception):
+        helpers.ProxyManager(str(proxy_file))
+
+def test_proxy_rotation(tmp_path):
+    proxy_file = tmp_path / "test_proxy.txt"
+    proxy_file.write_text("""http://1
+http://2
+http://3""")
+    manager = helpers.ProxyManager(str(proxy_file))
+
+    assert manager.get_next_proxy() == "http://1"
+    assert manager.get_next_proxy() == "http://2"
+    assert manager.get_next_proxy() == "http://3"
+    assert manager.get_next_proxy() == "http://1"
+
+def test_single_proxy_rotation(tmp_path):
+    proxy_file = tmp_path / "test_proxy.txt"
+    proxy_file.write_text("http://1")
+    manager = helpers.ProxyManager(str(proxy_file))
+    for _ in range(3):
+        assert manager.get_next_proxy() == "http://1"
+
+def test_global_manager(tmp_path):
+    proxy_file = tmp_path / "test_proxy.txt"
+    proxy_file.write_text("""http://1
+http://2""")
+
+    helpers.set_proxy_manager(str(proxy_file))
+
+    p1 = helpers.get_proxy()
+    p2 = helpers.get_proxy()
+
+    assert p1 != p2
+    assert helpers.get_proxy_count() == 2
+
+def test_thread_safe_rotation(tmp_path):
+    proxy_file = tmp_path / "test_proxy.txt"
+    proxy_file.write_text("""http://1
+http://2
+http://3""")
+    manager = helpers.ProxyManager(str(proxy_file))
+    results = []
+
+    def worker():
+        results.append(manager.get_next_proxy())
+
+    threads = [threading.Thread(target=worker) for _ in range(50)]
+
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(results) == 50
