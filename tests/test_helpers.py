@@ -92,7 +92,7 @@ def test_bulk_emails_single_valid(tmp_path, run_main, capsys):
     exit_code = run_main(["-ef", str(email_file), "-m", "github"])
     out = capsys.readouterr().out
 
-    assert "Loaded 1 emails" in out
+    assert "Loaded 1 email" in out
     assert exit_code == 0
 
 def test_bulk_emails_invalid(tmp_path, run_main):
@@ -155,7 +155,7 @@ def test_bulk_usernames_single_valid(tmp_path, run_main, capsys):
     exit_code = run_main(["-uf", str(username_file), "-m", "github"])
     out = capsys.readouterr().out
 
-    assert "Loaded 1 usernames" in out
+    assert "Loaded 1 username" in out
     assert exit_code == 0
 
 def test_bulk_usernames_empty_file(tmp_path, run_main):
