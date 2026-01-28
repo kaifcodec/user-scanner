@@ -99,6 +99,9 @@ async def _check(email: str) -> Result:
         except Exception as e:
             return Result.error(f"Unexpected error: {str(e)}")
 
+    # This return statement is added to satisfy mypy - though it should never be reached
+    return Result.error("Unexpected flow - no return condition met")
+
 
 async def validate_tiktok(email: str) -> Result:
     """
