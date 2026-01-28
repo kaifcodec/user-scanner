@@ -196,7 +196,7 @@ def main():
                 print(f"{R}[✘] Error: No valid emails found in {args.email_file}{X}")
                 sys.exit(1)
             
-            print(f"{C}[+] Loaded {len(valid_emails)} emails from {args.email_file}{X}")
+            print(f"{C}[+] Loaded {len(valid_emails)} {'email' if len(valid_emails) == 1 else 'emails'} from {args.email_file}{X}")
             is_email = True
             targets = valid_emails
         except FileNotFoundError:
@@ -213,7 +213,7 @@ def main():
             if not usernames:
                 print(f"{R}[✘] Error: No valid usernames found in {args.username_file}{X}")
                 sys.exit(1)
-            print(f"{C}[+] Loaded {len(usernames)} usernames from {args.username_file}{X}")
+            print(f"{C}[+] Loaded {len(usernames)} {'username' if len(usernames) == 1 else 'usernames'} from {args.username_file}{X}")
             is_email = False
             targets = usernames
         except FileNotFoundError:
