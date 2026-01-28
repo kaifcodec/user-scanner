@@ -1,56 +1,44 @@
 import httpx
-import re
+import json
 from user_scanner.core.result import Result
 
-EMAIL_RE = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
-
-
 async def _check(email: str) -> Result:
-    """
-    Performs Replit email existence check via signup API.
-
-    Returns:
-        Result.available() if email not registered
-        Result.taken() if email already exists
-        Result.error(msg) on failure
-    """
-    signup_url = "https://replit.com/signup"
-    check_url = "https://replit.com/data/user/exists"
-
-    headers = {
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "en-US,en;q=0.9",
-        "content-type": "application/json",
-        "origin": "https://replit.com",
-        "referer": "https://replit.com/signup",
-        "sec-fetch-site": "same-origin",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-dest": "empty",
-        "x-requested-with": "XMLHttpRequest",
+    url = "https://replit.com/data/user/exists"
+    
+    payload = {
+        "email": email
     }
 
-    async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=15.0) as client:
+    headers = {
+        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+        'Accept': "application/json",
+        'Accept-Encoding': "identity",
+        'Content-Type': "application/json",
+        'sec-ch-ua-platform': "\"Android\"",
+        'sec-ch-ua': "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+        'sec-ch-ua-mobile': "?1",
+        'x-requested-with': "XMLHttpRequest",
+        'origin': "https://replit.com",
+        'sec-fetch-site': "same-origin",
+        'sec-fetch-mode': "cors",
+        'sec-fetch-dest': "empty",
+        'referer': "https://replit.com/signup",
+        'accept-language': "en-US,en;q=0.9",
+        'priority': "u=1, i"
+    }
+
+    async with httpx.AsyncClient(http2=False, timeout=5.0) as client:
         try:
-            # Step 1: hit signup page to establish cookies
-            await client.get(signup_url)
+            response = await client.post(url, content=json.dumps(payload), headers=headers)
 
-            # Step 2: call email existence endpoint
-            payload = {"email": email}
-            resp = await client.post(check_url, json=payload, headers=headers)
+            if response.status_code == 403:
+                return Result.error("403 Forbidden")
 
-            if resp.status_code == 403:
-                return Result.error("Replit blocks automated requests (403)")
-
-
-            data = resp.json()
-
-            # Expected response: { "exists": true/false }
+            data = response.json()
             exists = data.get("exists")
 
             if exists is True:
                 return Result.taken()
-
             if exists is False:
                 return Result.available()
 
@@ -59,12 +47,5 @@ async def _check(email: str) -> Result:
         except Exception as e:
             return Result.error(str(e))
 
-
 async def validate_replit(email: str) -> Result:
-    """
-    Public validator for Replit email existence.
-    """
-    if not EMAIL_RE.match(email):
-        return Result.error("Invalid email format")
-
     return await _check(email)
