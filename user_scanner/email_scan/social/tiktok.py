@@ -51,31 +51,44 @@ async def _check(email: str) -> Result:
             try:
                 resp_data = response.json()
 
-                # Check for specific indicators in the response
-                if "email" in resp_data and "is_registered" in resp_data:
-                    if resp_data.get("email", {}).get("is_registered", False):
-                        return Result.taken()
-                    else:
-                        return Result.available()
+                # Strict check for is_registered flag in the email object
+                # This is the most reliable indicator of whether an email is registered
+                email_obj = resp_data.get("email", {})
+                if "is_registered" in email_obj:
+                    is_reg = email_obj["is_registered"]
+                    if isinstance(is_reg, bool):
+                        return Result.taken() if is_reg else Result.available()
+                    elif isinstance(is_reg, str):
+                        # Handle string representations of boolean
+                        return Result.taken() if is_reg.lower() in ('true', '1', 'yes') else Result.available()
 
-                # Check for captcha-related responses
+                # Check for captcha-related responses (strict check)
                 if "captcha" in str(resp_data).lower() or resp_data.get("error_code") == 20001:
                     return Result.error("CAPTCHA protection detected - cannot validate")
 
-                # Alternative check for error codes that indicate email existence
-                if "error_code" in resp_data:
-                    error_code = resp_data["error_code"]
-                    # Common error codes that might indicate email exists vs doesn't exist
+                # Check for bot detection responses
+                if resp_data.get("error_code") == 0 and "verify" in str(resp_data).lower():
+                    # Even with error_code 0, if it contains verification info, it's likely bot-protected
+                    return Result.error("Bot protection detected - cannot validate")
+
+                # More specific error code handling
+                error_code = resp_data.get("error_code")
+                if error_code is not None:
                     if error_code == 0:
-                        # Success - might mean email exists, but could also trigger CAPTCHA
-                        if "verify" in str(resp_data).lower() or "captcha" in str(resp_data).lower():
-                            return Result.error("CAPTCHA protection detected - cannot validate")
-                        return Result.taken()
-                    elif error_code == 10000:  # Common error code for invalid email
+                        # Error code 0 without is_registered flag usually means bot detection
+                        return Result.error("Possible bot detection - no reliable data returned")
+                    elif error_code == 10000:  # Invalid email format
                         return Result.available()
+                    elif error_code == 20001:  # Captcha required
+                        return Result.error("CAPTCHA protection detected - cannot validate")
+                    elif error_code == 20005:  # Too many requests
+                        return Result.error("Rate limited by TikTok")
                     else:
-                        # Some other error occurred, possibly CAPTCHA protection
-                        return Result.error(f"TikTok API error: {error_code}. Likely CAPTCHA protected.")
+                        # Other error codes likely indicate the email wasn't found or other issues
+                        return Result.error(f"TikTok API error: {error_code}")
+
+                # If we have no error_code and no is_registered flag, it's likely bot-protected
+                return Result.error("Response lacks required data - likely bot protection")
 
             except json.JSONDecodeError:
                 # If response isn't JSON, check for other indicators
@@ -99,7 +112,7 @@ async def _check(email: str) -> Result:
         except Exception as e:
             return Result.error(f"Unexpected error: {str(e)}")
 
-    # This return statement is added to satisfy mypy - though it should never be reached
+    # This return statement is added to satisfy mypy - though it should never be reached in normal execution
     return Result.error("Unexpected flow - no return condition met")
 
 
