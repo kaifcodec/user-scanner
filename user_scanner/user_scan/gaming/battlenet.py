@@ -1,4 +1,5 @@
 import re
+
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
@@ -19,12 +20,12 @@ def validate_battlenet(user: str) -> Result:
     """
     # BattleTag username rules: 3-12 chars, letters/numbers, one optional #
     # For this validator, we strip any #1234 discriminator if present
-    username = user.split('#')[0]
+    username = user.split("#")[0]
 
     if not (3 <= len(username) <= 12):
         return Result.error("Length must be 3-12 characters")
 
-    if not re.match(r'^[a-zA-Z][a-zA-Z0-9]*$', username):
+    if not re.match(r"^[a-zA-Z][a-zA-Z0-9]*$", username):
         return Result.error("Must start with letter, only letters and numbers allowed")
 
     url = f"https://overwatch.blizzard.com/en-us/search/account-by-name/{username}"
@@ -41,16 +42,20 @@ def validate_battlenet(user: str) -> Result:
 
         try:
             data = response.json()
+
             if isinstance(data, list) and len(data) == 0:
                 return Result.available()
             elif isinstance(data, list) and len(data) > 0:
-                return Result.taken()
+                end = "es" if len(data) > 1 else ""
+                return Result.taken(f"{len(data)} match{end}")
             else:
                 return Result.error("Unexpected response format")
         except Exception:
             return Result.error("Failed to parse response")
 
-    return generic_validate(url, process, headers=headers, timeout=15.0, follow_redirects=True)
+    return generic_validate(
+        url, process, headers=headers, timeout=15.0, follow_redirects=True
+    )
 
 
 if __name__ == "__main__":
