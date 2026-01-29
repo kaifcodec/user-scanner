@@ -22,7 +22,7 @@ async def _check(email: str) -> Result:
         'Content-Type': "application/x-www-form-urlencoded"
     }
 
-    async with httpx.AsyncClient(http2=False, timeout=15.0) as client:
+    async with httpx.AsyncClient(http2=False, timeout=5.0) as client:
         try:
             response = await client.post(url, data=payload, headers=headers)
             res_text = response.text
