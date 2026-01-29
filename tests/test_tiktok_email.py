@@ -1,10 +1,9 @@
-import pytest
+import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 from user_scanner.email_scan.social.tiktok import validate_tiktok
 from user_scanner.core.result import Status
 
-@pytest.mark.asyncio
-async def test_validate_tiktok_taken():
+def test_validate_tiktok_taken():
     # Mock the response for the POST request to the password reset API
     mock_get_resp = AsyncMock()
     mock_get_resp.status_code = 200
@@ -14,19 +13,23 @@ async def test_validate_tiktok_taken():
     mock_post_resp.text = '{"email": {"is_registered": true}, "error_code": 0}'
     mock_post_resp.json.return_value = {"email": {"is_registered": True}, "error_code": 0}
 
-    with patch("httpx.AsyncClient") as mock_client_class:
-        mock_client = MagicMock()
-        mock_client.__aenter__.return_value = mock_client
-        mock_client.__aexit__.return_value = None
-        mock_client.get.return_value = mock_get_resp
-        mock_client.post.return_value = mock_post_resp
-        mock_client_class.return_value = mock_client
+    async def run_test():
+        with patch("httpx.AsyncClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.get.return_value = mock_get_resp
+            mock_client.post.return_value = mock_post_resp
+            mock_client_class.return_value = mock_client
 
-        result = await validate_tiktok("test@example.com")
-        assert result.status == Status.TAKEN
+            result = await validate_tiktok("test@example.com")
+            assert result.status == Status.TAKEN
+            return True
 
-@pytest.mark.asyncio
-async def test_validate_tiktok_available():
+    # Run the async test function
+    asyncio.run(run_test())
+
+def test_validate_tiktok_available():
     # Mock the response for the POST request to the password reset API
     mock_get_resp = AsyncMock()
     mock_get_resp.status_code = 200
@@ -36,19 +39,23 @@ async def test_validate_tiktok_available():
     mock_post_resp.text = '{"email": {"is_registered": false}, "error_code": 0}'
     mock_post_resp.json.return_value = {"email": {"is_registered": False}, "error_code": 0}
 
-    with patch("httpx.AsyncClient") as mock_client_class:
-        mock_client = MagicMock()
-        mock_client.__aenter__.return_value = mock_client
-        mock_client.__aexit__.return_value = None
-        mock_client.get.return_value = mock_get_resp
-        mock_client.post.return_value = mock_post_resp
-        mock_client_class.return_value = mock_client
+    async def run_test():
+        with patch("httpx.AsyncClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.get.return_value = mock_get_resp
+            mock_client.post.return_value = mock_post_resp
+            mock_client_class.return_value = mock_client
 
-        result = await validate_tiktok("test@example.com")
-        assert result.status == Status.AVAILABLE
+            result = await validate_tiktok("test@example.com")
+            assert result.status == Status.AVAILABLE
+            return True
 
-@pytest.mark.asyncio
-async def test_validate_tiktok_captcha():
+    # Run the async test function
+    asyncio.run(run_test())
+
+def test_validate_tiktok_captcha():
     # Mock the response showing captcha protection
     mock_get_resp = AsyncMock()
     mock_get_resp.status_code = 200
@@ -58,20 +65,24 @@ async def test_validate_tiktok_captcha():
     mock_post_resp.text = '{"error_code": 20001, "captcha": "required"}'
     mock_post_resp.json.return_value = {"error_code": 20001, "captcha": "required"}
 
-    with patch("httpx.AsyncClient") as mock_client_class:
-        mock_client = MagicMock()
-        mock_client.__aenter__.return_value = mock_client
-        mock_client.__aexit__.return_value = None
-        mock_client.get.return_value = mock_get_resp
-        mock_client.post.return_value = mock_post_resp
-        mock_client_class.return_value = mock_client
+    async def run_test():
+        with patch("httpx.AsyncClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.get.return_value = mock_get_resp
+            mock_client.post.return_value = mock_post_resp
+            mock_client_class.return_value = mock_client
 
-        result = await validate_tiktok("test@example.com")
-        assert result.status == Status.ERROR
-        assert "CAPTCHA" in result.get_reason()
+            result = await validate_tiktok("test@example.com")
+            assert result.status == Status.ERROR
+            assert "CAPTCHA" in result.get_reason()
+            return True
 
-@pytest.mark.asyncio
-async def test_validate_tiktok_bot_detection():
+    # Run the async test function
+    asyncio.run(run_test())
+
+def test_validate_tiktok_bot_detection():
     # Mock the response for bot detection (error_code 0 without is_registered flag)
     mock_get_resp = AsyncMock()
     mock_get_resp.status_code = 200
@@ -81,14 +92,19 @@ async def test_validate_tiktok_bot_detection():
     mock_post_resp.text = '{"error_code": 0, "verify": "some_verification_needed"}'
     mock_post_resp.json.return_value = {"error_code": 0, "verify": "some_verification_needed"}
 
-    with patch("httpx.AsyncClient") as mock_client_class:
-        mock_client = MagicMock()
-        mock_client.__aenter__.return_value = mock_client
-        mock_client.__aexit__.return_value = None
-        mock_client.get.return_value = mock_get_resp
-        mock_client.post.return_value = mock_post_resp
-        mock_client_class.return_value = mock_client
+    async def run_test():
+        with patch("httpx.AsyncClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.get.return_value = mock_get_resp
+            mock_client.post.return_value = mock_post_resp
+            mock_client_class.return_value = mock_client
 
-        result = await validate_tiktok("test@example.com")
-        assert result.status == Status.ERROR
-        assert "bot" in result.get_reason().lower()
+            result = await validate_tiktok("test@example.com")
+            assert result.status == Status.ERROR
+            assert "bot" in result.get_reason().lower()
+            return True
+
+    # Run the async test function
+    asyncio.run(run_test())
