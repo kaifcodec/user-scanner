@@ -38,12 +38,28 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ **Bulk email scanning** from file support for checking multiple emails at once
 ---
 
-## Installation
+## Virtual Environment (optional but recommended)
 
 ```bash
+# create venv
+python -m venv .venv
+````
+## Activate venv
+```bash
+# Linux / macOS
+source .venv/bin/activate
+
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+```
+## Installation
+```bash
+# upgrade pip
+python -m pip install --upgrade pip
+
+# install
 pip install user-scanner
 ```
-
 ---
 
 ## Important Flags
