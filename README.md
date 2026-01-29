@@ -153,9 +153,11 @@ user-scanner -U
 
 - Note*: New modules are constantly getting added so this might have only limited, outdated output:
 
+<img width="1080" height="656" alt="1000146096" src="https://github.com/user-attachments/assets/1101e2f8-18ea-45a4-9492-92e237ecc670" />
+
+---
+
 <img width="1072" height="848" alt="user-scanner's main usage screenshot" src="https://github.com/user-attachments/assets/34e44ca6-e314-419e-9035-d951b493b47f" />
-
-
 
 ---
 
