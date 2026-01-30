@@ -177,11 +177,6 @@ user-scanner -U
 
 ---
 
-<img width="1080" height="352" alt="user-scanner's wildcard username feature" src="https://github.com/user-attachments/assets/578b248c-2a05-4917-aab3-6372a7c28045" />
-
-
----
-
 ## Contributing
 
 Modules are organized under `user_scanner/`:
