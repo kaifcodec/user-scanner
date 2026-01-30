@@ -20,23 +20,16 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 
 ## Features
 
-- ✅ Check an email across multiple sites to see if it’s registered.  
-- ✅ Scan usernames across **social networks**, **developer platforms**, **creator communities**, and more.  
-- ✅ Can be used purely as a username tool.  
-- ✅ Smart auto-update system detects new releases on PyPI and prompts the user to upgrade interactively.  
-- ✅ Clear `Registered` and `Not Registered` for email scanning `Available` / `Taken` / `Error` output for username scans
-- ✅ Robust error handling: displays the exact reason a username or email cannot be used (e.g., underscores or hyphens at the start/end).  
-- ✅ Fully modular: easily add new platform modules.  
-- ✅ Wildcard-based username permutations for automatic variation generation using a provided suffix.  
-- ✅ Option to select results format (**JSON**, **CSV**, console).  
-- ✅ Save scanning and OSINT results in the preferred format and output file (ideal for power users).  
-- ✅ Command-line interface ready: works immediately after `pip install`.  
-- ✅ Lightweight with minimal dependencies; runs on any machine.
-- ✅ **Proxy support** with round-robin rotation
-- ✅ **Proxy validation** to test and filter working proxies before scanning
-- ✅ **Bulk username scanning** from file support for checking multiple usernames at once
-- ✅ **Bulk email scanning** from file support for checking multiple emails at once
----
+- ✅ Email & username OSINT: check email registrations and username availability across social, developer, creator, and other platforms  
+- ✅ Dual-mode usage: works as an email scanner, username scanner, or username-only tool  
+- ✅ Clear results: `Registered` / `Not Registered` for emails and `Available` / `Taken` / `Error` for usernames with precise failure reasons  
+- ✅ Fully modular architecture for easy addition of new platform modules  
+- ✅ Bulk scanning support for usernames and emails via input files  
+- ✅ Wildcard-based username permutations with automatic variation generation  
+- ✅ Multiple output formats: console, **JSON**, and **CSV**, with file export support  
+- ✅ Proxy support with rotation and pre-scan proxy validation  
+- ✅ Smart auto-update system with interactive upgrade prompts via PyPI  
+- ✅ Lightweight, minimal dependencies, and ready to use immediately after `pip install`
 
 ## Virtual Environment (optional but recommended)
 
