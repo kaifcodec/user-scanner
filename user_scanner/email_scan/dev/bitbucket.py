@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=True) as client:
         try:
@@ -28,6 +29,7 @@ async def _check(email: str) -> Result:
                 return Result.error(f"Unexpected error occured [{response.status_code}]")
         except Exception as e:
             return Result.error(f"Unexpected exception:{e}")
+
 
 async def validate_bitbucket(email: str) -> Result:
     return await _check(email)
