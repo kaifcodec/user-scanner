@@ -13,8 +13,8 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
-            init_res = await client.get("https://www.last.fm/join", headers=headers)
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            await client.get("https://www.last.fm/join", headers=headers)
             token = client.cookies.get("csrftoken")
 
             if not token:
@@ -53,7 +53,7 @@ async def _check(email: str) -> Result:
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
     except Exception as e:
-        return Result.error(e)
+        return Result.error(str(e))
 
 
 async def validate_lastfm(email: str) -> Result:
