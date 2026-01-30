@@ -226,14 +226,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
 
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
+---
+
 ## ⚠️ Disclaimer
 
-This tool is provided for <b>educational purposes</b> and <b>authorized security auditing</b> only.
+This tool is provided for **educational purposes** and **authorized security research** only.
 
-* <b>Usage Responsibility:</b> The user of this tool is solely responsible for ensuring that their actions comply with local, state, and federal laws, as well as the Terms of Service (ToS) of any third-party providers. 
-* <b>Methodology:</b> This tool interacts only with publicly available, unauthenticated web endpoints to verify account existence. It does not access private user data, bypass security controls, or scrape proprietary media content.
-* <b>No Profiling:</b> This software is a "Yes/No" validator; it does not aggregate, store, or analyze user behaviors, interests, or personal identities to build user profiles.
-* <b>Limitation of Liability:</b> The developers of this tool assume no liability and are not responsible for any misuse, damage, or legal consequences caused by this program. This software is provided "as is" without any warranty of any kind.
+- **User Responsibility:** Users are solely responsible for ensuring their usage complies with all applicable laws and the Terms of Service (ToS) of any third-party providers.
+- **Methodology:** The tool interacts only with **publicly accessible, unauthenticated web endpoints**. It does not bypass authentication, security controls, or access private user data.
+- **No Profiling:** This software performs only basic **yes/no availability checks**. It does not collect, store, aggregate, or analyze user data, behavior, or identities.
+- **Limitation of Liability:** The software is provided **“as is”**, without warranty of any kind. The developers assume no liability for misuse or any resulting damage or legal consequences.
 
 ---
 
