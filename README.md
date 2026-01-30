@@ -29,7 +29,6 @@ Perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instag
 - ✅ Multiple output formats: console, **JSON**, and **CSV**, with file export support  
 - ✅ Proxy support with rotation and pre-scan proxy validation  
 - ✅ Smart auto-update system with interactive upgrade prompts via PyPI  
-- ✅ Lightweight, minimal dependencies, and ready to use immediately after `pip install`
 
 ## Virtual Environment (optional but recommended)
 
