@@ -165,9 +165,9 @@ user-scanner -U
 ```
 ---
 
-## Screenshot: 
+## Screenshots: 
 
-- Note*: New modules are constantly getting added so this might have only limited, outdated output:
+- Note*: New modules are constantly getting added so screenshots might show only limited, outdated output:
 
 <img width="1080" height="656" alt="1000146096" src="https://github.com/user-attachments/assets/1101e2f8-18ea-45a4-9492-92e237ecc670" />
 
