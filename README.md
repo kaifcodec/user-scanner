@@ -80,14 +80,11 @@ pip install user-scanner
 
 ### Basic username/email scan
 
-Scan a single username across **all** available modules/platforms:
+Scan a single email or username across **all** available modules/platforms:
 
 ```bash
-user-scanner -e john_doe@gmail.com
-user-scanner --email john_doe@gmail.com # long version
-
-user-scanner -u john_doe
-user-scanner --username john_doe # long version
+user-scanner -e john_doe@gmail.com   # single email scanning 
+user-scanner -u john_doe             # single username scanning 
 ```
 
 ### Selective scanning
@@ -185,8 +182,7 @@ user_scanner/
 │   ├── creator/      # Creator platforms (Hashnode, Dev.to, Medium, Patreon, etc.)
 │   ├── community/    # Community platforms (forums, StackOverflow, HackerNews, etc.)
 │   ├── gaming/       # Gaming sites (chess.com, Lichess, Roblox, Minecraft, etc.)
-│   └── donation/     # Donation platforms (BuyMeACoffee, Liberapay)
-|...
+    ...
 ```
 
 **Module guidelines:**
