@@ -96,23 +96,14 @@ user-scanner -u john_doe -c dev # developer platforms only
 user-scanner -u john_doe -m github # only GitHub
 ```
 
-### Bulk username scanning
+### Bulk email/username scanning
 
-Scan multiple usernames from a file (one username per line):
-- Can also be combined with categories or modules using `-c` and `-m` flags
-
-```bash
-user-scanner -uf usernames.txt
-```
-
-
-### Bulk email scanning
-
-Scan multiple emails from a file (one email per line):
-- Can also be combined with categories or modules using `-c` and `-m` flags
+Scan multiple emails/usernames from a file (one email/username per line):
+- Can also be combined with categories or modules using `-c` , `-m` and other flags
 
 ```bash
-user-scanner -ef emails.txt
+user-scanner -ef emails.txt     # bulk email scan
+user-scanner -uf usernames.txt  # bulk username scan
 ```
 
 ### Username/Email variations (suffix only)
@@ -138,20 +129,10 @@ user-scanner -u john_doe -P proxies.txt --validate-proxies # recommended
 ```
 
 This will:
-1. Test all proxies from the file
-2. Filter out non-working proxies
-3. Save working proxies to `validated_proxies.txt`
-4. Use only validated proxies for scanning
+1. Filter out non-working proxies
+2. Save working proxies to `validated_proxies.txt`
+3. Use only validated proxies for scanning
 
----
-
-### Update
-
-Update the tool to the latest PyPI version:
-
-```bash
-user-scanner -U
-```
 ---
 
 ## Screenshots: 
