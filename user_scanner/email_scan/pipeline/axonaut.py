@@ -22,7 +22,7 @@ async def _check(email: str) -> Result:
                 return Result.taken()
             
             elif response.status_code == 200:
-                return Result.error(response.text)
+                return Result.available()
             
             else:
                 return Result.error(f"HTTP {response.status_code}")

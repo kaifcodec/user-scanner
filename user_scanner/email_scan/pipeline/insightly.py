@@ -23,7 +23,7 @@ async def _check(email: str) -> Result:
                 data=payload
             )
 
-            if "An account exists for this address. Use another address or" in response.text:
+            if "An account exists for this address." in response.text:
                 return Result.taken()
             
             elif response.text.strip() == "true":
