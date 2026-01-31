@@ -30,7 +30,7 @@ async def _check(email: str) -> Result:
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
     except Exception as e:
-        return Result.error(str(e))
+        return Result.error(e)
 
 async def validate_duolingo(email: str) -> Result:
     return await _check(email)
