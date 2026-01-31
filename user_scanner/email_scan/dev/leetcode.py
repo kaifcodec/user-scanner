@@ -56,8 +56,8 @@ async def _check(email: str) -> Result:
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
-    except Exception:
-        return Result.error("Unknown error")
+    except Exception as e:
+        return Result.error(e)
 
 
 async def validate_leetcode(email: str) -> Result:
