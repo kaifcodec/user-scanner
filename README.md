@@ -73,7 +73,7 @@ pip install user-scanner
 | `-d, --delay DELAY`       | Delay (in seconds) between requests |
 | `-f, --format {csv,json}` | Select output format |
 | `-o, --output OUTPUT`     | Save results to a file |
-
+| `-U, --update`| Update user-scanner to latest pypi version|
 ---
 
 ## Usage
