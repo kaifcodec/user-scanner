@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     headers = {
         'authority': 'api.hubspot.com',
@@ -32,19 +33,20 @@ async def _check(email: str) -> Result:
 
                 if status == "INVALID_PASSWORD":
                     return Result.taken()
-                
+
                 elif status == "INVALID_USER":
                     return Result.available()
-                
+
                 else:
                     return Result.error(data)
-            
+
             return Result.error(f"HTTP {response.status_code}")
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
     except Exception as e:
         return Result.error(str(e))
+
 
 async def validate_hubspot(email: str) -> Result:
     return await _check(email)

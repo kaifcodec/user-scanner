@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     headers = {
         'authority': 'axonaut.com',
@@ -20,10 +21,10 @@ async def _check(email: str) -> Result:
             if response.status_code == 302 and "/login?email" in response.headers.get('Location', ''):
 
                 return Result.taken()
-            
+
             elif response.status_code == 200:
                 return Result.available()
-            
+
             else:
                 return Result.error(f"HTTP {response.status_code}")
 
@@ -31,6 +32,7 @@ async def _check(email: str) -> Result:
         return Result.error("Connection timed out")
     except Exception as e:
         return Result.error(str(e))
+
 
 async def validate_axonaut(email: str) -> Result:
     return await _check(email)

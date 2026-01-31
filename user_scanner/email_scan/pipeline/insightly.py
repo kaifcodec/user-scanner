@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     headers = {
         'authority': 'accounts.insightly.com',
@@ -25,10 +26,10 @@ async def _check(email: str) -> Result:
 
             if "An account exists for this address." in response.text:
                 return Result.taken()
-            
+
             elif response.text.strip() == "true":
                 return Result.available()
-            
+
             else:
                 return Result.error(f"Unexpected response: {response.status_code}")
 
@@ -36,6 +37,7 @@ async def _check(email: str) -> Result:
         return Result.error("Connection timed out")
     except Exception as e:
         return Result.error(str(e))
+
 
 async def validate_insightly(email: str) -> Result:
     return await _check(email)

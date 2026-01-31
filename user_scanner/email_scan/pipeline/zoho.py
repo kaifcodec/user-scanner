@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
@@ -16,7 +17,7 @@ async def _check(email: str) -> Result:
     try:
         async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
             await client.get("https://accounts.zoho.com/register", headers=headers)
-            
+
             csrf_cookie = client.cookies.get("iamcsr")
             if not csrf_cookie:
                 return Result.error("CSRF cookie not found")
@@ -43,19 +44,20 @@ async def _check(email: str) -> Result:
 
                 if message == "User exists" and status == 201:
                     return Result.taken()
-                
+
                 elif status == 400:
                     return Result.available()
-                
+
                 else:
                     return Result.error(data)
-            
+
             return Result.error(f"HTTP {response.status_code}")
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
     except Exception as e:
         return Result.error(str(e))
+
 
 async def validate_zoho(email: str) -> Result:
     return await _check(email)
