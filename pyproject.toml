@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "user-scanner"
-version = "1.1.0.5"
+version = "1.1.0.6"
 description = "Check username availability across multiple popular platforms"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -27,8 +27,24 @@ Homepage = "https://github.com/kaifcodec/user-scanner"
 [project.scripts]
 user-scanner = "user_scanner.__main__:main"
 
+[tool.flit.module]
+name = "user_scanner"
+
 [tool.flit.sdist]
-exclude = ["tests/", "docs/", ".github/", ".git", "rm_pycache.py", "che.py", ".gitignore", ".ruff_cache/"]
+exclude = [
+  "tests/",
+  "docs/",
+  ".github/",
+  ".git",
+  ".gitignore",
+  ".ruff_cache/",
+  "**/.ruff_cache/**",
+  "__pycache__/",
+  "**/__pycache__/**",
+  "*.pyc",
+  "rm_pycache.py",
+  "che.py"
+]
 
 [tool.pytest.ini_options]
 pythonpath = "."
