@@ -13,7 +13,7 @@ def validate_roblox(user: str) -> Result:
             return Result.error("Too many requests")
 
         if response.status_code == 400:
-            # Api states theres always an error
+            # Api states there's always an error
             error = search_results["errors"][0]
             if error["code"] == 6:
                 return Result.error("Username is too short")

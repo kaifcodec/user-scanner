@@ -47,4 +47,4 @@ if __name__ == "__main__":
     elif result == 0:
         print("Unavailable!")
     else:
-        print("Error occured!")
+        print("Error occurred!")

@@ -108,7 +108,7 @@ def generic_validate(url: str, func: Callable[[httpx.Response], Result], **kwarg
 def status_validate(url: str, available: int | List[int], taken: int | List[int], **kwargs) -> Result:
     """
     Function that takes a **url** and **kwargs** for the request and 
-    checks if the request status matches the availabe or taken.
+    checks if the request status matches the available or taken.
     **Available** and **Taken** must either be whole numbers or lists of whole numbers.
     """
     def inner(response: httpx.Response):
