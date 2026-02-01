@@ -33,7 +33,7 @@ async def _check(email: str) -> Result:
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
     except Exception as e:
-        return Result.error(f"Uexpected Exception: {e}")
+        return Result.error(f"Unexpected Exception: {e}")
 
 
 async def validate_marca(email: str) -> Result:

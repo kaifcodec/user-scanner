@@ -8,7 +8,7 @@ def test_indentate():
     assert indentate("", 2) == 2 * INDENT
 
     msg = ("This is a test message\n"
-           "made to test the identation\n"
+           "made to test the indentation\n"
            "and shouldn't be changed.")
 
     for i in range(0, 4):

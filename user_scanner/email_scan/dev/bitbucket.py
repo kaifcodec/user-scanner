@@ -26,7 +26,7 @@ async def _check(email: str) -> Result:
             elif is_reg is False:
                 return Result.taken()
             else:
-                return Result.error(f"Unexpected error occured [{response.status_code}]")
+                return Result.error(f"Unexpected error occurred [{response.status_code}]")
         except Exception as e:
             return Result.error(f"Unexpected exception:{e}")
 
