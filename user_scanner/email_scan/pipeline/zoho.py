@@ -49,7 +49,7 @@ async def _check(email: str) -> Result:
                 elif "User exists in another DC" in message:
                     return Result.taken()
 
-                return Result.error(f"Unexpected response body, report it via GitHub issues")
+                return Result.error("Unexpected response body, report it via GitHub issues")
 
             return Result.error(f"HTTP {response.status_code}")
 
