@@ -8,17 +8,15 @@ async def _check(email: str) -> Result:
         'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
         'Accept': '*/*',
         'Origin': 'https://accounts.zoho.com',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Dest': 'empty',
+        'Referer': 'https://accounts.zoho.com/',
         'Accept-Language': 'en-US,en;q=0.9',
     }
 
     try:
         async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
-            await client.get("https://accounts.zoho.com/register", headers=headers)
-
+            await client.get("https://accounts.zoho.com/signin", headers=headers)
             csrf_cookie = client.cookies.get("iamcsr")
+
             if not csrf_cookie:
                 return Result.error("CSRF cookie not found")
 
@@ -39,24 +37,26 @@ async def _check(email: str) -> Result:
 
             if response.status_code == 200:
                 data = response.json()
-                message = data.get("message")
                 status = data.get("status_code")
+                message = data.get("message", "")
 
-                if message == "User exists" and status == 201:
+                if status == 201 or message == "User exists":
                     return Result.taken()
 
                 elif status == 400:
                     return Result.available()
 
-                else:
-                    return Result.error(data)
+                elif "User exists in another DC" in message:
+                    return Result.taken()
+
+                return Result.error(f"Unexpected response body, report it via GitHub issues")
 
             return Result.error(f"HTTP {response.status_code}")
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
     except Exception as e:
-        return Result.error(str(e))
+        return Result.error(f"Unexpected Exception: {e}")
 
 
 async def validate_zoho(email: str) -> Result:
