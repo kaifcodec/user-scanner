@@ -48,7 +48,7 @@ async def _check(email: str) -> Result:
                 return Result.available()
 
             else:
-                return Result.error(data)
+                return Result.error("Unexpected response body, report it via GitHub issues")
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
