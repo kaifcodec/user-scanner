@@ -3,6 +3,7 @@ import time
 import sys
 import re
 from colorama import Fore, Style
+from itertools import islice
 
 from user_scanner.cli.banner import print_banner
 from user_scanner.core.version import load_local_version
@@ -15,7 +16,6 @@ from user_scanner.core.helpers import (
     load_modules,
     find_module,
     get_site_name,
-    generate_permutations,
     set_proxy_manager,
     get_proxy_count
 )
@@ -31,6 +31,8 @@ from user_scanner.core.email_orchestrator import (
     run_email_category_batch,
     run_email_module_batch
 )
+
+from user_scanner.core.patterns import expand_patterns
 
 # Color configs
 R = Fore.RED
@@ -74,9 +76,6 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Enable verbose output")
 
-    parser.add_argument("-p", "--permute", type=str,
-                        help="Generate permutations using a pattern")
-
     parser.add_argument("-s", "--stop", type=int,
                         default=MAX_PERMUTATIONS_LIMIT, help="Limit permutations")
 
@@ -92,7 +91,7 @@ def main():
         "-P", "--proxy-file", type=str, help="Path to proxy list file (one proxy per line)")
 
     parser.add_argument(
-        "--validate-proxies", action="store_true", 
+        "--validate-proxies", action="store_true",
         help="Validate proxies before scanning (tests against google.com)")
 
     parser.add_argument(
@@ -143,27 +142,27 @@ def main():
             if args.validate_proxies:
                 print(f"{C}[*] Validating proxies from {args.proxy_file}...{X}")
                 from user_scanner.core.helpers import validate_proxies, ProxyManager
-                
+
                 # Load proxies first
                 temp_manager = ProxyManager(args.proxy_file)
                 all_proxies = temp_manager.proxies
                 print(f"{C}[*] Testing {len(all_proxies)} proxies...{X}")
-                
+
                 # Validate them
                 working_proxies = validate_proxies(all_proxies)
-                
+
                 if not working_proxies:
                     print(f"{R}[✘] No working proxies found{X}")
                     sys.exit(1)
-                
+
                 print(f"{G}[+] Found {len(working_proxies)} working proxies out of {len(all_proxies)}{X}")
-                
+
                 # Save working proxies to temp file
                 temp_proxy_file = "validated_proxies.txt"
                 with open(temp_proxy_file, 'w', encoding='utf-8') as f:
                     for proxy in working_proxies:
                         f.write(proxy + '\n')
-                
+
                 set_proxy_manager(temp_proxy_file)
                 proxy_count = get_proxy_count()
                 print(f"{G}[+] Using {proxy_count} validated proxies{X}")
@@ -183,7 +182,7 @@ def main():
         try:
             with open(args.email_file, 'r', encoding='utf-8') as f:
                 emails = [line.strip() for line in f if line.strip() and not line.startswith('#')]
-            
+
             # Validate email formats
             valid_emails = []
             for email in emails:
@@ -191,14 +190,14 @@ def main():
                     valid_emails.append(email)
                 else:
                     print(f"{Y}[!] Skipping invalid email format: {email}{X}")
-            
+
             if not valid_emails:
                 print(f"{R}[✘] Error: No valid emails found in {args.email_file}{X}")
                 sys.exit(1)
-            
+
             print(f"{C}[+] Loaded {len(valid_emails)} {'email' if len(valid_emails) == 1 else 'emails'} from {args.email_file}{X}")
             is_email = True
-            targets = valid_emails
+            targets_found = valid_emails
         except FileNotFoundError:
             print(f"{R}[✘] Error: File not found: {args.email_file}{X}")
             sys.exit(1)
@@ -215,7 +214,7 @@ def main():
                 sys.exit(1)
             print(f"{C}[+] Loaded {len(usernames)} {'username' if len(usernames) == 1 else 'usernames'} from {args.username_file}{X}")
             is_email = False
-            targets = usernames
+            targets_found = usernames
         except FileNotFoundError:
             print(f"{R}[✘] Error: File not found: {args.username_file}{X}")
             sys.exit(1)
@@ -229,18 +228,18 @@ def main():
             sys.exit(1)
 
         target_name = args.username or args.email
-        targets = [target_name]
+        targets_found = [target_name]
 
     # Handle permutations (only for single username/email)
-    if args.permute and not (args.username_file or args.email_file):
-        target_name = args.username or args.email
-        targets = generate_permutations(
-            target_name, args.permute, args.stop, is_email)
-        print(
-            C + f"[+] Generated {len(targets)} permutations" + Style.RESET_ALL)
-    elif args.permute and (args.username_file or args.email_file):
-        print(f"{R}[✘] Error: Permutations not supported with file-based scanning{X}")
-        sys.exit(1)
+
+    targets = []
+    for target_name in targets_found:
+        temp_targets = list(islice(expand_patterns(target_name), args.stop))
+        targets.extend(temp_targets)
+        if len(temp_targets) > 1:
+            print(
+                C + f"[+] Generated {len(temp_targets)} permutations" + Style.RESET_ALL
+            )
 
     results = []
 
@@ -265,7 +264,7 @@ def main():
                     f"[!] {'Email' if is_email else 'User'} module '{args.module}' not found." +
                     Style.RESET_ALL
                 )
-        
+
         elif args.category:
             cat_path = load_categories(is_email).get(args.category)
             fn = run_email_category_batch if is_email else run_user_category
