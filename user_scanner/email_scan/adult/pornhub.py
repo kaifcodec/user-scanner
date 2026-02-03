@@ -14,7 +14,7 @@ async def _check(email: str) -> Result:
         "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
     }
 
-    async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=3) as client:
+    async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=5.0) as client:
         try:
             landing_resp = await client.get(base_url, headers=headers)
             token_match = re.search(r'var\s+token\s*=\s*"([^"]+)"', landing_resp.text)

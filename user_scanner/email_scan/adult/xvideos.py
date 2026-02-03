@@ -21,7 +21,7 @@ async def _check(email: str) -> Result:
         'Accept-Language': "en-US,en;q=0.9"
     }
 
-    async with httpx.AsyncClient(http2=True, timeout=3) as client:
+    async with httpx.AsyncClient(http2=True, timeout=5.0) as client:
         try:
             response = await client.get(url, params=params, headers=headers)
 
