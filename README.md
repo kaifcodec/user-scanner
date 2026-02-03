@@ -203,12 +203,11 @@ This tool is provided for **educational purposes** and **authorized security res
 
 ---
 
-## Star History
+## 🛠️ Troubleshooting
 
-<a href="https://www.star-history.com/#kaifcodec/user-scanner&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=kaifcodec/user-scanner&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=kaifcodec/user-scanner&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=kaifcodec/user-scanner&type=date&legend=top-left" />
- </picture>
-</a>
+Some sites may return **403 Forbidden** or **connection timeout** errors, especially if they are blocked in your region (this is common with some adult sites).
+
+- If a site is blocked in your region, use a VPN and select a region where you know the site is accessible.
+- Then run the tool again.
+
+These issues are caused by regional or network restrictions, not by the tool itself. If it still fails, report the error by opening an issue.
