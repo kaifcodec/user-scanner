@@ -46,7 +46,7 @@ async def _check(email: str) -> Result:
             if "supportedAuthenticationTypes=password" in response_text:
                 return Result.taken()
 
-            return Result.error("Unexpected response body")
+            return Result.error("Unexpected response body, report it via GitHub issues")
 
         except Exception as e:
             return Result.error(e)
