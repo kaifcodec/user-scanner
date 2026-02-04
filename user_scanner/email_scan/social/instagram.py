@@ -1,47 +1,62 @@
 import httpx
+import re
 from user_scanner.core.result import Result
 
 
-async def _check(email):
-    USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
-    async with httpx.AsyncClient(headers={"user-agent": USER_AGENT}, http2=True) as client:
-        await client.get("https://www.instagram.com/")
-        csrf = client.cookies.get("csrftoken")
+async def _check(email: str) -> Result:
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
 
-        headers = {
-            "x-csrftoken": csrf,
-            'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
-            'Accept-Encoding': "identity",
-            'sec-ch-ua-full-version-list': "\"Google Chrome\";v=\"143.0.7499.146\", \"Chromium\";v=\"143.0.7499.146\", \"Not A(Brand\";v=\"24.0.0.0\"",
-            'sec-ch-ua-platform': "\"Linux\"",
-            'sec-ch-ua': "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
-            'sec-ch-ua-model': "\"\"",
-            'sec-ch-ua-mobile': "?0",
-            'x-ig-app-id': "936619743392459",
-            'x-requested-with': "XMLHttpRequest",
-            'x-instagram-ajax': "1031566424",
-            'x-asbd-id': "359341",
-            'x-ig-www-claim': "0",
-            'sec-ch-ua-platform-version': "\"\"",
-            'origin': "https://www.instagram.com",
-            'referer': "https://www.instagram.com/accounts/password/reset/"
-        }
+    try:
+        async with httpx.AsyncClient(headers={"user-agent": user_agent}, http2=True, timeout=15.0) as client:
+            res = await client.get("https://www.instagram.com/accounts/password/reset/", follow_redirects=True)
 
-        response = await client.post(
-            "https://www.instagram.com/api/v1/web/accounts/account_recovery_send_ajax/",
-            data={"email_or_username": email},
-            headers=headers
-        )
+            csrf = client.cookies.get("csrftoken")
+            if not csrf:
+                match = re.search(
+                    r'["\']csrf_token["\']\s*:\s*["\']([^"\']+)["\']', res.text)
+                if match:
+                    csrf = match.group(1)
 
-        data = response.json()
-        status_val = data.get("status")
-        if status_val == "ok":
-            return Result.taken()
-        elif status_val == "fail":
-            return Result.available()
-        else:
-            return Result.error("Unexpected response body, report it on github")
+            if not csrf:
+                return Result.error("CSRF token not found (IP may be flagged)")
 
+            headers = {
+                "x-csrftoken": csrf,
+                "x-ig-app-id": "936619743392459",
+                "x-requested-with": "XMLHttpRequest",
+                "x-asbd-id": "359341",
+                "origin": "https://www.instagram.com",
+                "referer": "https://www.instagram.com/accounts/password/reset/",
+                "accept": "*/*",
+                "content-type": "application/x-www-form-urlencoded"
+            }
+
+            response = await client.post(
+                "https://www.instagram.com/api/v1/web/accounts/account_recovery_send_ajax/",
+                data={"email_or_username": email},
+                headers=headers
+            )
+
+            if response.status_code in [200, 400]:
+                data = response.json()
+                status_val = data.get("status")
+
+                if status_val == "ok":
+                    return Result.taken()
+                elif status_val == "fail":
+                    return Result.available()
+
+                return Result.error("Unexpected response body, report it via GitHub issues")
+
+            if response.status_code == 429:
+                return Result.error("Rate limited (429)")
+
+            return Result.error(f"HTTP {response.status_code}")
+
+    except httpx.TimeoutException:
+        return Result.error("Connection timed out")
+    except Exception as e:
+        return Result.error(f"Unexpected Exception: {e}")
 
 
 async def validate_instagram(email: str) -> Result:

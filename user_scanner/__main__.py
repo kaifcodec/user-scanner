@@ -1,7 +1,8 @@
 import argparse
-import time
-import sys
+import json
 import re
+import sys
+import time
 from colorama import Fore, Style
 from itertools import islice
 
@@ -65,7 +66,6 @@ def main():
                         help="Scan all platforms in a category")
 
     parser.add_argument("-m", "--module", help="Scan a single specific module")
-
 
     parser.add_argument("-lu", "--list-user", action="store_true",
                         help="List all available modules for username scanning")
@@ -169,7 +169,8 @@ def main():
             else:
                 set_proxy_manager(args.proxy_file)
                 proxy_count = get_proxy_count()
-                print(f"{G}[+] Loaded {proxy_count} proxies from {args.proxy_file}{X}")
+                print(
+                    f"{G}[+] Loaded {proxy_count} proxies from {args.proxy_file}{X}")
         except Exception as e:
             print(f"{R}[✘] Error loading proxies: {e}{X}")
             sys.exit(1)
@@ -192,7 +193,8 @@ def main():
                     print(f"{Y}[!] Skipping invalid email format: {email}{X}")
 
             if not valid_emails:
-                print(f"{R}[✘] Error: No valid emails found in {args.email_file}{X}")
+                print(
+                    f"{R}[✘] Error: No valid emails found in {args.email_file}{X}")
                 sys.exit(1)
 
             print(f"{C}[+] Loaded {len(valid_emails)} {'email' if len(valid_emails) == 1 else 'emails'} from {args.email_file}{X}")
@@ -208,11 +210,14 @@ def main():
     elif args.username_file:
         try:
             with open(args.username_file, 'r', encoding='utf-8') as f:
-                usernames = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+                usernames = [line.strip() for line in f if line.strip()
+                                        and not line.startswith('#')]
             if not usernames:
-                print(f"{R}[✘] Error: No valid usernames found in {args.username_file}{X}")
+                print(
+                    f"{R}[✘] Error: No valid usernames found in {args.username_file}{X}")
                 sys.exit(1)
-            print(f"{C}[+] Loaded {len(usernames)} {'username' if len(usernames) == 1 else 'usernames'} from {args.username_file}{X}")
+            print(
+                f"{C}[+] Loaded {len(usernames)} {'username' if len(usernames) == 1 else 'usernames'} from {args.username_file}{X}")
             is_email = False
             targets_found = usernames
         except FileNotFoundError:
@@ -283,8 +288,36 @@ def main():
     if args.output:
         content = formatter.into_csv(
             results) if args.format == "csv" else formatter.into_json(results)
-        with open(args.output, "a", encoding="utf-8") as f:
-            f.write(content)
+
+        if args.format == "json":
+            data = []
+            try:
+                with open(args.output, "r", encoding="utf-8") as f:
+                    old = json.load(f)
+                    if isinstance(old, list) and all(isinstance(x, dict) for x in old):
+                        data = old
+            except Exception:
+                pass
+
+            new_items = json.loads(content)
+            if isinstance(new_items, list) and all(isinstance(x, dict) for x in new_items):
+                data.extend(new_items)
+
+            with open(args.output, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+
+        if args.format == "csv":
+            try:
+                with open(args.output, "r", encoding="utf-8") as init_file:
+                    has_content = init_file.read().strip() != ""
+            except Exception:
+                has_content = False
+
+            with open(args.output, "a", encoding="utf-8") as f:
+                if has_content:
+                    f.write("\n")
+                f.write(content)
+
         print(G + f"\n[+] Results saved to {args.output}" + Style.RESET_ALL)
 
 
