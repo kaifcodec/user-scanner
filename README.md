@@ -105,6 +105,42 @@ Scan multiple emails/usernames from a file (one email/username per line):
 user-scanner -ef emails.txt     # bulk email scan
 user-scanner -uf usernames.txt  # bulk username scan
 ```
+---
+### Library mode for email_scan/user_scan
+
+For full usage guide [click here](https://github.com/kaifcodec/user-scanner/blob/main/USAGE.md)
+
+- Email scan example (single module):
+```python
+import asyncio
+from user_scanner.core import engine
+from user_scanner.email_scan.dev import github
+
+async def main():
+    # Engine detects 'email_scan' path -> returns "Registered" status
+    result = await engine.check(github, "test@gmail.com")
+    json_data = result.to_json() # returns JSON output
+    csv_data = result.to_csv()   # returns CSV output
+
+asyncio.run(main())
+
+```
+- Username scan example (single module):
+```python
+import asyncio
+from user_scanner.core import engine
+from user_scanner.user_scan.dev import github
+
+async def main():
+    # Engine detects 'user_scan' path -> returns "Available" status
+    result = await engine.check(github, "johndoe123")
+    json_data = result.to_json() # returns JSON output
+    csv_data = result.to_csv()   # returns CSV output
+
+asyncio.run(main())
+
+```
+---
 
 ### Username/Email variations (suffix only)
 
