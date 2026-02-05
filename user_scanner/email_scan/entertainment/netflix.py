@@ -57,7 +57,7 @@ async def _check(email: str) -> Result:
                 elif "Welcome back!" in resp_text:
                     return Result.taken()
                 else:
-                    return Result.error("Unexpected response body, report it via GitHub issues")
+                    return Result.error("Unexpected response, Try an India-based VPN or report it via GitHub issues")
 
             return Result.error(f"HTTP {response.status_code}")
 
