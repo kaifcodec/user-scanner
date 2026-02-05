@@ -8,10 +8,10 @@ async def _check(email: str) -> Result:
             url = "https://id.atlassian.com/rest/marketing-consent/config"
             payload = {"email": email}
             headers = {
-                'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
-                'Content-Type': "application/json",
-                'Origin': "https://id.atlassian.com",
-                'Referer': f"https://id.atlassian.com/login?email={email}"
+                "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+                "Content-Type": "application/json",
+                "Origin": "https://id.atlassian.com",
+                "Referer": f"https://id.atlassian.com/login?email={email}",
             }
 
             response = await client.post(url, json=payload, headers=headers)
@@ -22,11 +22,13 @@ async def _check(email: str) -> Result:
             data = response.json()
             is_reg = data.get("implicitConsent")
             if is_reg is True:
-                return Result.available()
-            elif is_reg is False:
                 return Result.taken()
+            elif is_reg is False:
+                return Result.available()
             else:
-                return Result.error(f"Unexpected error occurred [{response.status_code}]")
+                return Result.error(
+                    f"Unexpected error occurred [{response.status_code}]"
+                )
         except Exception as e:
             return Result.error(f"Unexpected exception:{e}")
 
