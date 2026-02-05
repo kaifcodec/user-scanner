@@ -44,7 +44,7 @@ def validate_battlenet(user: str) -> Result:
             data = response.json()
 
             if isinstance(data, list) and len(data) == 0:
-                return Result.available()
+                return Result.available("Battle.net allows duplicate usernames and distinguishes accounts with a numeric tag")
             elif isinstance(data, list) and len(data) > 0:
                 end = "es" if len(data) > 1 else ""
                 return Result.taken(f"{len(data)} match{end}")
