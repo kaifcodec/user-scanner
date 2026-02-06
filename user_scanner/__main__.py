@@ -263,7 +263,7 @@ def main():
             print(f"\n{Fore.CYAN} Checking username: {target}{Style.RESET_ALL}")
 
         if args.module:
-            modules = find_module(args.module, is_email)
+            modules = find_module(args.module.replace(".", "_"), is_email)
             fn = run_email_module_batch if is_email else run_user_module
             if modules:
                 for module in modules:
