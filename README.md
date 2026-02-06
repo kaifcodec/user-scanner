@@ -184,6 +184,14 @@ This will:
 
 ---
 
+## ❤️ Support the project
+
+If this project helps you, consider supporting its development:
+
+**BTC (SegWit):** `bc1q0dzkuav8lq9lwu7gc457vwlda4utfcr5hpv7ka`
+
+
+---
 ## Contributing
 
 Modules are organized under `user_scanner/`:
