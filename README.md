@@ -109,7 +109,7 @@ user-scanner -uf usernames.txt  # bulk username scan
 ### Library mode for email_scan
 Only available for `user-scanner>=1.2.0`
 
-For full usage guide [click here](https://github.com/kaifcodec/user-scanner/blob/main/USAGE.md)
+For full usage (eg. category checks, full scan) guide [click here](https://github.com/kaifcodec/user-scanner/blob/main/USAGE.md)
 
 - Email scan example (single module):
 ```python
