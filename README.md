@@ -176,9 +176,10 @@ This will:
 
 - Note*: New modules are constantly getting added so screenshots might show only limited, outdated output:
 
-<img width="1080" height="800" alt="1000146237" src="https://github.com/user-attachments/assets/1bb7d7cb-9b78-495a-ae95-01a9ef48d9a2" />
+<img width="1080" height="930" alt="1000146237" src="https://github.com/user-attachments/assets/3cbcecaf-3620-49be-9d0a-8f94790acdf0" />
 
 ---
+
 
 <img width="1072" height="848" alt="user-scanner's main usage screenshot" src="https://github.com/user-attachments/assets/34e44ca6-e314-419e-9035-d951b493b47f" />
 
