@@ -126,3 +126,90 @@ async def test_metadata_enrichment(patreon_stub):
     assert result.is_email is False
     assert result.site_name == "Patreon"
     assert result.category == "Creator"
+
+
+# check_category
+@pytest.mark.anyio
+async def test_check_category(monkeypatch, patreon_stub, medium_stub):
+    async_mock = AsyncMock()
+    async_mock.return_value = Result.taken()
+
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
+        "creator": "/fake/path"
+    })
+    monkeypatch.setattr(engine, "load_modules",
+                        lambda x: [patreon_stub, medium_stub])
+    monkeypatch.setattr(engine, "check", async_mock)
+
+    result = await engine.check_category("creator", "some_username", is_email=False)
+    calls = [call(patreon_stub, "some_username"),
+             call(medium_stub, "some_username")]
+
+    assert len(result) == 2
+    async_mock.assert_has_calls(calls)
+
+
+@pytest.mark.anyio
+async def test_is_email_passed_correctly(monkeypatch, github_stub):
+    async_mock = AsyncMock()
+    async_mock.return_value = Result.taken()
+
+    sync_mock = Mock()
+    sync_mock.return_value = {"dev": "/fake/path"}
+
+    monkeypatch.setattr(engine, "load_categories", sync_mock)
+    monkeypatch.setattr(engine, "load_modules", lambda x: [github_stub])
+    github_stub.validate_github = async_mock
+
+    result = await engine.check_category("dev", "some_email")
+
+    assert len(result) == 1
+    sync_mock.assert_called_once_with(is_email=True)
+
+
+@pytest.mark.anyio
+async def test_case_insensitive_category_match(monkeypatch, github_stub):
+    async_mock = AsyncMock()
+    async_mock.return_value = Result.taken()
+
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
+        "dev": "/fake/path"
+    })
+    monkeypatch.setattr(engine, "load_modules", lambda x: [github_stub])
+    github_stub.validate_github = async_mock
+
+    result = await engine.check_category("Dev", "some_email")
+
+    assert len(result) == 1
+    async_mock.assert_awaited_once_with("some_email")
+
+
+@pytest.mark.anyio
+async def test_empty_category_list(monkeypatch):
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
+        "dev": "/fake/path"
+    })
+    monkeypatch.setattr(engine, "load_modules", lambda x: [])
+    result = await engine.check_category("dev", "some_email")
+
+    assert result == []
+
+
+@pytest.mark.anyio
+async def test_category_not_found_email(monkeypatch):
+    monkeypatch.setattr(engine, "load_categories",
+                        lambda is_email: {"dev": "/fake/path"})
+    with pytest.raises(ValueError) as exc_info:
+        await engine.check_category("unknown", "some_email")
+
+    assert "email_scan" in str(exc_info.value)
+
+
+@pytest.mark.anyio
+async def test_category_not_found_username(monkeypatch):
+    monkeypatch.setattr(engine, "load_categories",
+                        lambda is_email: {"dev": "/fake/path"})
+    with pytest.raises(ValueError) as exc_info:
+        await engine.check_category("unknown", "some_username", is_email=False)
+
+    assert "user_scan" in str(exc_info.value)
