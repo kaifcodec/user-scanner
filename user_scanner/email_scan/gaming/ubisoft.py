@@ -52,7 +52,7 @@ async def _check(email: str) -> Result:
             if "legalOptinsKey" in body and "Invalid email" not in body:
                 return Result.available()
 
-            return Result.error(f"Unexpected response body, report it on github")
+            return Result.error("Unexpected response body, report it on github")
 
     except Exception as e:
         return Result.error(e)
