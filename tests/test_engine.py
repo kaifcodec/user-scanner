@@ -213,3 +213,78 @@ async def test_category_not_found_username(monkeypatch):
         await engine.check_category("unknown", "some_username", is_email=False)
 
     assert "user_scan" in str(exc_info.value)
+
+
+# check all
+@pytest.mark.anyio
+async def test_check_all(monkeypatch):
+    async_mock = AsyncMock()
+    async_mock.return_value = [Result.taken(), Result.available()]
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
+        "creator": "/fake/path",
+        "dev": "/fake/path2"
+    })
+    monkeypatch.setattr(engine, "check_category", async_mock)
+
+    result = await engine.check_all("some_email")
+    calls = [call("creator", "some_email", True),
+             call("dev", "some_email", True)]
+
+    assert len(result) == 4
+    async_mock.assert_has_calls(calls)
+
+
+@pytest.mark.anyio
+async def test_check_all_email_passed_correct(monkeypatch):
+    async_mock = AsyncMock()
+    async_mock.return_value = [Result.taken(), Result.available()]
+    sync_mock = Mock()
+    sync_mock.return_value = {
+        "creator": "/fake/path",
+        "dev": "/fake/path2"
+    }
+
+    monkeypatch.setattr(engine, "load_categories", sync_mock)
+    monkeypatch.setattr(engine, "check_category", async_mock)
+
+    await engine.check_all("some_username", is_email=False)
+    calls = [call("creator", "some_username", False),
+             call("dev", "some_username", False)]
+
+    sync_mock.assert_called_once_with(is_email=False)
+    async_mock.assert_has_calls(calls, any_order=False)
+
+
+@pytest.mark.anyio
+async def test_check_all_nested_lis_flatten(monkeypatch):
+    async_mock = AsyncMock()
+    async_mock.side_effect = [[Result.taken(), Result.available()],
+                              [Result.taken()]]
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
+        "creator": "/fake/path",
+        "dev": "/fake/path2"
+    })
+    monkeypatch.setattr(engine, "check_category", async_mock)
+
+    result = await engine.check_all("some_email")
+
+    assert len(result) == 3
+
+
+@pytest.mark.anyio
+async def test_check_all_category_exception(monkeypatch):
+    async def check_category_side_effect(cat_name, target, is_email=True):
+        if cat_name == "dev":
+            raise ValueError("Failed")
+        return [Result.taken(), Result.available()]
+
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
+        "creator": "/fake/path",
+        "dev": "/fake/path2"
+    })
+    monkeypatch.setattr(engine, "check_category", check_category_side_effect)
+
+    with pytest.raises(ValueError) as exc_info:
+        await engine.check_all("some_email")
+
+    assert "Failed" in str(exc_info.value)
