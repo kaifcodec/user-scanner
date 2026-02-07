@@ -125,6 +125,6 @@ def status_validate(url: str, available: int | List[int], taken: int | List[int]
             return Result.available()
         elif taken_value:
             return Result.taken()
-        return Result.error("Status didn't match. Report this on Github.")
+        return Result.error(f"[{status}] Status didn't match. Report this on Github.")
 
     return generic_validate(url, inner, **kwargs)
