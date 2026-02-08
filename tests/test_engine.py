@@ -1,3 +1,19 @@
+"""
+user-scanner Engine Unit Tests
+
+This suite tests the core orchestration logic of 'engine.py'.
+It verifies:
+1. Automated mode detection (Email vs Username) based on file paths.
+2. Metadata enrichment (Site Name, Category) of Result objects.
+3. Execution flow for both sync and async module validation functions.
+4. Error handling and result flattening for batch/category scans.
+
+Note: These tests use Mocking and Stubs (via unittest.mock and pytest-monkeypatch)
+to isolate the engine from the network. No actual API requests are performed.
+
+"""
+
+
 import pytest
 from types import ModuleType
 from user_scanner.core import engine
