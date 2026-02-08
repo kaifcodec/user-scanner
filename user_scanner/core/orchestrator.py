@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import httpx
 from pathlib import Path
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 from typing import Callable, List
 from types import ModuleType
 from user_scanner.core.helpers import find_category,  get_site_name, load_categories, load_modules, get_proxy
@@ -72,7 +73,7 @@ def make_request(url: str, **kwargs) -> httpx.Response:
     """Simple wrapper to **httpx.get** that predefines headers and timeout"""
     if "headers" not in kwargs:
         kwargs["headers"] = {
-            'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+            'User-Agent': get_random_user_agent(),
             'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             'Accept-Encoding': "gzip, deflate, br",
             'Accept-Language': "en-US,en;q=0.9",

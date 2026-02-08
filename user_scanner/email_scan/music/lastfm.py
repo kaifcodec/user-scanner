@@ -1,5 +1,6 @@
 import httpx
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:

@@ -1,11 +1,12 @@
 from user_scanner.core.orchestrator import status_validate
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_instagram(user):
     url = f"https://www.threads.com/api/v1/users/web_profile_info/?username={user}"
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'X-IG-App-ID': "936619743392459",
         'Accept': "application/json, text/javascript, */*; q=0.01",
         'Accept-Encoding': "gzip, deflate, br",

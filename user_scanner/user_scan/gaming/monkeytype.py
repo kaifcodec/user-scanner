@@ -1,5 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 from urllib.parse import quote
 
 def validate_monkeytype(user: str) -> Result:

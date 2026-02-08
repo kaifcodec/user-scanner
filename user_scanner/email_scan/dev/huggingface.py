@@ -1,12 +1,13 @@
 import httpx
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
     url = "https://huggingface.co/api/check-user-email"
     params = {'email': email}
     headers = {
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept-Encoding': "identity",
         'referer': "https://huggingface.co/join",
         'priority': "u=1, i"

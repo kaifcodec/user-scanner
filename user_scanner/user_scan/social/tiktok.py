@@ -1,6 +1,8 @@
 import re
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_tiktok(user: str) -> Result:
@@ -17,7 +19,7 @@ def validate_tiktok(user: str) -> Result:
         return Result.error("Username cannot start nor end with a period")
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         'Accept-Encoding': "identity",
         'Accept-Language': "en-US,en;q=0.9",

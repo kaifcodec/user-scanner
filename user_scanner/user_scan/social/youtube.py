@@ -1,10 +1,11 @@
 from user_scanner.core.orchestrator import status_validate, Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_youtube(user) -> Result:
     url = f"https://m.youtube.com/@{user}"
     headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         'Accept-Encoding': "identity",
         'sec-ch-dpr': "2.75",

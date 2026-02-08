@@ -1,11 +1,12 @@
 import httpx
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
     headers = {
         'authority': 'api.hubspot.com',
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'content-type': 'application/json',
         'origin': 'https://app.hubspot.com',
         'referer': 'https://app.hubspot.com/',

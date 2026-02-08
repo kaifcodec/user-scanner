@@ -1,12 +1,13 @@
 import httpx
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
     headers = {
         'authority': 'www.duolingo.com',
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'en-US,en;q=0.9',
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0",
+        'User-Agent': get_random_user_agent(),
         'Referer': 'https://www.duolingo.com/',
     }
 

@@ -1,13 +1,14 @@
 import httpx
 import re
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
     login_url = "https://account.bbc.com/auth/identifier/signin?realm=%2F&clientId=Account&action=register&ptrt=https%3A%2F%2Fwww.bbc.com%2F&userOrigin=BBCS_BBC&purpose=free"
     check_url = "https://account.bbc.com/auth/identifier/check"
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept': "application/json",
         'Origin': "https://account.bbc.com",
     }
