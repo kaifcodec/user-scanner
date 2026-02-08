@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 from typing import List
 from types import ModuleType
 
@@ -23,7 +24,7 @@ async def check(module: ModuleType, target: str) -> Result:
         )
 
     try:
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             result = await func(target)
         else:
             result = func(target)
