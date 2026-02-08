@@ -1,5 +1,4 @@
 import httpx
-import json
 from user_scanner.core.result import Result
 
 
