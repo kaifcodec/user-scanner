@@ -22,6 +22,11 @@ from user_scanner.core.result import Result
 
 
 @pytest.fixture
+def anyio_backend():
+    return 'asyncio'
+
+
+@pytest.fixture
 def github_stub():
     module = ModuleType("github")
     module.__file__ = "/some/path/email_scan/dev/github.py"
