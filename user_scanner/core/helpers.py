@@ -1,6 +1,5 @@
 import importlib
 import importlib.util
-from itertools import permutations
 from types import ModuleType
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -70,39 +69,10 @@ def find_category(module: ModuleType) -> str | None:
     return None
 
 
-def generate_permutations(username: str, pattern: str, limit: int | None = None, is_email: bool = False) -> List[str]:
-    """
-    Generate all order-based permutations of characters in `pattern`
-    appended after `username`.
-    """
-
-    if limit and limit <= 0:
-        return []
-
-    permutations_set = {username}
-    chars = list(pattern)
-
-    domain = ""
-    if is_email:
-        username, domain = username.strip().split("@")
-
-    # generate permutations of length 1 → len(chars)
-    for r in range(len(chars)):
-        for combo in permutations(chars, r):
-            new = username + ''.join(combo)
-            if is_email:
-                new += "@" + domain
-            permutations_set.add(new)
-            if limit and len(permutations_set) >= limit:
-                return sorted(permutations_set)
-
-    return sorted(permutations_set)
-
-
 def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int = 50) -> List[str]:
     """Validate proxies by testing them against google.com. Returns list of working proxies."""
     working_proxies = []
-    
+
     def test_proxy(proxy: str) -> Optional[str]:
         try:
             with httpx.Client(proxy=proxy, timeout=timeout) as client:
@@ -112,26 +82,26 @@ def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int =
         except Exception:
             pass
         return None
-    
+
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(test_proxy, proxy): proxy for proxy in proxy_list}
         for future in as_completed(futures):
             result = future.result()
             if result:
                 working_proxies.append(result)
-    
+
     return working_proxies
 
 
 class ProxyManager:
     """Thread-safe proxy manager that loads and rotates proxies from a file."""
-    
+
     def __init__(self, proxy_file: str):
         self.proxies: list[str] = []
         self.current_index = 0
         self.lock = threading.Lock()
         self._load_proxies(proxy_file)
-    
+
     def _load_proxies(self, proxy_file: str) -> None:
         """Load proxies from a text file. Supports http://, https://, and socks5:// proxies."""
         try:
@@ -143,31 +113,31 @@ class ProxyManager:
                         if not line.startswith(('http://', 'https://', 'socks5://')):
                             line = 'http://' + line
                         self.proxies.append(line)
-            
+
             if not self.proxies:
                 raise ValueError("No valid proxies found in file")
-                
+
         except FileNotFoundError:
             raise FileNotFoundError(f"Proxy file not found: {proxy_file}")
         except Exception as e:
             raise Exception(f"Error loading proxies: {e}")
-    
+
     def get_next_proxy(self) -> Optional[str]:
         """Get the next proxy in rotation (round-robin)."""
         if not self.proxies:
             return None
-        
+
         with self.lock:
             proxy = self.proxies[self.current_index]
             self.current_index = (self.current_index + 1) % len(self.proxies)
             return proxy
-    
+
     def get_random_proxy(self) -> Optional[str]:
         """Get a random proxy from the list."""
         if not self.proxies:
             return None
         return random.choice(self.proxies)
-    
+
     def count(self) -> int:
         """Return the number of loaded proxies."""
         return len(self.proxies)
@@ -198,4 +168,3 @@ def get_proxy_count() -> int:
     if _proxy_manager:
         return _proxy_manager.count()
     return 0
-
