@@ -86,6 +86,102 @@ async def main():
 
 asyncio.run(main())
 ```
+Output:
+```json
+[
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Bluesky",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Discord",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Instagram",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Mastodon",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Pinterest",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Reddit",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Snapchat",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Soundcloud",
+    "status": "Error",
+    "reason": "Possible rate limit, status code [429]"
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Telegram",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Threads",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Tiktok",
+    "status": "Error",
+    "reason": "ConnectTimeout: Timed out"
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "X (Twitter)",
+    "status": "Taken",
+    "reason": ""
+  },
+  {
+    "username": "johndoe123",
+    "category": "Social",
+    "site_name": "Youtube",
+    "status": "Taken",
+    "reason": ""
+  }
+]
+```
 
 #### Full OSINT Scan (All Categories)
 ```python
