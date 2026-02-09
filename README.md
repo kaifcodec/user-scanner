@@ -122,27 +122,24 @@ async def main():
     result = await engine.check(github, "test@gmail.com")
     json_data = result.to_json() # returns JSON output
     csv_data = result.to_csv()   # returns CSV output
-
+    print(json_data)             # prints the json data
 asyncio.run(main())
 
 ```
+Output:
+```json
+{
+        "email": "test@gmail.com",
+        "category": "Dev",
+        "site_name": "Github",
+        "status": "Registered",
+        "reason": ""
+}
+```
 ---
 
-### Username/Email variations (suffix only)
-
-Generate & check username variations using a permutation from the given suffix:
-
-```bash
-user-scanner -u john_ -p ab # john_a, ..., john_ab, john_ba
-```
 
 ### Using Proxies
-
-Route requests through proxy servers:
-
-```bash
-user-scanner -u john_doe -P proxies.txt
-```
 
 Validate proxies before scanning (tests each proxy against google.com):
 
