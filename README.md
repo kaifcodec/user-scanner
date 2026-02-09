@@ -53,28 +53,10 @@ python -m pip install --upgrade pip
 pip install user-scanner
 ```
 ---
+### Important Flags
 
-## Important Flags
+See [Important flags](docs/FLAGS.md) here and use the tool powerfully
 
-| Flag | Description |
-|------|-------------|
-| `-u, --username USERNAME` | Scan a single username across platforms |
-| `-e, --email EMAIL`       | Scan a single email across platforms |
-| `-uf, --username-file FILE` | Scan multiple usernames from file (one per line) |
-| `-ef, --email-file FILE`  | Scan multiple emails from file (one per line) |
-| `-c, --category CATEGORY` | Scan all platforms in a specific category |
-| `-lu, --list-user` | List all available modules for username scanning |
-| `-le, --list-email` | List all available modules for email scanning |
-| `-m, --module MODULE`     | Scan a single specific module |
-| `-p, --permute PERMUTE`   | Generate username permutations using a pattern/suffix |
-| `-P, --proxy-file FILE`   | Use proxies from file (one per line) |
-| `--validate-proxies`      | Validate proxies before scanning (tests against google.com) |
-| `-s, --stop STOP`         | Limit the number of permutations generated |
-| `-d, --delay DELAY`       | Delay (in seconds) between requests |
-| `-f, --format {csv,json}` | Select output format |
-| `-o, --output OUTPUT`     | Save results to a file |
-
----
 
 ## Usage
 
@@ -109,10 +91,12 @@ user-scanner -uf usernames.txt  # bulk username scan
 ### Library mode for email_scan
 Only available for `user-scanner>=1.2.0`
 
-For full usage (eg. category checks, full scan) guide [click here](https://github.com/kaifcodec/user-scanner/blob/main/USAGE.md)
+See full usage (eg. category checks, full scan) guide [library usage](docs/USAGE.md)
 
 - Email scan example (single module):
+
 ```python
+
 import asyncio
 from user_scanner.core import engine
 from user_scanner.email_scan.dev import github
@@ -123,11 +107,14 @@ async def main():
     json_data = result.to_json() # returns JSON output
     csv_data = result.to_csv()   # returns CSV output
     print(json_data)             # prints the json data
+
 asyncio.run(main())
 
 ```
 Output:
+
 ```json
+
 {
         "email": "test@gmail.com",
         "category": "Dev",
@@ -135,6 +122,7 @@ Output:
         "status": "Registered",
         "reason": ""
 }
+
 ```
 ---
 
@@ -152,6 +140,7 @@ This will:
 2. Save working proxies to `validated_proxies.txt`
 3. Use only validated proxies for scanning
 
+
 ---
 
 ## Screenshots: 
@@ -166,6 +155,7 @@ This will:
 <img width="1072" height="848" alt="user-scanner's main usage screenshot" src="https://github.com/user-attachments/assets/34e44ca6-e314-419e-9035-d951b493b47f" />
 
 ---
+
 
 ## ❤️ Support the project
 
@@ -194,17 +184,7 @@ user_scanner/
     ...
 ```
 
-**Module guidelines:**
-This project contains small "validator" modules that check whether a username exists on a given platform. Each validator is a single function that returns a Result object (see `core/orchestrator.py`).
-
-Result semantics:
-- Result.available() → `available`
-- Result.taken() → `taken`
-- Result.error(message: Optional[str]) → `error`, blocked, unknown, or request failure (include short diagnostic message when helpful)
-
-Follow this document when adding or updating validators.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
+See detailed [Contributing guidelines](CONTRIBUTING.md)
 
 ---
 
@@ -239,3 +219,4 @@ Some sites may return **403 Forbidden** or **connection timeout** errors, especi
 - Then run the tool again.
 
 These issues are caused by regional or network restrictions, not by the tool itself. If it still fails, report the error by opening an issue.
+
