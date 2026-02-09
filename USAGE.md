@@ -8,7 +8,7 @@ User Scanner provides a powerful **Library Mode** via its core engine. This allo
 
 The engine automatically detects whether you are using a module from `email_scan` or `user_scan` by inspecting its path. It then adjusts the result labels (e.g., "Registered" vs "Taken") automatically.
 
-#### Email Scan Example
+### Email Scan Example
 ```python
 import asyncio
 from user_scanner.core import engine
@@ -26,12 +26,22 @@ async def main():
     
 asyncio.run(main())
 ```
+Output:
+```json
+{
+        "email": "target@gmail.com",
+        "category": "Social",
+        "site_name": "Instagram",
+        "status": "Registered",
+        "reason": ""
+}
+```
 
-#### Username Scan Example
+### Username Scan Example
 ```python
 import asyncio
 from user_scanner.core import engine
-from user_scanner.user_scan.social import github
+from user_scanner.user_scan.dev import github
 
 async def main():
     # Engine detects 'user_scan' path -> Result status: "Available" / "Taken"
@@ -41,7 +51,17 @@ async def main():
 
 asyncio.run(main())
 ```
+Output:
 
+```json
+{
+        "username": "johndoe123",
+        "category": "Dev",
+        "site_name": "Github",
+        "status": "Taken",
+        "reason": ""
+}
+```
 ---
 
 ### Batch & Category Scans
