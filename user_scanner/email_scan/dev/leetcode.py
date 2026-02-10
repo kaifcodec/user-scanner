@@ -1,64 +1,54 @@
 import httpx
+import json
 from user_scanner.core.result import Result
 
-
 async def _check(email: str) -> Result:
+    url = "https://leetcode.com/graphql/"
+    
+    # Hardcoded values as leetcode accepting this value, wierd but it works!
+    static_csrf = "bMwA82bLs7IrhigK19Bu6uDj4DhZnVnE"
+    
+    payload = {
+        "query": """
+            mutation AuthRequestPasswordResetByEmail($email: String!) {
+                authRequestPasswordResetByEmail(email: $email) {
+                    ok
+                    error
+                }
+            }
+        """,
+        "variables": {"email": email},
+        "operationName": "AuthRequestPasswordResetByEmail"
+    }
+
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        'Accept-Language': "en-US,en;q=0.9",
-        'Referer': "https://leetcode.com/accounts/login/",
+        'Content-Type': "application/json",
+        'x-csrftoken': static_csrf,
         'Origin': "https://leetcode.com",
+        'Referer': "https://leetcode.com/accounts/password/reset/",
+        'Cookie': f"csrftoken={static_csrf}"
     }
 
     try:
-        async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
-            await client.get("https://leetcode.com/accounts/login/", headers=headers)
-            csrf_token = client.cookies.get("csrftoken")
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(url, content=json.dumps(payload), headers=headers)
+            data = response.json()
 
-            if not csrf_token:
-                return Result.error("CSRF token not found, possible rate-limit")
+            result_obj = data.get("data", {}).get("authRequestPasswordResetByEmail", {})
+            is_ok = result_obj.get("ok")
+            error_msg = result_obj.get("error")
 
-            headers.update({
-                'x-requested-with': "XMLHttpRequest",
-                'referer': "https://leetcode.com/accounts/password/reset/",
-            })
+            if is_ok is True:
+                return Result.taken()
+            
+            if is_ok is False and error_msg == "Email does not exist":
+                return Result.available()
 
-            payload = {
-                'next': 'undefined',
-                'userName': '',
-                'email': email,
-                'csrfmiddlewaretoken': csrf_token
-            }
+            return Result.error(f"LeetCode Error: {error_msg}")
 
-            response = await client.post(
-                "https://leetcode.com/accounts/password/reset/",
-                headers=headers,
-                data=payload
-            )
-
-            if response.status_code in [200, 400]:
-                data = response.json()
-
-                if data.get("location") == "/accounts/password/reset/done/":
-                    return Result.taken()
-
-                email_field = data.get("form", {}).get(
-                    "fields", {}).get("email", {})
-                errors = email_field.get("errors", [])
-
-                if any("not assigned to any user account" in err for err in errors):
-                    return Result.available()
-
-                return Result.error("Unexpected response data")
-
-            return Result.error(f"HTTP {response.status_code}")
-
-    except httpx.TimeoutException:
-        return Result.error("Connection timed out")
     except Exception as e:
         return Result.error(e)
-
 
 async def validate_leetcode(email: str) -> Result:
     return await _check(email)
