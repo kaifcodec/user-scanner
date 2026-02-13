@@ -31,6 +31,9 @@ async def _check(email: str) -> Result:
 
             # Logic: If both 'tierd_knight' and 'email' are taken, the email exists.
             # If only 'tierd_knight' is mentioned as taken, the email is available.
+            if response.status_code == 403:
+                return Result.error("Cloudflare Bot Detection (403 Forbidden), try after sometime or use proxy")
+
             if "mail: The email address" in body and "is already taken" in body:
                 return Result.taken()
 
