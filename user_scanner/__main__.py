@@ -33,7 +33,7 @@ from user_scanner.core.email_orchestrator import (
     run_email_module_batch
 )
 
-from user_scanner.core.patterns import expand_patterns
+from user_scanner.core.patterns import expand_patterns_random
 
 # Color configs
 R = Fore.RED
@@ -239,7 +239,7 @@ def main():
 
     targets = []
     for target_name in targets_found:
-        temp_targets = list(islice(expand_patterns(target_name), args.stop))
+        temp_targets = list(islice(expand_patterns_random(target_name), args.stop))
         targets.extend(temp_targets)
         if len(temp_targets) > 1:
             print(

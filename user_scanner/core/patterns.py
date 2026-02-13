@@ -1,6 +1,7 @@
 import itertools
+import random
 from dataclasses import dataclass
-from typing import List, Set
+from typing import Iterator, List, Set
 
 
 @dataclass
@@ -152,13 +153,13 @@ def _parse_patterns(input: str) -> List[Block]:
     return res
 
 
-def _iter_block(block: PatternBlock):
+def _iter_block(block: PatternBlock) -> Iterator[str]:
     for length in sorted(block.lenset):
         for combo in itertools.product(block.charset, repeat=length):
             yield "".join(combo)
 
 
-def _iter_pattern(blocks: List[Block]):
+def _iter_pattern(blocks: List[Block]) -> Iterator[str]:
     if not blocks:
         yield ""
         return
@@ -174,6 +175,29 @@ def _iter_pattern(blocks: List[Block]):
                 yield middle + suffix
 
 
-def expand_patterns(input: str):
+def expand_patterns(input: str) -> Iterator[str]:
     blocks = _parse_patterns(input)
     yield from _iter_pattern(blocks)
+
+
+def expand_patterns_random(input: str, capacity: int = 1000) -> Iterator[str]:
+    patterns = expand_patterns(input)
+    buffer = []
+
+    for _ in range(capacity):
+        try:
+            buffer.append(next(patterns))
+        except StopIteration:
+            random.shuffle(buffer)
+            yield from buffer
+            return
+
+    random.shuffle(buffer)
+
+    for item in patterns:
+        pos = random.randrange(capacity)
+        buffer[pos], item = item, buffer[pos]
+        yield item
+
+    random.shuffle(buffer)
+    yield from buffer
