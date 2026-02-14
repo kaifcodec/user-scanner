@@ -36,7 +36,7 @@ async def _check(email: str) -> Result:
             elif user_status == "UNREGISTERED_EMAIL":
                 return Result.available()
             elif user_status == "UNVERIFIED_EMAIL":
-                return Result.taken("However email is not verfied on the site")
+                return Result.taken("However email is not verified on the site")
 
             return Result.error("Unexpected response body, report it on github")
 

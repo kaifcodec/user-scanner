@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 async def _check(email: str) -> Result:
     url = "https://leetcode.com/graphql/"
     
-    # Hardcoded values as leetcode accepting this value, wierd but it works!
+    # Hardcoded values as leetcode accepting this value, weird but it works!
     static_csrf = "bMwA82bLs7IrhigK19Bu6uDj4DhZnVnE"
     
     payload = {
