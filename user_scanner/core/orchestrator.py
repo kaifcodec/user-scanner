@@ -27,7 +27,8 @@ def _worker_single(module: ModuleType, username: str) -> Result:
         return result
     except Exception as e:
         return Result.error(e, site_name=site_name, username=username)
-    
+
+
 def run_user_module(module: ModuleType, username: str) -> List[Result]:
     result = _worker_single(module, username)
 
@@ -82,15 +83,16 @@ def make_request(url: str, **kwargs) -> httpx.Response:
     if "timeout" not in kwargs:
         kwargs["timeout"] = 5.0
 
-    # Add proxy if available and not already set
     if "proxy" not in kwargs:
-        proxy = get_proxy()
-        if proxy:
-            kwargs["proxy"] = proxy
+        proxy_val = get_proxy()
+    else:
+        proxy_val = kwargs.pop("proxy")
 
     method = kwargs.pop("method", "GET")
+    use_http2 = kwargs.pop("http2", False)
 
-    return httpx.request(method.upper(), url, **kwargs)
+    with httpx.Client(http2=use_http2, proxy=proxy_val) as client:
+        return client.request(method.upper(), url, **kwargs)
 
 
 def generic_validate(url: str, func: Callable[[httpx.Response], Result], **kwargs) -> Result:

@@ -1,8 +1,7 @@
 from user_scanner.core.orchestrator import status_validate
 
-
 def validate_instagram(user):
-    url = f"https://www.threads.com/api/v1/users/web_profile_info/?username={user}"
+    url = f"https://www.threads.net/api/v1/users/web_profile_info/?username={user}"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
@@ -11,10 +10,10 @@ def validate_instagram(user):
         'Accept-Encoding': "gzip, deflate, br",
         'Accept-Language': "en-US,en;q=0.9",
         'X-Requested-With': "XMLHttpRequest",
-        'Referer': f"https://www.instagram.com/{user}/",
+        'Referer': f"https://www.threads.net/@{user}",
     }
 
-    return status_validate(url, 404, 200, headers=headers)
+    return status_validate(url, 404, 200, headers=headers, http2=True)
 
 
 if __name__ == "__main__":
