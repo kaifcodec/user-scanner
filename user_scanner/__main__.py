@@ -267,7 +267,7 @@ def main():
             fn = run_email_module_batch if is_email else run_user_module
             if modules:
                 for module in modules:
-                    results.extend(fn(module, target))
+                    results.extend(fn(module, target, show_url=args.verbose))
             else:
                 print(
                     R +
@@ -279,7 +279,7 @@ def main():
             cat_path = load_categories(is_email).get(args.category)
             fn = run_email_category_batch if is_email else run_user_category
             if cat_path:
-                results.extend(fn(cat_path, target))
+                results.extend(fn(cat_path, target, show_url=args.verbose))
             else:
                 print(
                     R +
@@ -288,7 +288,7 @@ def main():
                 )
         else:
             fn = run_email_full_batch if is_email else run_user_full
-            results.extend(fn(target))
+            results.extend(fn(target, show_url=args.verbose))
 
     if args.output:
         content = formatter.into_csv(
