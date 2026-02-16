@@ -2,7 +2,6 @@ import re
 from user_scanner.core.orchestrator import status_validate
 from user_scanner.core.result import Result
 
-
 def validate_mastodon(user: str) -> Result:
     if not (3 <= len(user) <= 30):
         return Result.error("Length must be 3-30 characters")
@@ -14,8 +13,10 @@ def validate_mastodon(user: str) -> Result:
         return Result.error("Username must start and end with a letter or number")
 
     url = f"https://mastodon.social/api/v1/accounts/lookup?acct={user}"
+    show_url = "https://mastodon.social"
 
-    return status_validate(url, 404, 200, follow_redirects=True)
+    return status_validate(url, available=404, taken=200, show_url=show_url, follow_redirects=True)
+
 
 
 if __name__ == "__main__":

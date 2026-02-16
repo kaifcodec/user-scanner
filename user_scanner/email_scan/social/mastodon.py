@@ -2,7 +2,6 @@ import httpx
 import re
 from user_scanner.core.result import Result
 
-
 async def _check(email):
     base_url = "https://mastodon.social"
     signup_url = f"{base_url}/auth/sign_up"
@@ -19,12 +18,12 @@ async def _check(email):
         try:
             initial_resp = await client.get(signup_url)
             if initial_resp.status_code not in [200, 302]:
-                return Result.error(f"Failed to access signup page: {initial_resp.status_code}")
+                return Result.error(f"Failed to access signup page: {initial_resp.status_code}", url=base_url)
 
             token_match = re.search(
                 r'name="csrf-token" content="([^"]+)"', initial_resp.text)
             if not token_match:
-                return Result.error("Could not find authenticity token")
+                return Result.error("Could not find authenticity token", url=base_url)
 
             csrf_token = token_match.group(1)
 
@@ -41,19 +40,19 @@ async def _check(email):
             response = await client.post(post_url, data=payload)
             res_text = response.text
             res_status = response.status_code
+            
             if "has already been taken" in res_text:
-                return Result.taken()
+                return Result.taken(url=base_url)
             elif "registration attempt has been blocked" in res_text:
-                return Result.error("Your IP has been flagged by mastodon, try after some time")
+                return Result.error("Your IP has been flagged by mastodon, try after some time", url=base_url)
             elif "has already been taken" not in res_text and res_status in [200, 302]:
-                return Result.available()
+                return Result.available(url=base_url)
             elif res_status == 429:
-                return Result.error("Rate limited, use '-d' flag to avoid bot detection")
+                return Result.error("Rate limited, use '-d' flag to avoid bot detection", url=base_url)
             else:
-                return Result.error("Unexpected error, report it via GitHub issues")
+                return Result.error("Unexpected error, report it via GitHub issues", url=base_url)
         except Exception as e:
-            return Result.error(e)
-
+            return Result.error(e, url=base_url)
 
 async def validate_mastodon(email: str) -> Result:
     return await _check(email)
