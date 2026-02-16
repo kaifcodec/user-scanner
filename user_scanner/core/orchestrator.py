@@ -88,9 +88,16 @@ def make_request(url: str, **kwargs) -> httpx.Response:
         if proxy:
             kwargs["proxy"] = proxy
 
+    # Extract our custom flags
     method = kwargs.pop("method", "GET")
+    use_http2 = kwargs.pop("http2", False)
+    proxy = kwargs.pop("proxy", None)
 
-    return httpx.request(method.upper(), url, **kwargs)
+    # Use the client to respect the http2 and proxy settings
+    with httpx.Client(http2=use_http2, proxies=proxy) as client:
+        return client.request(method.upper(), url, **kwargs)
+
+
 
 
 def generic_validate(url: str, func: Callable[[httpx.Response], Result], **kwargs) -> Result:
