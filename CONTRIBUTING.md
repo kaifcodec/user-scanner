@@ -37,34 +37,39 @@ from user_scanner.core.result import Result
 async def _check(email: str) -> Result:
     """
     Internal helper that performs the multi-step signup probe.
-    Returns: Result.available(), Result.taken(), or Result.error(msg)
+    
+    This function demonstrates how to handle CSRF tokens, custom error 
+    messages (like IP bans), and passing the target URL back to Results.
     """
-    base_url = "https://mastodon.social"
-    signup_url = f"{base_url}/auth/sign_up"
-    post_url = f"{base_url}/auth"
+    # The display URL used for output and error reporting
+    show_url = "https://mastodon.social"
+    
+    signup_url = f"{show_url}/auth/sign_up"
+    post_url = f"{show_url}/auth"
 
     headers = {
         "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "referer": "https://mastodon.social/explore",
-        "origin": "https://mastodon.social",
+        "referer": f"{show_url}/explore",
+        "origin": show_url,
     }
 
     async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=True) as client:
         try:
+            # 1. Access the signup page to retrieve required CSRF tokens
             initial_resp = await client.get(signup_url, timeout=15.0)
-            if initial_resp.status_code != 200:
-                return Result.error(f"Failed to access signup page: {initial_resp.status_code}")
+            if initial_resp.status_code not in [200, 302]:
+                return Result.error(f"Failed to access signup page: {initial_resp.status_code}", url=show_url)
 
-            # Look for CSRF/auth token in the signup HTML
+            # Extract the CSRF/authenticity token from the HTML
             token_match = re.search(r'name="csrf-token" content="([^"]+)"', initial_resp.text)
             if not token_match:
-                return Result.error("Could not find authenticity token")
+                return Result.error("Could not find authenticity token", url=show_url)
 
             csrf_token = token_match.group(1)
 
-            # Use a dummy username & password for the signup probe
+            # 2. Prepare the probe payload with the email we want to check
             payload = {
                 "authenticity_token": csrf_token,
                 "user[account_attributes][username]": "no3motions_robot_020102",
@@ -76,29 +81,41 @@ async def _check(email: str) -> Result:
             }
 
             response = await client.post(post_url, data=payload, timeout=15.0)
+            res_text = response.text
+            res_status = response.status_code
 
-            # Check the response HTML for the "already taken" phrase
-            if "has already been taken" in response.text:
-                return Result.taken()
+            # 3. Analyze the response to determine account status
+            if "has already been taken" in res_text:
+                return Result.taken(url=show_url)
+            
+            elif "registration attempt has been blocked" in res_text:
+                return Result.error("Your IP has been flagged by Mastodon", url=show_url)
+            
+            elif res_status == 429:
+                return Result.error("Rate limited; try using the '-d' flag", url=show_url)
+            
+            elif res_status in [200, 302]:
+                # If no 'taken' message is found and status is OK/Redirect, it's available
+                return Result.available(url=show_url)
+            
             else:
-                # If the response does not show taken, treat as available.
-                # Be aware: services can change wording; prefer explicit checks.
-                return Result.available()
+                return Result.error("Unexpected response body", url=show_url)
 
         except Exception as exc:
-            # Convert exception to string so Result.error is stable/serializable
-            return Result.error(str(exc))
+            # Always pass the url=show_url even in exceptions for clear reporting
+            return Result.error(str(exc), url=show_url)
 
 
 async def validate_mastodon(email: str) -> Result:
     """
     Public validator used by the email mode.
-    - Do basic local validation before network calls.
-    - Return Result.* helpers described above.
+    
+    All email modules must export a 'validate_<name>' function that 
+    returns a Result object.
     """
-    if not EMAIL_RE.match(email):
-        return Result.error("Invalid email format")
     return await _check(email)
+
+
 ```
 
 
@@ -131,7 +148,7 @@ To keep validators DRY, the repository provides helper functions in `core/orches
 1. generic_validate
 - Purpose: Run a request for a given URL and let a small callback (processor) inspect the httpx.Response and return a Result.
 - Typical signature (example — consult the actual orchestrator implementation for exact parameter names):
-  - `generic_validate(url: str, processor: Callable[[httpx.Response], Result], headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
+  - `generic_validate(url: str, processor: Callable[[httpx.Response], Result], headers: Optional[dict] = None, show_url=None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
 - Processor function signature:
   - def process(response) -> Result
   - Must return Result.available(), Result.taken(), or Result.error("message")
@@ -143,63 +160,67 @@ To keep validators DRY, the repository provides helper functions in `core/orches
 ```python
 from user_scanner.core.orchestrator import generic_validate, Result
 
-
-def validate_github(user):
+def validate_github(user: str) -> Result:
+    """
+    Example of a 'generic_validate' module.
+    Use this when the site requires complex logic or response body parsing.
+    """
     url = f"https://github.com/signup_check/username?value={user}"
+    
+    # Define show_url for clean output display
+    show_url = "https://github.com"
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
-        'Accept-Encoding': "gzip, deflate, br, zstd",
-        'sec-ch-ua-platform': "\"Linux\"",
-        'sec-ch-ua': "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"Google Chrome\";v=\"140\"",
-        'sec-ch-ua-mobile': "?0",
-        'sec-fetch-site': "same-origin",
-        'sec-fetch-mode': "cors",
-        'sec-fetch-dest': "empty",
-        'referer': "https://github.com/signup?source=form-home-signup&user_email=",
+        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+        'referer': "https://github.com/signup",
         'accept-language': "en-US,en;q=0.9",
-        'priority': "u=1, i"
     }
 
+    # Specific error message from GitHub for validation rules
     GITHUB_INVALID_MSG = (
         "Username may only contain alphanumeric characters or single hyphens, "
         "and cannot begin or end with a hyphen."
     )
 
     def process(response):
+        """
+        Internal processing function.
+        Note: You don't need to pass 'url' here; 
+        generic_validate will attach it automatically from the kwargs.
+        """
         if response.status_code == 200:
             return Result.available()
 
         if response.status_code == 422:
             if GITHUB_INVALID_MSG in response.text:
-                return Result.error("Cannot start/end with hyphen or use double hyphens")
+                return Result.error("Invalid format: alphanumeric and single hyphens only")
 
             return Result.taken()
 
-        return Result.error("Unexpected GitHub response — report it via issues")
+        return Result.error(f"GitHub returned unexpected status: {response.status_code}")
 
-    return generic_validate(url, process, headers=headers)
+    # Pass show_url into generic_validate so the Orchestrator 
+    # can attach it to the final Result object.
+    return generic_validate(url, process, headers=headers, show_url=show_url)
 
 
 if __name__ == "__main__":
     user = input("Username?: ").strip()
     result = validate_github(user)
 
-    # Inspect Result (example usage; adapt to actual Result API in orchestrator)
-    if result == Result.available():
+    if result.is_available():
         print("Available!")
-    elif result == Result.taken():
-        print("Unavailable!")
+    elif result.is_taken():
+        print(f"Unavailable! Site: {result.url}")
     else:
-        # Result.error can carry a message; show it when present
-        msg = getattr(result, "message", None)
-        print("Error occurred!" + (f" {msg}" if msg else ""))
+        print(f"Error: {result.get_reason()}")
+
 ```
 
 2. status_validate
 - Purpose: Simple helper for sites where availability can be determined purely from HTTP status codes (e.g., 404 = available, 200 = taken).
 - Typical signature (example):
-  - `status_validate(url: str, available_status: int, taken_status: int, headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
+  - `status_validate(url: str, available_status: int, taken_status: int, show_url=None, headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
 - Use case: Sites that reliably return 404 for missing profiles and 200 for existing ones.
 
 ### Example `launchpad.py` module:
@@ -207,22 +228,19 @@ if __name__ == "__main__":
 ```python
 from user_scanner.core.orchestrator import status_validate
 
-def validate_launchpad(user: str):
-    """
-    Uses status_validate because Launchpad returns 404 for non-existing users
-    and 200 for existing ones.
-    """
+
+def validate_launchpad(user):
     url = f"https://launchpad.net/~{user}"
+    show_url = "https://launchpad.net"
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Upgrade-Insecure-Requests": "1",
+        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9",
+        'Accept-Encoding': "gzip, deflate, br, zstd",
+        'Upgrade-Insecure-Requests': "1",
     }
 
-    # available_status=404, taken_status=200
-    return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
 ```
 
 Note: The exact parameter names and behavior of the orchestrator functions are defined in `core/orchestrator.py`. Use this CONTRIBUTING guide as a reference for when to use each helper; inspect the implementation for exact types and helper methods on Result.
