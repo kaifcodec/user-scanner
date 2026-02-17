@@ -79,7 +79,7 @@ def make_request(url: str, **kwargs) -> httpx.Response:
             'Accept-Language': "en-US,en;q=0.9",
             'sec-fetch-dest': "document",
         }
-    if kwargs["show_url"]:
+    if "show_url" in kwargs:
         kwargs.pop("show_url", None)
 
     if "timeout" not in kwargs:
