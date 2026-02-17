@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://letterboxd.com"
     home_url = "https://letterboxd.com/sign-in/"
     register_url = "https://letterboxd.com/user/standalone/register.do"
 
@@ -43,10 +44,10 @@ async def _check(email: str) -> Result:
                 "already associated with an account" in msg for msg in messages)
 
             if is_taken or "emailAddress" in error_fields:
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if "result" in data and not is_taken:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response structure")
 

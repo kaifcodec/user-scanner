@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://coursera.org"
     url = "https://www.coursera.org/api/userAccounts.v1"
 
     params = {
@@ -32,9 +33,9 @@ async def _check(email: str) -> Result:
             if not isinstance(methods, list):
                 return Result.error(f"Unexpected data type for loginMethods: {type(methods)}, report it on github")
             if len(methods) > 0:
-                return Result.taken()
+                return Result.taken(url=show_url)
             else:
-                return Result.available()
+                return Result.available(url=show_url)
 
     except httpx.ConnectTimeout:
         return Result.error("Connection timed out (Coursera)")

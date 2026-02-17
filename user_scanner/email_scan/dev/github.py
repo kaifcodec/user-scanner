@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://github.com"
     async with httpx.AsyncClient(http2=True, follow_redirects=True) as client:
         try:
             url1 = "https://github.com/signup"
@@ -60,9 +61,9 @@ async def _check(email: str) -> Result:
             body = response.text
 
             if "already associated with an account" in body:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif response.status_code == 200 and "Email is available" in body:
-                return Result.available()
+                return Result.available(url=show_url)
             else:
                 return Result.error(f"Unexpected status code: {response.status_code}, report this via GitHub issues")
 

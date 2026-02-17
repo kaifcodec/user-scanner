@@ -2,6 +2,7 @@ import httpx
 from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
+    show_url = "https://vivino.com"
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         'Accept': 'application/json',
@@ -33,10 +34,10 @@ async def _check(email: str) -> Result:
             error_msg = data.get("error", "")
 
             if error_msg == "The supplied email does not exist":
-                return Result.available()
+                return Result.available(url=show_url)
 
             if not error_msg or "password" in error_msg.lower():
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             return Result.error(f"Vivino Error: {error_msg}")
 

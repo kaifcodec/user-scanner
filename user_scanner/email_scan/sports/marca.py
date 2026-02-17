@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://marca.com"
     url = f"https://seguro.marca.com/ueregistro/v2/usuarios/comprobacion/{email}/2"
 
     headers = {
@@ -22,9 +23,9 @@ async def _check(email: str) -> Result:
                 status = data.get("status")
 
                 if status == "OK":
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif status == "NOK":
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 

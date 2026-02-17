@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://instagram"
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
 
     try:
@@ -42,9 +43,9 @@ async def _check(email: str) -> Result:
                 status_val = data.get("status")
 
                 if status_val == "ok":
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif status_val == "fail":
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 

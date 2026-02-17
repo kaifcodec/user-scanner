@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     url = "https://replit.com/data/user/exists"
+    show_url = "https://replit.com"
     
     payload = {
         "email": email
@@ -38,9 +39,9 @@ async def _check(email: str) -> Result:
             exists = data.get("exists")
 
             if exists is True:
-                return Result.taken()
+                return Result.taken(url=show_url)
             if exists is False:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response format")
 

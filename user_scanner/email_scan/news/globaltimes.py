@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://globaltimes.cn"
     url = "https://enapp.globaltimes.cn/api/user/login"
 
     payload = {
@@ -35,10 +36,10 @@ async def _check(email: str) -> Result:
             ]
 
             if any(indicator in message for indicator in taken_indicators):
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if "don't recognize this account" in message:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

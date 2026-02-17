@@ -2,6 +2,7 @@ import httpx
 from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
+    show_url = "https://naturabuy.fr"
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         'Accept': '*/*',
@@ -31,9 +32,9 @@ async def _check(email: str) -> Result:
             data = response.json()
             
             if data.get("free") is False:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif data.get("free") is True:
-                return Result.available()
+                return Result.available(url=show_url)
             
             return Result.error("Unexpected response format")
 

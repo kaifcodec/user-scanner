@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://adobe.com"
     url = "https://auth.services.adobe.com/signin/v2/users/accounts"
 
     payload = {
@@ -31,14 +32,14 @@ async def _check(email: str) -> Result:
                 return Result.error("Unexpected response body, report it on github")
 
             if not data:
-                return Result.available()
+                return Result.available(url=show_url)
 
             for account in data:
                 methods = account.get("authenticationMethods", [])
                 if any(m.get("id") == "password" for m in methods):
-                    return Result.taken()
+                    return Result.taken(url=show_url)
 
-            return Result.available()
+            return Result.available(url=show_url)
 
     except httpx.ConnectTimeout:
         return Result.error("Connection timed out! maybe region blocks")

@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://zoho.com"
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -41,13 +42,13 @@ async def _check(email: str) -> Result:
                 message = data.get("message", "")
 
                 if status == 201 or message == "User exists":
-                    return Result.taken()
+                    return Result.taken(url=show_url)
 
                 elif status == 400:
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 elif "User exists in another DC" in message:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 
