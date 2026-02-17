@@ -3,6 +3,7 @@ from user_scanner.core.orchestrator import status_validate
 
 def validate_cratesio(user):
     url = f"https://crates.io/api/v1/users/{user}"
+    show_url = "https://crates.io"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
@@ -11,7 +12,7 @@ def validate_cratesio(user):
         'sec-fetch-mode': "cors",
     }
 
-    return status_validate(url, 404, 200, headers=headers)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers)
 
 
 if __name__ == "__main__":

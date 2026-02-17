@@ -11,6 +11,7 @@ def validate_producthunt(user: str) -> Result:
         return Result.error("Only use letters, numbers, and underscores.")
 
     url = f"https://www.producthunt.com/@{user}"
+    show_url = "https://producthunt.com"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
@@ -19,7 +20,7 @@ def validate_producthunt(user: str) -> Result:
         'Accept-Language': "en-US,en;q=0.9",
     }
 
-    return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
 
 
 if __name__ == "__main__":

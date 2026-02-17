@@ -5,6 +5,7 @@ from urllib.parse import quote
 def validate_monkeytype(user: str) -> Result:
     safe_user = quote(user, safe="")
     url = f"https://api.monkeytype.com/users/checkName/{safe_user}"
+    show_url = "https://monkeytype.com"
 
     headers = {
         "User-Agent": (
@@ -41,7 +42,7 @@ def validate_monkeytype(user: str) -> Result:
 
         return Result.error("Invalid status code")
 
-    return generic_validate(url, process, headers=headers)
+    return generic_validate(url, process, show_url=show_url, headers=headers)
 
 
 if __name__ == "__main__":

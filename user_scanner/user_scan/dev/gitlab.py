@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 def validate_gitlab(user):
     url = f"https://gitlab.com/users/{user}/exists"
+    show_url = "https://gitlab.com"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
@@ -25,7 +26,7 @@ def validate_gitlab(user):
                     return Result.taken()
         return Result.error("Invalid status code")
 
-    return generic_validate(url, process, headers=headers)
+    return generic_validate(url, process, show_url=show_url, headers=headers)
 
 
 if __name__ == "__main__":

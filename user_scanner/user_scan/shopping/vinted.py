@@ -9,6 +9,7 @@ def validate_vinted(user: str):
     user = user.lower().strip()
 
     url = f"https://www.vinted.pt/member/general/search?search_text={user}"
+    show_url = "https://vinted.pt"
 
     if not re.match(r"^[a-zA-Z0-9_.-]+$", user):
         return Result.error(
@@ -34,7 +35,7 @@ def validate_vinted(user: str):
         else:
             return Result.taken()
 
-    return generic_validate(url, process)
+    return generic_validate(url, process, show_url=show_url)
 
 
 if __name__ == "__main__":

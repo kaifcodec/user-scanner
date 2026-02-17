@@ -10,6 +10,7 @@ def validate_leetcode(user: str) -> Result:
         return Result.error("Can only use letters, numbers, underscores, periods, or hyphens")
 
     url = f"https://leetcode.com/u/{user}/"
+    show_url = "https://leetcode.com"
 
     headers = {
       'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
@@ -20,7 +21,7 @@ def validate_leetcode(user: str) -> Result:
       'priority': "u=0, i"
     }
 
-    return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
 
 
 if __name__ == "__main__":

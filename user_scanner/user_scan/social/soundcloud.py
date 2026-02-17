@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 def validate_soundcloud(user):
     url = f"https://soundcloud.com/{user}"
+    show_url = "https://soundcloud.com"
 
     def process(response):
         if response.status_code == 404:
@@ -23,7 +24,7 @@ def validate_soundcloud(user):
 
         return Result.error()
 
-    return generic_validate(url, process, follow_redirects=True)
+    return generic_validate(url, process, show_url=show_url, follow_redirects=True)
 
 
 if __name__ == "__main__":
