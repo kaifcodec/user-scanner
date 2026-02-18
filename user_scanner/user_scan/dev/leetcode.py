@@ -1,5 +1,6 @@
 import re
 from user_scanner.core.orchestrator import status_validate, Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_leetcode(user: str) -> Result:
@@ -13,7 +14,7 @@ def validate_leetcode(user: str) -> Result:
     show_url = "https://leetcode.com"
 
     headers = {
-      'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
+      'User-Agent': get_random_user_agent(),
       'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
       'Accept-Encoding': "identity",
       'upgrade-insecure-requests': "1",

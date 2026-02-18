@@ -1,5 +1,6 @@
 from user_scanner.core.result import Result
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.helpers import get_random_user_agent
 
 def validate_x(user):
     url = "https://api.twitter.com/i/users/username_available.json"
@@ -13,7 +14,7 @@ def validate_x(user):
 
     headers = {
         "Authority": "api.twitter.com",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "User-Agent": get_random_user_agent(),
     }
 
     def process(response):

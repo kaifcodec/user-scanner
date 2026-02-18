@@ -1,5 +1,6 @@
 from user_scanner.core.result import Result
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_hashnode(user):
@@ -12,7 +13,7 @@ def validate_hashnode(user):
     }
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept': "application/json",
         'Content-Type': "application/json",
         'Origin': "https://hashnode.com",
