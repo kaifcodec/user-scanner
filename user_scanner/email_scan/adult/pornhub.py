@@ -1,7 +1,5 @@
 import httpx
 import re
-
-from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
@@ -10,7 +8,7 @@ async def _check(email: str) -> Result:
     check_api = f"{base_url}/api/v1/user/create_account_check"
 
     headers = {
-        "user-agent": get_random_user_agent(),
+        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
         "x-requested-with": "XMLHttpRequest",
         "origin": base_url,
         "referer": base_url + "/",

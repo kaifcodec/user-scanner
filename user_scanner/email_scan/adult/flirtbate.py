@@ -1,13 +1,12 @@
 import httpx
 from user_scanner.core.result import Result
-from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
     url = "https://api.flirtbate.com/api/v1/customer/reset-password-email"
     show_url = "https://flirtbate.com"
 
     headers = {
-        'User-Agent': get_random_user_agent(),
+        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
         'Accept': "application/json",
         'Content-Type': "application/json",
         'origin': "https://flirtbate.com",

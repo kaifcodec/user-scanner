@@ -1,6 +1,5 @@
 import httpx
 from user_scanner.core.result import Result
-from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
@@ -8,7 +7,7 @@ async def _check(email: str) -> Result:
     url = "https://2.rome.api.flipkart.com/1/action/view"
 
     headers = {
-        'User-Agent': get_random_user_agent(),
+        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
         'Content-Type': "application/json",
         'X-User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36 FKUA/msite/0.0.3/msite/Mobile channelType/undefined",
         'Origin': "https://www.flipkart.com",

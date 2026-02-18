@@ -1,7 +1,6 @@
 import httpx
 import json
 from user_scanner.core.result import Result
-from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
@@ -16,7 +15,7 @@ async def _check(email: str) -> Result:
     }
 
     headers = {
-        'User-Agent': get_random_user_agent(),
+        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
         'Content-Type': "application/json;charset=UTF-8",
         'Token': "null",
         'Vcode': "232",

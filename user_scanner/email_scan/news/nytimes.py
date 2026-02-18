@@ -3,7 +3,6 @@ import json
 import re
 import html
 from user_scanner.core.result import Result
-from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
@@ -13,7 +12,7 @@ async def _check(email: str) -> Result:
     check_url = "https://myaccount.nytimes.com/svc/lire_ui/authorize-email/check"
 
     headers = {
-        'User-Agent': get_random_user_agent(),
+        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
         'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         'Accept-Language': "en-US,en;q=0.9",
     }
