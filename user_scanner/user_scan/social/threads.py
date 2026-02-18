@@ -1,6 +1,6 @@
 from user_scanner.core.orchestrator import status_validate
 
-def validate_instagram(user):
+def validate_threads(user):
     url = f"https://www.threads.net/api/v1/users/web_profile_info/?username={user}"
     show_url = "https://threads.net"
 
@@ -19,7 +19,7 @@ def validate_instagram(user):
 
 if __name__ == "__main__":
     user = input("Username?: ").strip()
-    result = validate_instagram(user)
+    result = validate_threads(user)
 
     if result == 1:
         print("Available!")
