@@ -1,4 +1,5 @@
 from user_scanner.core.orchestrator import status_validate
+from user_scanner.core.helpers import get_random_user_agent
 
 def validate_instagram(user):
     url = "https://www.instagram.com/api/v1/users/web_profile_info/"
@@ -8,7 +9,7 @@ def validate_instagram(user):
     }
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept-Encoding': "gzip, deflate, br, zstd",
         'sec-ch-ua-full-version-list': "\"Not(A:Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"144.0.7559.132\", \"Google Chrome\";v=\"144.0.7559.132\"",
         'sec-ch-ua-platform': "\"Linux\"",

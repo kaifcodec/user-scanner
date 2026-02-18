@@ -1,5 +1,6 @@
 import httpx
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
@@ -7,7 +8,7 @@ async def _check(email: str) -> Result:
     register_url = "https://letterboxd.com/user/standalone/register.do"
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept': "application/json, text/javascript, */*; q=0.01",
         'X-Requested-With': "XMLHttpRequest",
         'Origin': "https://letterboxd.com",

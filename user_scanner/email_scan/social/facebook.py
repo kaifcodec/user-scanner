@@ -1,13 +1,14 @@
 import httpx
 import re
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=True, follow_redirects=False) as client:
         try:
             url1 = "https://m.facebook.com/login/"
             headers1 = {
-                'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+                'User-Agent': get_random_user_agent(),
                 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
                 'Accept-Encoding': "identity",
                 'sec-ch-ua': '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
@@ -17,7 +18,7 @@ async def _check(email: str) -> Result:
             url2 = "https://www.facebook.com"
             params2 = {'_rdr': ""}
             headers2 = {
-                'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+                'User-Agent': get_random_user_agent(),
                 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
                 'Accept-Encoding': "identity",
                 'upgrade-insecure-requests': "1",
@@ -58,7 +59,7 @@ async def _check(email: str) -> Result:
             }
 
             headers3 = {
-                'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+                'User-Agent': get_random_user_agent(),
                 'Accept-Encoding': "identity",
                 'sec-ch-ua-full-version-list': '"Google Chrome";v="143.0.7499.192", "Chromium";v="143.0.7499.192", "Not A(Brand";v="24.0.0.0"',
                 'sec-ch-ua-platform': '"Linux"',

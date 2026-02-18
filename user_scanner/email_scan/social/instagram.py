@@ -1,10 +1,11 @@
 import httpx
 import re
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
-    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+    user_agent = get_random_user_agent()
 
     try:
         async with httpx.AsyncClient(headers={"user-agent": user_agent}, http2=True, timeout=15.0) as client:

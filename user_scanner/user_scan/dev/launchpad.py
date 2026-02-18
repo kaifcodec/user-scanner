@@ -1,11 +1,12 @@
 from user_scanner.core.orchestrator import status_validate
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_launchpad(user):
     url = f"https://launchpad.net/~{user}"
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9",
         'Accept-Encoding': "gzip, deflate, br, zstd",
         'Upgrade-Insecure-Requests': "1",

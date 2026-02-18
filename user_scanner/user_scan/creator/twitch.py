@@ -2,6 +2,7 @@ import json
 import re
 import httpx
 from user_scanner.core.orchestrator import generic_validate, Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_twitch(user: str) -> Result:
@@ -30,7 +31,7 @@ def validate_twitch(user: str) -> Result:
     ]
 
     headers = {
-      'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
+      'User-Agent': get_random_user_agent(),
       'Accept-Encoding': "identity",
       'Content-Type': "application/json",
       'sec-ch-ua-platform': "\"Android\"",

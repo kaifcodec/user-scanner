@@ -1,11 +1,12 @@
 import httpx
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email):
     url = "https://api.x.com/i/users/email_available.json"
     params = {"email": email}
     headers = {
-        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
+        "user-agent": get_random_user_agent(),
         "accept-encoding": "gzip, deflate, br, zstd",
         "sec-ch-ua-platform": "\"Android\"",
         "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",

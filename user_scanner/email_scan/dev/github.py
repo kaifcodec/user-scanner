@@ -1,6 +1,7 @@
 import httpx
 import re
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
@@ -13,7 +14,7 @@ async def _check(email: str) -> Result:
                 'sec-ch-ua-mobile': '?0',
                 'sec-ch-ua-platform': '"Linux"',
                 'upgrade-insecure-requests': '1',
-                'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+                'user-agent': get_random_user_agent(),
                 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'sec-fetch-site': 'cross-site',
                 'sec-fetch-mode': 'navigate',
@@ -42,7 +43,7 @@ async def _check(email: str) -> Result:
             }
 
             headers2 = {
-                'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+                'User-Agent': get_random_user_agent(),
                 'Accept-Encoding': "gzip, deflate, br, zstd",
                 'sec-ch-ua-platform': '"Linux"',
                 'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',

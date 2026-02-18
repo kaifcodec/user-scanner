@@ -1,12 +1,13 @@
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_medium(user):
     url = f"https://medium.com/@{user}"
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         'Accept-Encoding': "identity",
         'upgrade-insecure-requests': "1",

@@ -1,17 +1,14 @@
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 from urllib.parse import quote
+from user_scanner.core.helpers import get_random_user_agent
 
 def validate_monkeytype(user: str) -> Result:
     safe_user = quote(user, safe="")
     url = f"https://api.monkeytype.com/users/checkName/{safe_user}"
 
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/128.0.0.0 Safari/537.36"
-        ),
+        "User-Agent": get_random_user_agent(),
         "Accept": "application/json, text/plain, */*",
         "Accept-Encoding": "identity",
         "Accept-Language": "en-US,en;q=0.9",

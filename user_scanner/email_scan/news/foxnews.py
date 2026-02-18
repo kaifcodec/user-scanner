@@ -1,5 +1,6 @@
 import httpx
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
     url = "https://id.fox.com/status/v1/status"
@@ -9,7 +10,7 @@ async def _check(email: str) -> Result:
     }
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept': "*/*",
         'Accept-Encoding': "gzip, deflate, br, zstd",
         'x-api-key': "049f8b7844b84b9cb5f830f28f08648c",
