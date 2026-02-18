@@ -72,7 +72,7 @@ def main():
                         help="List all available modules for email scanning")
 
     parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Enable verbose output")
+                        help="Enable verbose output to show urls of the websites")
 
     parser.add_argument("-p", "--permute", type=str,
                         help="Generate permutations using a pattern")
