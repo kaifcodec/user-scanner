@@ -39,7 +39,7 @@ async def _check(email: str) -> Result:
             if not error_msg or "password" in error_msg.lower():
                 return Result.taken(url=show_url)
 
-            return Result.error(f"Vivino Error: {error_msg}")
+            return Result.error(f"Vivino Error: {error_msg}", url=show_url)
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")

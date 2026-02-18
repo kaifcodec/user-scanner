@@ -39,7 +39,7 @@ async def _check(email: str) -> Result:
                     return Result.available(url=show_url)
 
                 else:
-                    return Result.error(data)
+                    return Result.error(url=show_url)
 
             return Result.error(f"HTTP {response.status_code}")
 
