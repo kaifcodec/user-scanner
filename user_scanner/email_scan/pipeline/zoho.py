@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://zoho.com"
     headers = {
         'User-Agent': get_random_user_agent(),
         'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -42,13 +43,13 @@ async def _check(email: str) -> Result:
                 message = data.get("message", "")
 
                 if status == 201 or message == "User exists":
-                    return Result.taken()
+                    return Result.taken(url=show_url)
 
                 elif status == 400:
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 elif "User exists in another DC" in message:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 

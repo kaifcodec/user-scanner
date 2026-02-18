@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://netflix.com"
     headers = {
         'User-Agent': get_random_user_agent(),
         'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -53,10 +54,10 @@ async def _check(email: str) -> Result:
                 resp_text = response.text
 
                 if "sign-up link to" in resp_text:
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 elif "Welcome back!" in resp_text:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 else:
                     return Result.error("Unexpected response, Try an India-based VPN or report it via GitHub issues")
 

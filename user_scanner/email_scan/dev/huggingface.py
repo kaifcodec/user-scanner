@@ -5,6 +5,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
     url = "https://huggingface.co/api/check-user-email"
+    show_url = "https://huggingface.co"
     params = {'email': email}
     headers = {
         'User-Agent': get_random_user_agent(),
@@ -24,10 +25,10 @@ async def _check(email: str) -> Result:
 
             if st_code == 200:
                 if "already exists" in res_text:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
 
                 if "This email address is available." in res_text:
-                    return Result.available()
+                    return Result.available(url=show_url)
 
             return Result.error(f"HTTP Error: {response.status_code}, report it via GitHub issues")
 

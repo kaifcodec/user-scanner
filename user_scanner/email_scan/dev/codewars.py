@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://codewars.com"
     url = "https://www.codewars.com/join"
 
     params = {'language': 'javascript'}
@@ -36,10 +37,10 @@ async def _check(email: str) -> Result:
             html = response.text
 
             if "is already taken" in html:
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if "can&#39;t be blank" in html:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response pattern")
 

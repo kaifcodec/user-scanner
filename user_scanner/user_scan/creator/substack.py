@@ -13,6 +13,7 @@ def validate_substack(user: str) -> Result:
         return Result.error("Usernames can only contain lowercase letters and numbers")
 
     url = f"https://{user}.substack.com"
+    show_url = "https://substack.com"
 
     headers = {
         'User-Agent': get_random_user_agent(),
@@ -22,7 +23,7 @@ def validate_substack(user: str) -> Result:
         'priority': "u=0, i"
     }
 
-    return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
 
 
 if __name__ == "__main__":

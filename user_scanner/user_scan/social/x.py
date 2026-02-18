@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 def validate_x(user):
     url = "https://api.twitter.com/i/users/username_available.json"
+    show_url = "https://x.com"
 
     params = {
         "username": user,
@@ -33,7 +34,7 @@ def validate_x(user):
 
         return Result.error()
 
-    return generic_validate(url, process, params=params, headers=headers)
+    return generic_validate(url, process, show_url=show_url, params=params, headers=headers)
 
 if __name__ == "__main__":
     user = input("Username?: ").strip()

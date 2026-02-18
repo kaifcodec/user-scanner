@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 def validate_launchpad(user):
     url = f"https://launchpad.net/~{user}"
+    show_url = "https://launchpad.net"
 
     headers = {
         'User-Agent': get_random_user_agent(),
@@ -12,7 +13,7 @@ def validate_launchpad(user):
         'Upgrade-Insecure-Requests': "1",
     }
 
-    return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
 
 
 if __name__ == "__main__":

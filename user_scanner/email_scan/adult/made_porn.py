@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://made.porn"
     url = "https://made.porn/endpoint/api/json/change-password"
 
     payload = {
@@ -22,10 +23,10 @@ async def _check(email: str) -> Result:
             data = response.json()
 
             if "sent an email with a link" in data.get("Text", ""):
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if "The email address is incorrect" in data.get("Error", ""):
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

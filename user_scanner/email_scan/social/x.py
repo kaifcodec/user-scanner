@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email):
     url = "https://api.x.com/i/users/email_available.json"
+    show_url = "https://x.com"
     params = {"email": email}
     headers = {
         "user-agent": get_random_user_agent(),
@@ -28,9 +29,9 @@ async def _check(email):
             taken_bool = data.get("taken")
 
             if taken_bool is True:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif taken_bool is False:
-                return Result.available()
+                return Result.available(url=show_url)
             else:
                 return Result.error("Unexpected error, report it via GitHub issues")
 

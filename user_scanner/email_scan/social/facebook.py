@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://facebook.com"
     async with httpx.AsyncClient(http2=True, follow_redirects=False) as client:
         try:
             url1 = "https://m.facebook.com/login/"
@@ -83,9 +84,9 @@ async def _check(email: str) -> Result:
             body = response.text
 
             if "redirectPageTo" in body and "ServerRedirect" in body:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif "No search results" in body or "Your search did not return any results." in body:
-                return Result.available()
+                return Result.available(url=show_url)
             else:
                 return Result.error("Unexpected error, report it via GitHub issues")
 

@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://axonaut.com"
     headers = {
         'authority': 'axonaut.com',
         'User-Agent': get_random_user_agent(),
@@ -21,10 +22,10 @@ async def _check(email: str) -> Result:
 
             if response.status_code == 302 and "/login?email" in response.headers.get('Location', ''):
 
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             elif response.status_code == 200:
-                return Result.available()
+                return Result.available(url=show_url)
 
             else:
                 return Result.error(f"HTTP {response.status_code}")

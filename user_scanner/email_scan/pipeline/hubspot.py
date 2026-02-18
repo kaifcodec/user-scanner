@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://hubspot.com"
     headers = {
         'authority': 'api.hubspot.com',
         'User-Agent': get_random_user_agent(),
@@ -33,13 +34,13 @@ async def _check(email: str) -> Result:
                 status = data.get("status")
 
                 if status == "INVALID_PASSWORD":
-                    return Result.taken()
+                    return Result.taken(url=show_url)
 
                 elif status == "INVALID_USER":
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 else:
-                    return Result.error(data)
+                    return Result.error(url=show_url)
 
             return Result.error(f"HTTP {response.status_code}")
 

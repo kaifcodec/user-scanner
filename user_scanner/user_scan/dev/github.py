@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 def validate_github(user):
     url = f"https://github.com/signup_check/username?value={user}"
+    show_url = "https://github.com"
 
     headers = {
         'User-Agent': get_random_user_agent(),
@@ -36,7 +37,7 @@ def validate_github(user):
 
         return Result.error("Unexpected GitHub response report it via issues")
 
-    return generic_validate(url, process, headers=headers)
+    return generic_validate(url, process, show_url=show_url, headers=headers)
 
 
 if __name__ == "__main__":

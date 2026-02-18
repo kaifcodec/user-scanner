@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://vivino.com"
     headers = {
         'User-Agent': get_random_user_agent(),
         'Accept': 'application/json',
@@ -34,12 +35,12 @@ async def _check(email: str) -> Result:
             error_msg = data.get("error", "")
 
             if error_msg == "The supplied email does not exist":
-                return Result.available()
+                return Result.available(url=show_url)
 
             if not error_msg or "password" in error_msg.lower():
-                return Result.taken()
+                return Result.taken(url=show_url)
 
-            return Result.error(f"Vivino Error: {error_msg}")
+            return Result.error(f"Vivino Error: {error_msg}", url=show_url)
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")

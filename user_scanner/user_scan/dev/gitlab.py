@@ -5,6 +5,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 def validate_gitlab(user):
     url = f"https://gitlab.com/users/{user}/exists"
+    show_url = "https://gitlab.com"
 
     headers = {
         'User-Agent': get_random_user_agent(),
@@ -26,7 +27,7 @@ def validate_gitlab(user):
                     return Result.taken()
         return Result.error("Invalid status code")
 
-    return generic_validate(url, process, headers=headers)
+    return generic_validate(url, process, show_url=show_url, headers=headers)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,8 @@ from user_scanner.core.result import Result
 from typing import List
 
 INDENT = "  "
-CSV_HEADER = "username,category,site_name,status,reason"
+CSV_HEADER = "username,category,site_name,status,url,reason"
+
 
 
 def indentate(msg: str, indent: int):

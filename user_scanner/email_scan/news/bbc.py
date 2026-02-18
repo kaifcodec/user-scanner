@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://bbc.com"
     login_url = "https://account.bbc.com/auth/identifier/signin?realm=%2F&clientId=Account&action=register&ptrt=https%3A%2F%2Fwww.bbc.com%2F&userOrigin=BBCS_BBC&purpose=free"
     check_url = "https://account.bbc.com/auth/identifier/check"
 
@@ -46,9 +47,9 @@ async def _check(email: str) -> Result:
             data = check_res.json()
 
             if data.get("exists") is True:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif data.get("exists") is False:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

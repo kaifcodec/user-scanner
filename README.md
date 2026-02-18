@@ -2,7 +2,7 @@
 
 ![User Scanner Logo](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.2.0.6-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.3.0-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
@@ -68,14 +68,29 @@ Scan a single email or username across **all** available modules/platforms:
 user-scanner -e john_doe@gmail.com   # single email scanning 
 user-scanner -u john_doe             # single username scanning 
 ```
+### Verbose mode 
+
+Use `-v` flag to show the url of the sites being checked
+```bash
+user-scanner -v -e johndoe@gmail.com -c dev
+```
+Output:
+```sh
+  ...
+  [✔] Huggingface [https://huggingface.co] (johndoe@gmail.com): Registered
+  [✔] Envato [https://account.envato.com] (johndoe@gmail.com): Registered
+  [✔] Replit [https://replit.com] (johndoe@gmail.com): Registered
+  [✔] Xda [https://xda-developers.com] (johndoe@gmail.com): Registered
+  ...
+```
 
 ### Selective scanning
 
 Scan only specific categories or single modules:
 
 ```bash
-user-scanner -u john_doe -c dev # developer platforms only
-user-scanner -u john_doe -m github # only GitHub
+user-scanner -u john_doe -c dev                # developer platforms only
+user-scanner -e john_doe@gmail.com -m github   # only GitHub
 ```
 
 ### Bulk email/username scanning
@@ -120,9 +135,9 @@ Output:
         "category": "Dev",
         "site_name": "Github",
         "status": "Registered",
+        "url": "https://github.com",
         "reason": ""
 }
-
 ```
 ---
 

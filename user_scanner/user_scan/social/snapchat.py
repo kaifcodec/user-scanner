@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 def validate_snapchat(user):
     url = f"https://www.snapchat.com/@{user}"
+    show_url = "https://snapchat.com"
 
     headers = {
         'User-Agent': get_random_user_agent(),
@@ -21,7 +22,7 @@ def validate_snapchat(user):
         'priority': "u=0, i"
     }
 
-    return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
 
 
 if __name__ == "__main__":

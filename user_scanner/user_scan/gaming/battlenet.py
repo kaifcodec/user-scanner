@@ -30,6 +30,7 @@ def validate_battlenet(user: str) -> Result:
         return Result.error("Must start with letter, only letters and numbers allowed")
 
     url = f"https://overwatch.blizzard.com/en-us/search/account-by-name/{username}"
+    show_url = "https://battle.net"
 
     headers = {
         "User-Agent": get_random_user_agent(),
@@ -55,7 +56,7 @@ def validate_battlenet(user: str) -> Result:
             return Result.error("Failed to parse response")
 
     return generic_validate(
-        url, process, headers=headers, timeout=15.0, follow_redirects=True
+        url, process, show_url=show_url, headers=headers, timeout=15.0, follow_redirects=True
     )
 
 

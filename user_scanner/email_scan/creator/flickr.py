@@ -5,6 +5,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
     url = "https://cognito-idp.us-east-1.amazonaws.com"
+    show_url = "https://flickr.com"
 
     payload = {
         "ClientId": "3ck15a1ov4f0d3o97vs3tbjb52",
@@ -35,10 +36,10 @@ async def _check(email: str) -> Result:
             body = response.text
 
             if "An account with the given email already exists" in body:
-                return Result.taken()
+                return Result.taken(url=show_url)
             
             elif "PreSignUp failed with error Sign Up failure" in body:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body")
 

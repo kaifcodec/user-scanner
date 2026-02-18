@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
     url = "https://api.flirtbate.com/api/v1/customer/reset-password-email"
+    show_url = "https://flirtbate.com"
 
     headers = {
         'User-Agent': get_random_user_agent(),
@@ -29,10 +30,10 @@ async def _check(email: str) -> Result:
             message = data.get("message", "")
 
             if "Reset password email sent" in message:
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if "Email invalid for reset password" in message:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it via GitHub issues")
 

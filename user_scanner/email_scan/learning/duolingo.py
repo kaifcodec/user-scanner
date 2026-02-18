@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://duolingo.com"
     headers = {
         'authority': 'www.duolingo.com',
         'Accept': 'application/json, text/plain, */*',
@@ -22,9 +23,9 @@ async def _check(email: str) -> Result:
                 data = response.json()
                 # Duolingo returns a list of users matching the email
                 if data.get("users") and len(data["users"]) > 0:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 else:
-                    return Result.available()
+                    return Result.available(url=show_url)
             
             return Result.error(f"HTTP {response.status_code}")
 

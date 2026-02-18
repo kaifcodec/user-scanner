@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://devrant.com"
     headers = {
         'User-Agent': get_random_user_agent(),
         'Accept': 'application/json, text/javascript, */*; q=0.01',
@@ -36,9 +37,9 @@ async def _check(email: str) -> Result:
             error_msg = data.get('error', '')
 
             if error_msg == 'The email specified is already registered to an account.':
-                return Result.taken()
+                return Result.taken(url=show_url)
 
-            return Result.available()
+            return Result.available(url=show_url)
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")

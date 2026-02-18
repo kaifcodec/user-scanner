@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 def validate_cratesio(user):
     url = f"https://crates.io/api/v1/users/{user}"
+    show_url = "https://crates.io"
 
     headers = {
         'User-Agent': get_random_user_agent(),
@@ -12,7 +13,7 @@ def validate_cratesio(user):
         'sec-fetch-mode': "cors",
     }
 
-    return status_validate(url, 404, 200, headers=headers)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers)
 
 
 if __name__ == "__main__":

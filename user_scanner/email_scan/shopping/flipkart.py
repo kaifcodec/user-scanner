@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://flipkart.com"
     url = "https://2.rome.api.flipkart.com/1/action/view"
 
     headers = {
@@ -42,10 +43,10 @@ async def _check(email: str) -> Result:
             response_text = response.text
 
             if "Looks like you're new here!" in response_text:
-                return Result.available()
+                return Result.available(url=show_url)
 
             if "supportedAuthenticationTypes=password" in response_text:
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             return Result.error("Unexpected response body, report it via GitHub issues")
 

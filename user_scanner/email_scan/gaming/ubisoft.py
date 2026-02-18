@@ -6,6 +6,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
     url = "https://public-ubiservices.ubi.com/v3/users/validatecreation"
+    show_url = "https://ubisoft.com"
 
     payload = {
         "email": email,
@@ -48,10 +49,10 @@ async def _check(email: str) -> Result:
             body = response.text
 
             if "Invalid email" in body:
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if "legalOptinsKey" in body and "Invalid email" not in body:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

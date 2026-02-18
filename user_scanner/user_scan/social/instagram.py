@@ -3,6 +3,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 def validate_instagram(user):
     url = "https://www.instagram.com/api/v1/users/web_profile_info/"
+    show_url = "https://instagram.com"
 
     params = {
         'username': user
@@ -29,7 +30,7 @@ def validate_instagram(user):
         'priority': "u=1, i"
     }
 
-    return status_validate(url, 404, 200, params=params, headers=headers, http2=True)
+    return status_validate(url, 404, 200, show_url=show_url, params=params, headers=headers, http2=True)
 
 
 if __name__ == "__main__":

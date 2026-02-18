@@ -16,6 +16,7 @@ def validate_lichess(user: str) -> Result:
         return Result.error("Username must end with a letter or a number")
 
     url = f"https://lichess.org/api/player/autocomplete?term={user}&exists=1"
+    show_url = "https://lichess.org"
 
     def process(response):
         res_text = response.text.strip().lower()
@@ -25,7 +26,7 @@ def validate_lichess(user: str) -> Result:
             return Result.available()
         return Result.error("Unexpected error, report it via github issues")
 
-    return generic_validate(url, process, timeout=3.0)
+    return generic_validate(url, process, show_url=show_url, timeout=3.0)
 
 
 if __name__ == "__main__":

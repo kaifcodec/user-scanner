@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://leetcode.com"
     url = "https://leetcode.com/graphql/"
     
     # Hardcoded values as leetcode accepting this value, weird but it works!
@@ -41,10 +42,10 @@ async def _check(email: str) -> Result:
             error_msg = result_obj.get("error")
 
             if is_ok is True:
-                return Result.taken()
+                return Result.taken(url=show_url)
             
             if is_ok is False and error_msg == "Email does not exist":
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error(f"LeetCode Error: {error_msg}")
 

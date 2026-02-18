@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://superporn.com"
     url = "https://api.superporn.com/signup/check-email"
     
     payload = {
@@ -26,11 +27,11 @@ async def _check(email: str) -> Result:
             
             if is_error is True:
                 if "Email is in use" in data.get("message", ""):
-                    return Result.taken()
+                    return Result.taken(url=show_url)
             
             elif is_error is False:
                 if data.get("result") == "ok":
-                    return Result.available()
+                    return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it via GitHub issues")
 

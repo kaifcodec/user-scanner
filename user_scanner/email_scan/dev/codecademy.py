@@ -5,6 +5,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://codecademy.com"
     headers = {
         'User-Agent': get_random_user_agent(),
         'Accept': 'application/json',
@@ -34,9 +35,9 @@ async def _check(email: str) -> Result:
             )
 
             if response.status_code == 400 and 'has already been taken' in response.text:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif response.status_code == 200:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error(f"Unexpected response: {response.status_code}")
 

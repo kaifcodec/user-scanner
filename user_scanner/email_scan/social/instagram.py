@@ -5,10 +5,11 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://instagram.com"
     user_agent = get_random_user_agent()
 
     try:
-        async with httpx.AsyncClient(headers={"user-agent": user_agent}, http2=True, timeout=15.0) as client:
+        async with httpx.AsyncClient(headers={"user-agent": user_agent}, http2=True, timeout=7.0) as client:
             res = await client.get("https://www.instagram.com/accounts/password/reset/", follow_redirects=True)
 
             csrf = client.cookies.get("csrftoken")
@@ -43,9 +44,9 @@ async def _check(email: str) -> Result:
                 status_val = data.get("status")
 
                 if status_val == "ok":
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif status_val == "fail":
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 

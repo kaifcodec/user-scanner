@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://addictinggames.com"
     url = "https://prod.addictinggames.com/user/registerpass"
 
     params = {
@@ -36,10 +37,10 @@ async def _check(email: str) -> Result:
                 return Result.error("Cloudflare Bot Detection (403 Forbidden), try after sometime or use proxy")
 
             if "mail: The email address" in body and "is already taken" in body:
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if "name: The username tierd_knight is already taken" in body:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

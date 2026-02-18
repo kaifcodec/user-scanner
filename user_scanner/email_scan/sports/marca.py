@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://marca.com"
     url = f"https://seguro.marca.com/ueregistro/v2/usuarios/comprobacion/{email}/2"
 
     headers = {
@@ -18,21 +19,21 @@ async def _check(email: str) -> Result:
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.get(url, headers=headers)
 
-            if response.status_code in [200, 404]:
+            if response.status_code in [200, 404, 400]:
                 data = response.json()
                 status = data.get("status")
 
                 if status == "OK":
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif status == "NOK":
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 
             return Result.error(f"HTTP {response.status_code}")
 
     except httpx.TimeoutException:
-        return Result.error("Connection timed out")
+        return Result.error("Connection timed out, could be regional block")
     except Exception as e:
         return Result.error(f"Unexpected Exception: {e}")
 

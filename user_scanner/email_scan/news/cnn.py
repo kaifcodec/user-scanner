@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import get_random_user_agent
 
 async def _check(email: str) -> Result:
+    show_url = "https://cnn.com"
     url = "https://audience.cnn.com/core/api/1/identity"
 
     payload = {
@@ -30,10 +31,10 @@ async def _check(email: str) -> Result:
             body = response.text
 
             if "identity.already.in.use" in body:
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if "cnn.createprofile" in body and "cnn.updatepassword" in body:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

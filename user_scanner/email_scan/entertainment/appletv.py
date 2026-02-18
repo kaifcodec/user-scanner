@@ -4,6 +4,7 @@ from user_scanner.core.helpers import get_random_user_agent
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://tv.apple.com"
     url = "https://idmsa.apple.com/appleauth/auth/federate"
     params = {'isRememberMeEnabled': "false"}
     headers = {
@@ -34,9 +35,9 @@ async def _check(email: str) -> Result:
             if response.status_code == 200:
                 data = response.json()
                 if "primaryAuthOptions" in data:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif "primaryAuthOptions" not in data:
-                    return Result.available()
+                    return Result.available(url=show_url)
                 else:
                     return Result.error("Unexpected response body, report it via GitHub issues")
 

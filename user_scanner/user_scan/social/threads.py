@@ -1,8 +1,9 @@
 from user_scanner.core.orchestrator import status_validate
 from user_scanner.core.helpers import get_random_user_agent
 
-def validate_instagram(user):
+def validate_threads(user):
     url = f"https://www.threads.net/api/v1/users/web_profile_info/?username={user}"
+    show_url = "https://threads.net"
 
     headers = {
         'User-Agent': get_random_user_agent(),
@@ -14,12 +15,12 @@ def validate_instagram(user):
         'Referer': f"https://www.threads.net/@{user}",
     }
 
-    return status_validate(url, 404, 200, headers=headers, http2=True)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers, http2=True)
 
 
 if __name__ == "__main__":
     user = input("Username?: ").strip()
-    result = validate_instagram(user)
+    result = validate_threads(user)
 
     if result == 1:
         print("Available!")

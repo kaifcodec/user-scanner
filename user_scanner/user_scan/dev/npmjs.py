@@ -10,9 +10,10 @@ def validate_npmjs(user):
         return Result.error("Username cannot contain uppercase letters.")
 
     url = f"https://www.npmjs.com/~{user}"
+    show_url = "https://npmjs.com"
 
 
-    return status_validate(url, 404, 200, timeout=3.0, follow_redirects=True)
+    return status_validate(url, 404, 200, show_url=show_url, timeout=3.0, follow_redirects=True)
 
 
 if __name__ == "__main__":

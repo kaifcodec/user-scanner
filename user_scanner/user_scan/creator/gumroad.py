@@ -6,7 +6,8 @@ def validate_gumroad(user: str) -> Result:
         return Result.error("Username must be between 3 and 20 lowercase alphanumeric characters")
 
     url = f"https://{user}.gumroad.com/"
-    return status_validate(url, 404, 200, follow_redirects=True)
+    show_url = "https://gumroad.com"
+    return status_validate(url, 404, 200, show_url=show_url, follow_redirects=True)
 
 
 if __name__ == "__main__":
@@ -19,4 +20,3 @@ if __name__ == "__main__":
         print("Unavailable!")
     else:
         print(f"Error occurred! Reason: {result.get_reason()}")
-
