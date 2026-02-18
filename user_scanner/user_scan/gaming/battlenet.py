@@ -29,7 +29,7 @@ def validate_battlenet(user: str) -> Result:
         return Result.error("Must start with letter, only letters and numbers allowed")
 
     url = f"https://overwatch.blizzard.com/en-us/search/account-by-name/{username}"
-    show_url = "https://overwatch.blizzard.com"
+    show_url = "https://battle.net"
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",

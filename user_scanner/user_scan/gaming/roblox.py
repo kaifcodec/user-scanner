@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 def validate_roblox(user: str) -> Result:
     # official api
     url = f"https://users.roblox.com/v1/users/search?keyword={user}&limit=10"
-    show_url = "https://users.roblox.com"
+    show_url = "https://roblox.com"
 
     def process(response):
         search_results = response.json()  # api response

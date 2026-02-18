@@ -12,7 +12,7 @@ def validate_twitch(user: str) -> Result:
         return Result.error("Username can only contain alphanumeric characters (a-z, 0-9)")
 
     url = "https://gql.twitch.tv/gql"
-    show_url = "https://gql.twitch.tv"
+    show_url = "https://twitch.tv"
 
     payload = [
       {
