@@ -12,7 +12,7 @@ def validate_substack(user: str) -> Result:
         return Result.error("Usernames can only contain lowercase letters and numbers")
 
     url = f"https://{user}.substack.com"
-    show_url = "https://{user}.substack.com"
+    show_url = "https://substack.com"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
