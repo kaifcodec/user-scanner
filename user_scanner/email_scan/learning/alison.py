@@ -3,6 +3,7 @@ import re
 from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
+    show_url = "https://alison.com"
     url = "https://alison.com/register"
 
     headers = {
@@ -37,10 +38,10 @@ async def _check(email: str) -> Result:
             body = response.text
 
             if "The signup email has already been taken" in body:
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if 'id="emailNew"' in body and "The signup email has already been taken" not in body:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

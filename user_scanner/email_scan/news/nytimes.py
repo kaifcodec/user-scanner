@@ -6,6 +6,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://nytimes.com"
 
     login_url = "https://myaccount.nytimes.com/auth/enter-email?response_type=cookie&client_id=vi&redirect_uri=https%3A%2F%2Fwww.nytimes.com"
     check_url = "https://myaccount.nytimes.com/svc/lire_ui/authorize-email/check"
@@ -52,9 +53,9 @@ async def _check(email: str) -> Result:
             further_action = data.get("data", {}).get("further_action", "")
 
             if further_action == "show-login":
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif further_action == "show-register":
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

@@ -7,6 +7,7 @@ async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=False, follow_redirects=True) as client:
         try:
             get_url = "https://www.spotify.com/in-en/signup"
+            show_url = "https://spotify.com"
             get_headers = {
                 'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
                 'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -73,9 +74,9 @@ async def _check(email: str) -> Result:
             data = response.json()
 
             if "error" in data and "already_exists" in data["error"]:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif "success" in data:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error(f"Unexpected error [{response.status_code}], report it via GitHub issues")
 

@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://stremio.com"
     url = "https://api.strem.io/api/login"
 
     headers = {
@@ -28,9 +29,9 @@ async def _check(email: str) -> Result:
                 error_data = data.get("error", {})
 
                 if error_data.get("wrongPass") is True:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif error_data.get("wrongEmail") is True:
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 

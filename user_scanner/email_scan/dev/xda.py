@@ -2,6 +2,7 @@ import httpx
 from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
+    show_url = "https://xda-developers.com"
     url = "https://www.xda-developers.com/check-user-exists/"
 
     params = {
@@ -22,10 +23,10 @@ async def _check(email: str) -> Result:
             exists = data.get("userExists")
 
             if exists is True:
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             if exists is False:
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

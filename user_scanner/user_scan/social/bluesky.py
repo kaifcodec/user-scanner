@@ -5,6 +5,7 @@ from user_scanner.core.result import Result
 def validate_bluesky(user):
     handle = user if user.endswith('.bsky.social') else f"{user}.bsky.social"
     url = "https://bsky.social/xrpc/com.atproto.temp.checkHandleAvailability"
+    show_url = "https://bsky.social"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
@@ -39,7 +40,7 @@ def validate_bluesky(user):
 
         return Result.error("Invalid status code!")
 
-    return generic_validate(url, process, headers=headers, params=params, timeout=15.0)
+    return generic_validate(url, process, show_url=show_url, headers=headers, params=params, timeout=15.0)
 
 
 if __name__ == "__main__":

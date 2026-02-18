@@ -3,6 +3,7 @@ from user_scanner.core.orchestrator import status_validate
 
 def validate_snapchat(user):
     url = f"https://www.snapchat.com/@{user}"
+    show_url = "https://snapchat.com"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
@@ -20,7 +21,7 @@ def validate_snapchat(user):
         'priority': "u=0, i"
     }
 
-    return status_validate(url, 404, 200, headers=headers, follow_redirects=True)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
 
 
 if __name__ == "__main__":

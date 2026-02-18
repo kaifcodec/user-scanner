@@ -4,6 +4,7 @@ from user_scanner.core.orchestrator import generic_validate
 
 def validate_hashnode(user):
     url = "https://hashnode.com/utility/ajax/check-username"
+    show_url = "https://hashnode.com"
 
     payload = {
         "username": user,
@@ -33,7 +34,7 @@ def validate_hashnode(user):
         else:
             return Result.error("Invalid status code")
 
-    return generic_validate(url, process, method="POST", json=payload, headers=headers, timeout=3.0)
+    return generic_validate(url, process, show_url=show_url, method="POST", json=payload, headers=headers, timeout=3.0)
 
 if __name__ == "__main__":
     user = input("Username?: ").strip()

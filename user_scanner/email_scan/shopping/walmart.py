@@ -21,6 +21,7 @@ def generate_pkce_challenge():
 
 async def _check(email: str) -> Result:
     url = "https://identity.walmart.com/orchestra/idp/graphql"
+    show_url = "https://walmart.com"
 
     # Dynamic IDs
     uid = str(uuid.uuid4()).replace("-", "")
@@ -108,10 +109,10 @@ async def _check(email: str) -> Result:
             if pref in ["PASSWORD", "CHOICE"]:
                 if any(err.get("code") == "COMPROMISED" for err in errors):
                     return Result.taken("Account is flagged as compromised")
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             elif pref == "CREATE":
-                return Result.available()
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected response body structure, report it via GitHub issues")
 

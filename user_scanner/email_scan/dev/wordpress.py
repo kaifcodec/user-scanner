@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://wordpress.com"
     url = f"https://public-api.wordpress.com/rest/v1.1/users/{email}/auth-options"
 
     params = {
@@ -35,9 +36,9 @@ async def _check(email: str) -> Result:
             body = data.get("body", {})
 
             if inner_code == 200:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif inner_code == 404 and body.get("error") == "unknown_user":
-                return Result.available()
+                return Result.available(url=show_url)
             else:
                 error_msg = body.get("message", "Unknown API response")
                 return Result.error(f"WordPress Error: {error_msg}")

@@ -29,19 +29,19 @@ def _worker_single(module: ModuleType, username: str) -> Result:
         return Result.error(e, site_name=site_name, username=username)
 
 
-def run_user_module(module: ModuleType, username: str) -> List[Result]:
+def run_user_module(module: ModuleType, username: str, show_url: bool = False) -> List[Result]:
     result = _worker_single(module, username)
 
     category = find_category(module)
     if category:
         result.update(category=category)
 
-    print(result.get_console_output())
+    print(result.get_console_output(show_url=show_url))
 
     return [result]
 
 
-def run_user_category(category_path: Path, username: str) -> List[Result]:
+def run_user_category(category_path: Path, username: str, show_url: bool = False) -> List[Result]:
     category_name = category_path.stem.capitalize()
     print(f"\n{Fore.MAGENTA}== {category_name} SITES =={Style.RESET_ALL}")
 
@@ -53,17 +53,17 @@ def run_user_category(category_path: Path, username: str) -> List[Result]:
         for result in exec_map:
             result.update(category=category_name)
             results.append(result)
-            result.show()
+            result.show(show_url=show_url)
 
     return results
 
 
-def run_user_full(username: str) -> List[Result]:
+def run_user_full(username: str, show_url: bool = False) -> List[Result]:
     results = []
 
     categories = list(load_categories().values())
     for category_path in categories:
-        temp = run_user_category(category_path, username)
+        temp = run_user_category(category_path, username, show_url=show_url)
         results.extend(temp)
 
     return results
@@ -79,6 +79,8 @@ def make_request(url: str, **kwargs) -> httpx.Response:
             'Accept-Language': "en-US,en;q=0.9",
             'sec-fetch-dest': "document",
         }
+    if "show_url" in kwargs:
+        kwargs.pop("show_url", None)
 
     if "timeout" not in kwargs:
         kwargs["timeout"] = 5.0
@@ -99,12 +101,16 @@ def generic_validate(url: str, func: Callable[[httpx.Response], Result], **kwarg
     """
     A generic validate function that makes a request and executes the provided function on the response.
     """
+    # Look for 'show_url' in kwargs, if not found, use the request 'url'
+    display_url = kwargs.get("show_url", None)
+
     try:
         response = make_request(url, **kwargs)
         result = func(response)
-        return result
+        # Update the result with the chosen display url
+        return result.update(url=display_url)
     except Exception as e:
-        return Result.error(e, url=url)
+        return Result.error(e, url=display_url)
 
 
 def status_validate(url: str, available: int | List[int], taken: int | List[int], **kwargs) -> Result:
@@ -129,4 +135,5 @@ def status_validate(url: str, available: int | List[int], taken: int | List[int]
             return Result.taken()
         return Result.error(f"[{status}] Status didn't match. Report this on Github.")
 
+    # We pass all kwargs (including show_url if it exists) to generic_validate
     return generic_validate(url, inner, **kwargs)

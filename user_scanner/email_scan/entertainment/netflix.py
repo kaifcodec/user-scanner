@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://netflix.com"
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
         'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -52,10 +53,10 @@ async def _check(email: str) -> Result:
                 resp_text = response.text
 
                 if "sign-up link to" in resp_text:
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 elif "Welcome back!" in resp_text:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 else:
                     return Result.error("Unexpected response, Try an India-based VPN or report it via GitHub issues")
 

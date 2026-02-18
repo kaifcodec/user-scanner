@@ -12,6 +12,7 @@ def validate_twitch(user: str) -> Result:
         return Result.error("Username can only contain alphanumeric characters (a-z, 0-9)")
 
     url = "https://gql.twitch.tv/gql"
+    show_url = "https://gql.twitch.tv"
 
     payload = [
       {
@@ -61,9 +62,7 @@ def validate_twitch(user: str) -> Result:
             return Result.error("Unexpected GraphQL response structure or type.")
 
     return generic_validate(
-        url,
-        process,
-        headers=headers,
+        url, process, show_url=show_url, headers=headers,
         method='POST',
         content=json.dumps(payload),
         follow_redirects=False

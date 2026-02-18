@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 def validate_medium(user):
     url = f"https://medium.com/@{user}"
+    show_url = "https://medium.com"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
@@ -33,7 +34,7 @@ def validate_medium(user):
                 return Result.available()
         return Result.error()
 
-    return generic_validate(url, process, headers=headers)
+    return generic_validate(url, process, show_url=show_url, headers=headers)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ def validate_hackernews(user: str) -> Result:
         return Result.error("Only use letters, numbers, underscores, and hyphens")
 
     url = f"https://news.ycombinator.com/user?id={user}"
+    show_url = "https://news.ycombinator.com"
 
     def process(response):
         if "No such user." in response.text:
@@ -18,7 +19,7 @@ def validate_hackernews(user: str) -> Result:
             return Result.taken()
         return Result.error("Unexpected response structure")
 
-    return generic_validate(url, process, timeout=3.0, follow_redirects=True)
+    return generic_validate(url, process, show_url=show_url, timeout=3.0, follow_redirects=True)
 
 
 if __name__ == "__main__":

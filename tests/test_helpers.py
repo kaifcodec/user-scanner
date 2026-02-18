@@ -44,12 +44,14 @@ def run_main(monkeypatch):
         monkeypatch.setattr("user_scanner.__main__.check_for_updates", lambda: None)
         monkeypatch.setattr("user_scanner.__main__.update_self", lambda: None)
         monkeypatch.setattr("user_scanner.__main__.print_banner", lambda: None)
+        # Added **kwargs to handle show_url argument
         monkeypatch.setattr(
             "user_scanner.__main__.run_email_module_batch",
-            lambda m, t: [Result.taken(username=t, site_name=m, is_email=True)])
+            lambda m, t, **kwargs: [Result.taken(username=t, site_name=m, is_email=True)])
+        # Added **kwargs to handle show_url argument
         monkeypatch.setattr(
         "user_scanner.__main__.run_user_module",
-        lambda module, target: [Result.taken(username=target, site_name=module, is_email=False)]
+        lambda module, target, **kwargs: [Result.taken(username=target, site_name=module, is_email=False)]
         )
         try:
             main()
@@ -322,3 +324,4 @@ http://3""")
         t.join()
 
     assert len(results) == 50
+

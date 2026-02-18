@@ -14,8 +14,9 @@ def validate_bitbucket(user: str) -> Result:
         return Result.error("Only use lowercase letters, numbers, hyphens, and underscores.")
 
     url = f"https://bitbucket.org/{user}/"
+    show_url = "https://bitbucket.org"
 
-    return status_validate(url, 404, [200, 302], follow_redirects=True)
+    return status_validate(url, 404, [200, 302], show_url=show_url, follow_redirects=True)
 
 
 if __name__ == "__main__":
@@ -28,7 +29,6 @@ if __name__ == "__main__":
         print("Unavailable!")
     else:
         print(f"Error occurred! Reason: {result.get_reason()}")
-
 
 
 

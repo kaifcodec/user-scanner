@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    show_url = "https://timesofindia.com"
     url = "https://jsso.indiatimes.com/sso/crossapp/identity/web/checkUserExists"
 
     payload = {
@@ -31,12 +32,12 @@ async def _check(email: str) -> Result:
             user_status = data.get("data", {}).get("status", "")
 
             if user_status == "VERIFIED_EMAIL":
-                return Result.taken()
+                return Result.taken(url=show_url)
 
             elif user_status == "UNREGISTERED_EMAIL":
-                return Result.available()
+                return Result.available(url=show_url)
             elif user_status == "UNVERIFIED_EMAIL":
-                return Result.taken("However email is not verified on the site")
+                return Result.taken("However email is not verified on the site", url=show_url)
 
             return Result.error("Unexpected response body, report it on github")
 

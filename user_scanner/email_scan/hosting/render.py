@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     url = "https://api.render.com/graphql"
+    show_url = "https://render.com"
     
     payload = {
         "operationName": "signUp",
@@ -45,9 +46,9 @@ async def _check(email: str) -> Result:
             if errors:
                 msg = errors[0].get("message", "")
                 if '"email":"exists"' in msg:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif '"hcaptcha_token":"invalid"' in msg:
-                    return Result.available()
+                    return Result.available(url=show_url)
                 else:
                     return Result.error(f"Render Error: {msg}")
 

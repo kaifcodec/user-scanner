@@ -5,6 +5,7 @@ from user_scanner.core.result import Result
 def validate_roblox(user: str) -> Result:
     # official api
     url = f"https://users.roblox.com/v1/users/search?keyword={user}&limit=10"
+    show_url = "https://users.roblox.com"
 
     def process(response):
         search_results = response.json()  # api response
@@ -30,7 +31,7 @@ def validate_roblox(user: str) -> Result:
         return Result.available()
 
     # First try: Using roblox's API
-    result = generic_validate(url, process, follow_redirects=True)
+    result = generic_validate(url, process, show_url=show_url, follow_redirects=True)
 
     if result.get_reason() != "Too many requests":
         return result
@@ -38,7 +39,7 @@ def validate_roblox(user: str) -> Result:
     # If rate limited, uses a simple status validation
     url = f"https://www.roblox.com/user.aspx?username={user}"
 
-    return status_validate(url, 404, [200, 302], follow_redirects=True)
+    return status_validate(url, 404, [200, 302], show_url=show_url, follow_redirects=True)
 
 
 if __name__ == "__main__":

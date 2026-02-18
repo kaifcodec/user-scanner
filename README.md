@@ -68,14 +68,29 @@ Scan a single email or username across **all** available modules/platforms:
 user-scanner -e john_doe@gmail.com   # single email scanning 
 user-scanner -u john_doe             # single username scanning 
 ```
+### Verbose mode 
+
+Use `-v` flag to show the url of the sites being checked
+```bash
+user-scanner -v -e johndoe@gmail.com -c dev
+```
+Output:
+```sh
+  ...
+  [✔] Huggingface [https://huggingface.co] (johndoe@gmail.com): Registered
+  [✔] Envato [https://account.envato.com] (johndoe@gmail.com): Registered
+  [✔] Replit [https://replit.com] (johndoe@gmail.com): Registered
+  [✔] Xda [https://xda-developers.com] (johndoe@gmail.com): Registered
+  ...
+```
 
 ### Selective scanning
 
 Scan only specific categories or single modules:
 
 ```bash
-user-scanner -u john_doe -c dev # developer platforms only
-user-scanner -u john_doe -m github # only GitHub
+user-scanner -u john_doe -c dev                # developer platforms only
+user-scanner -e john_doe@gmail.com -m github   # only GitHub
 ```
 
 ### Bulk email/username scanning
@@ -120,9 +135,9 @@ Output:
         "category": "Dev",
         "site_name": "Github",
         "status": "Registered",
+        "url": "https://github.com",
         "reason": ""
 }
-
 ```
 ---
 

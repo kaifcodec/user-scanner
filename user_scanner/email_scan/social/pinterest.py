@@ -6,6 +6,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     url = "https://www.pinterest.com/resource/ApiResource/get/"
+    show_url = "https://pinterest.com"
 
     data_str = json.dumps({
         "options": {
@@ -50,9 +51,9 @@ async def _check(email: str) -> Result:
                 exists = resource_response.get("data")
 
                 if exists is True:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif exists is False:
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 
