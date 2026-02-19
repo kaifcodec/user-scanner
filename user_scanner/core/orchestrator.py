@@ -76,7 +76,8 @@ def run_user_full(username: str, show_url: bool = False) -> List[Result]:
         exec_map = executor.map(
             lambda m: _worker_single(m, username), all_modules)
         for result in exec_map:
-            cat_name = module_to_cat.get(result.site_name, "Unknown")
+            site_name = result.site_name
+            cat_name = module_to_cat.get(site_name, "Unknown") if site_name else "Unknown"
 
             if cat_name not in printed_categories:
                 print(f"\n{Fore.MAGENTA}== {cat_name} SITES =={Style.RESET_ALL}")
