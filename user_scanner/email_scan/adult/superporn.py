@@ -20,6 +20,10 @@ async def _check(email: str) -> Result:
     try:
         async with httpx.AsyncClient(timeout=4.0) as client:
             response = await client.post(url, data=payload, headers=headers)
+
+            if response.status_code == 403:
+                return Result.error("Status: [403] IP blocked try using proxy or VPN")
+
             data = response.json()
 
             is_error = data.get("error")
