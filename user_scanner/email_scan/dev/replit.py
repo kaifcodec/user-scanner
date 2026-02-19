@@ -2,10 +2,11 @@ import httpx
 import json
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     url = "https://replit.com/data/user/exists"
     show_url = "https://replit.com"
-    
+
     payload = {
         "email": email
     }
@@ -47,6 +48,7 @@ async def _check(email: str) -> Result:
 
         except Exception as e:
             return Result.error(str(e))
+
 
 async def validate_replit(email: str) -> Result:
     return await _check(email)

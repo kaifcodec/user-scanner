@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://xnxx.com"
     url = "https://www.xnxx.com/account/checkemail"
@@ -42,6 +43,7 @@ async def _check(email: str) -> Result:
 
         except Exception as e:
             return Result.error(e)
+
 
 async def validate_xnxx(email: str) -> Result:
     return await _check(email)

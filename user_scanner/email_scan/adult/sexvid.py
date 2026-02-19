@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://sexvid.pro"
     url = "https://www.sexvid.pro/reset-password/"
@@ -39,6 +40,7 @@ async def _check(email: str) -> Result:
 
         except Exception as e:
             return Result.error(e)
+
 
 async def validate_sexvid(email: str) -> Result:
     return await _check(email)

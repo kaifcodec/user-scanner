@@ -2,6 +2,7 @@ import httpx
 import json
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://cnn.com"
     url = "https://audience.cnn.com/core/api/1/identity"
@@ -43,6 +44,7 @@ async def _check(email: str) -> Result:
         return Result.error("Server took too long to respond (Read Timeout)")
     except Exception as e:
         return Result.error(e)
+
 
 async def validate_cnn(email: str) -> Result:
     return await _check(email)

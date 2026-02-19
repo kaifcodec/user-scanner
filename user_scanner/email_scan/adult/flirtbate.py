@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     url = "https://api.flirtbate.com/api/v1/customer/reset-password-email"
     show_url = "https://flirtbate.com"
@@ -40,6 +41,7 @@ async def _check(email: str) -> Result:
         return Result.error("Connection timed out")
     except Exception as e:
         return Result.error(f"Unexpected Exception: {e}")
+
 
 async def validate_flirtbate(email: str) -> Result:
     return await _check(email)

@@ -2,6 +2,7 @@ import httpx
 import re
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://facebook.com"
     async with httpx.AsyncClient(http2=True, follow_redirects=False) as client:
@@ -92,6 +93,6 @@ async def _check(email: str) -> Result:
         except Exception as e:
             return Result.error(f"Unexpected exception: {e}")
 
+
 async def validate_facebook(email: str) -> Result:
     return await _check(email)
-

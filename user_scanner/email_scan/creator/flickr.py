@@ -2,6 +2,7 @@ import httpx
 import json
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     url = "https://cognito-idp.us-east-1.amazonaws.com"
     show_url = "https://flickr.com"
@@ -36,7 +37,7 @@ async def _check(email: str) -> Result:
 
             if "An account with the given email already exists" in body:
                 return Result.taken(url=show_url)
-            
+
             elif "PreSignUp failed with error Sign Up failure" in body:
                 return Result.available(url=show_url)
 
@@ -44,6 +45,7 @@ async def _check(email: str) -> Result:
 
     except Exception as e:
         return Result.error(str(e))
+
 
 async def validate_flickr(email: str) -> Result:
     return await _check(email)
