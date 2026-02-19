@@ -37,7 +37,7 @@ def validate_tiktok(user: str) -> Result:
                 return Result.taken()
         return Result.error("Unable to load tiktok")
 
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(url, process, show_url=show_url, headers=headers, timeout=4.0)
 
 
 if __name__ == "__main__":
