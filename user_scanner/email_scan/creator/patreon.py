@@ -52,8 +52,3 @@ async def _check(email: str) -> Result:
 
 async def validate_patreon(email: str) -> Result:
     return await _check(email)
-
-
-
-
-

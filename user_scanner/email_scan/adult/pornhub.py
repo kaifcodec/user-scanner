@@ -2,6 +2,7 @@ import httpx
 import re
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     base_url = "https://www.pornhub.com"
     show_url = "https://pornhub.com"
@@ -18,7 +19,8 @@ async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=5.0) as client:
         try:
             landing_resp = await client.get(base_url, headers=headers)
-            token_match = re.search(r'var\s+token\s*=\s*"([^"]+)"', landing_resp.text)
+            token_match = re.search(
+                r'var\s+token\s*=\s*"([^"]+)"', landing_resp.text)
 
             if not token_match:
                 return Result.error("Failed to extract dynamic token from HTML")

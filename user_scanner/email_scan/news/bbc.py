@@ -2,6 +2,7 @@ import httpx
 import re
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://bbc.com"
     login_url = "https://account.bbc.com/auth/identifier/signin?realm=%2F&clientId=Account&action=register&ptrt=https%3A%2F%2Fwww.bbc.com%2F&userOrigin=BBCS_BBC&purpose=free"
@@ -17,9 +18,11 @@ async def _check(email: str) -> Result:
         async with httpx.AsyncClient(timeout=7.0, follow_redirects=True) as client:
             response = await client.get(login_url, headers=headers)
 
-            nonce_match = re.search(r'nonce=([a-zA-Z0-9\-_]+)', str(response.url))
+            nonce_match = re.search(
+                r'nonce=([a-zA-Z0-9\-_]+)', str(response.url))
             if not nonce_match:
-                nonce_match = re.search(r'"nonce":"([a-zA-Z0-9\-_]+)"', response.text)
+                nonce_match = re.search(
+                    r'"nonce":"([a-zA-Z0-9\-_]+)"', response.text)
 
                 return Result.error("Unable to extract nonce, report it via GitHub issues")
 
@@ -58,6 +61,7 @@ async def _check(email: str) -> Result:
         return Result.error("Server took too long to respond (Read Timeout)")
     except Exception as e:
         return Result.error(e)
+
 
 async def validate_bbc(email: str) -> Result:
     return await _check(email)

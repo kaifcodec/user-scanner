@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://xda-developers.com"
     url = "https://www.xda-developers.com/check-user-exists/"
@@ -36,6 +37,7 @@ async def _check(email: str) -> Result:
         return Result.error("Server took too long to respond (XDA)")
     except Exception as e:
         return Result.error(e)
+
 
 async def validate_xda(email: str) -> Result:
     return await _check(email)

@@ -2,13 +2,14 @@ import httpx
 import json
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://leetcode.com"
     url = "https://leetcode.com/graphql/"
-    
+
     # Hardcoded values as leetcode accepting this value, weird but it works!
     static_csrf = "bMwA82bLs7IrhigK19Bu6uDj4DhZnVnE"
-    
+
     payload = {
         "query": """
             mutation AuthRequestPasswordResetByEmail($email: String!) {
@@ -36,13 +37,14 @@ async def _check(email: str) -> Result:
             response = await client.post(url, content=json.dumps(payload), headers=headers)
             data = response.json()
 
-            result_obj = data.get("data", {}).get("authRequestPasswordResetByEmail", {})
+            result_obj = data.get("data", {}).get(
+                "authRequestPasswordResetByEmail", {})
             is_ok = result_obj.get("ok")
             error_msg = result_obj.get("error")
 
             if is_ok is True:
                 return Result.taken(url=show_url)
-            
+
             if is_ok is False and error_msg == "Email does not exist":
                 return Result.available(url=show_url)
 
@@ -50,6 +52,7 @@ async def _check(email: str) -> Result:
 
     except Exception as e:
         return Result.error(e)
+
 
 async def validate_leetcode(email: str) -> Result:
     return await _check(email)

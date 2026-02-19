@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://codewars.com"
     url = "https://www.codewars.com/join"
@@ -47,6 +48,7 @@ async def _check(email: str) -> Result:
         return Result.error("Connection timed out")
     except Exception as e:
         return Result.error(f"Unexpected Exception: {e}")
+
 
 async def validate_codewars(email: str) -> Result:
     return await _check(email)

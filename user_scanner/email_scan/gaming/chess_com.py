@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=True) as client:
         try:
@@ -43,6 +44,7 @@ async def _check(email: str) -> Result:
 
         except Exception as e:
             return Result.error(f"unexpected exception: {e}")
+
 
 async def validate_chess_com(email: str) -> Result:
     return await _check(email)

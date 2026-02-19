@@ -2,6 +2,7 @@ import httpx
 import json
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://addictinggames.com"
     url = "https://prod.addictinggames.com/user/registerpass"
@@ -45,6 +46,7 @@ async def _check(email: str) -> Result:
 
     except Exception as e:
         return Result.error(e)
+
 
 async def validate_addictinggames(email: str) -> Result:
     return await _check(email)

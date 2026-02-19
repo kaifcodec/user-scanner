@@ -1,10 +1,11 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     url = "https://id.fox.com/status/v1/status"
     show_url = "https://foxnews.com"
-    
+
     params = {
         'email': email
     }
@@ -34,7 +35,7 @@ async def _check(email: str) -> Result:
 
             if found is True:
                 return Result.taken(url=show_url)
-            
+
             elif found is False:
                 return Result.available(url=show_url)
 
@@ -47,6 +48,7 @@ async def _check(email: str) -> Result:
         return Result.error("Server took too long to respond (Read Timeout)")
     except Exception as e:
         return Result.error(e)
+
 
 async def validate_foxnews(email: str) -> Result:
     return await _check(email)

@@ -2,6 +2,7 @@ import httpx
 import re
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://alison.com"
     url = "https://alison.com/register"
@@ -17,7 +18,8 @@ async def _check(email: str) -> Result:
         async with httpx.AsyncClient(timeout=7.0, follow_redirects=True) as client:
             init_res = await client.get(url, headers=headers)
 
-            token_match = re.search(r'name="_token"\s+value="([^"]+)"', init_res.text)
+            token_match = re.search(
+                r'name="_token"\s+value="([^"]+)"', init_res.text)
             if not token_match:
                 return Result.error("Unable to extract CSRF token from Alison")
 
@@ -51,6 +53,7 @@ async def _check(email: str) -> Result:
         return Result.error("Server took too long to respond (Alison)")
     except Exception as e:
         return Result.error(e)
+
 
 async def validate_alison(email: str) -> Result:
     return await _check(email)

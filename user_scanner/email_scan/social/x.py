@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email):
     url = "https://api.x.com/i/users/email_available.json"
     show_url = "https://x.com"

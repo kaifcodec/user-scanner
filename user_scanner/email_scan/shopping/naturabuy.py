@@ -1,6 +1,7 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     show_url = "https://naturabuy.fr"
     headers = {
@@ -30,18 +31,19 @@ async def _check(email: str) -> Result:
                 return Result.error(f"Unexpected status: {response.status_code}")
 
             data = response.json()
-            
+
             if data.get("free") is False:
                 return Result.taken(url=show_url)
             elif data.get("free") is True:
                 return Result.available(url=show_url)
-            
+
             return Result.error("Unexpected response format")
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
     except Exception as e:
         return Result.error(str(e))
+
 
 async def validate_naturabuy(email: str) -> Result:
     return await _check(email)

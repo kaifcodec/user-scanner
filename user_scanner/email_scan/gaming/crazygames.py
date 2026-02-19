@@ -2,10 +2,11 @@ import httpx
 import json
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     url = "https://identitytoolkit.googleapis.com/v1/accounts:createAuthUri"
     show_url = "https://crazygames.com"
-    
+
     params = {
         'key': "AIzaSyAkBGn9sKEUBSMQ9CTFyHHxXas0tdcpts8"
     }
@@ -31,7 +32,7 @@ async def _check(email: str) -> Result:
 
             if is_registered is True:
                 return Result.taken(url=show_url)
-            
+
             elif is_registered is False:
                 return Result.available(url=show_url)
 
@@ -39,6 +40,7 @@ async def _check(email: str) -> Result:
 
     except Exception as e:
         return Result.error(e)
+
 
 async def validate_crazygames(email: str) -> Result:
     return await _check(email)

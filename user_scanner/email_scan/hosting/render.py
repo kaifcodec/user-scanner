@@ -1,10 +1,11 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     url = "https://api.render.com/graphql"
     show_url = "https://render.com"
-    
+
     payload = {
         "operationName": "signUp",
         "variables": {
@@ -56,6 +57,7 @@ async def _check(email: str) -> Result:
 
         except Exception as e:
             return Result.error(e)
+
 
 async def validate_render(email: str) -> Result:
     return await _check(email)
