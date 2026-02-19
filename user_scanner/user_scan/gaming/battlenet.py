@@ -56,7 +56,7 @@ def validate_battlenet(user: str) -> Result:
             return Result.error("Failed to parse response")
 
     return generic_validate(
-        url, process, show_url=show_url, headers=headers, timeout=15.0, follow_redirects=True
+        url, process, show_url=show_url, headers=headers, timeout=6.0, follow_redirects=True
     )
 
 

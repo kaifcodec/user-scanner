@@ -35,7 +35,7 @@ def validate_youtube(user) -> Result:
     }
 
 
-    return status_validate(url, 404, 200, show_url=show_url, headers=headers)
+    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
 
 
 if __name__ == "__main__":

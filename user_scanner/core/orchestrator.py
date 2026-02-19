@@ -48,7 +48,7 @@ def run_user_category(category_path: Path, username: str, show_url: bool = False
     results = []
     modules = load_modules(category_path)
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=20) as executor:
         exec_map = executor.map(lambda m: _worker_single(m, username), modules)
         for result in exec_map:
             result.update(category=category_name)
@@ -60,11 +60,32 @@ def run_user_category(category_path: Path, username: str, show_url: bool = False
 
 def run_user_full(username: str, show_url: bool = False) -> List[Result]:
     results = []
+    all_modules = []
+    categories = list(load_categories().items())
+    module_to_cat = {}
+    printed_categories = set()
 
-    categories = list(load_categories().values())
-    for category_path in categories:
-        temp = run_user_category(category_path, username, show_url=show_url)
-        results.extend(temp)
+    for cat_name, cat_path in categories:
+        modules = load_modules(cat_path)
+        display_name = cat_name.capitalize()
+        for m in modules:
+            all_modules.append(m)
+            module_to_cat[get_site_name(m)] = display_name
+
+    with ThreadPoolExecutor(max_workers=60) as executor:
+        exec_map = executor.map(
+            lambda m: _worker_single(m, username), all_modules)
+        for result in exec_map:
+            site_name = result.site_name
+            cat_name = module_to_cat.get(site_name, "Unknown") if site_name else "Unknown"
+
+            if cat_name not in printed_categories:
+                print(f"\n{Fore.MAGENTA}== {cat_name} SITES =={Style.RESET_ALL}")
+                printed_categories.add(cat_name)
+
+            result.update(category=cat_name)
+            results.append(result)
+            result.show(show_url=show_url)
 
     return results
 
