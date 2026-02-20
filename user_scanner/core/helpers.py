@@ -86,8 +86,8 @@ def generate_permutations(username: str, pattern: str, limit: int | None = None,
     if is_email:
         username, domain = username.strip().split("@")
 
-    # generate permutations of length 1 → len(chars)
-    for r in range(len(chars)):
+    # generate permutations of length 1 -> len(chars)
+    for r in range(1, len(chars) + 1):
         for combo in permutations(chars, r):
             new = username + ''.join(combo)
             if is_email:
@@ -109,8 +109,8 @@ def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int =
                 response = client.get("https://www.google.com")
                 if response.status_code == 200:
                     return proxy
-        except Exception:
-            pass
+        except (httpx.HTTPError, OSError, ValueError):
+            return None
         return None
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
