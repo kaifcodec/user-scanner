@@ -10,6 +10,8 @@ import threading
 def test_generate_permutations():
     perms = helpers.generate_permutations("user", "ab", limit=None)    
     assert "user" in perms  
+    assert "userab" in perms
+    assert "userba" in perms
     # All permutations must be valid
     assert all(
         p == "user" or
@@ -22,6 +24,7 @@ def test_generate_permutations():
 def test_generate_permutations_email():
     perms = helpers.generate_permutations("john@email.com", "abc", limit=None, is_email=True)    
     assert "john@email.com" in perms  
+    assert "johnabc@email.com" in perms
     assert all(
         p == "john@email.com" or
         (p.startswith("john") and len(p) > len("john@email.com") and p.endswith("@email.com"))
@@ -208,7 +211,7 @@ def test_validate_proxy_partially_invalid(mock_client):
         proxy = kwargs.get("proxy")
         instance = MagicMock()
         if "invalid" in proxy:
-            instance.get.side_effect = Exception("connection failed")
+            instance.get.side_effect = helpers.httpx.HTTPError("connection failed")
         else:
             response = MagicMock()
             response.status_code = 200
