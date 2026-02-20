@@ -1,6 +1,5 @@
 import importlib
 import importlib.util
-from itertools import permutations
 from types import ModuleType
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -68,35 +67,6 @@ def find_category(module: ModuleType) -> str | None:
         return category.capitalize()
 
     return None
-
-
-def generate_permutations(username: str, pattern: str, limit: int | None = None, is_email: bool = False) -> List[str]:
-    """
-    Generate all order-based permutations of characters in `pattern`
-    appended after `username`.
-    """
-
-    if limit and limit <= 0:
-        return []
-
-    permutations_set = {username}
-    chars = list(pattern)
-
-    domain = ""
-    if is_email:
-        username, domain = username.strip().split("@")
-
-    # generate permutations of length 1 -> len(chars)
-    for r in range(1, len(chars) + 1):
-        for combo in permutations(chars, r):
-            new = username + ''.join(combo)
-            if is_email:
-                new += "@" + domain
-            permutations_set.add(new)
-            if limit and len(permutations_set) >= limit:
-                return sorted(permutations_set)
-
-    return sorted(permutations_set)
 
 
 def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int = 50) -> List[str]:

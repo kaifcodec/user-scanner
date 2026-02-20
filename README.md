@@ -93,6 +93,21 @@ user-scanner -u john_doe -c dev                # developer platforms only
 user-scanner -e john_doe@gmail.com -m github   # only GitHub
 ```
 
+### Pattern expansion
+
+Embed pattern syntax in usernames or emails to auto-expand variants:
+
+- `[chars]` — single character from set (e.g. `[a-z]`, `[0-9]`)
+- `[chars]{n}` or `[chars]{n-m}` — length(s) (e.g. `[0-9]{1-2}` for 1–2 digits)
+
+```bash
+user-scanner -u "john[0-9]" -m github        # john0, john1, ... john9
+user-scanner -u "user[0-9]{1-2}" -s 50       # first 50 of user0..user99
+user-scanner -e "test[ab]@mail.com" -m github
+```
+
+Use `-r` / `--random` to scan in random order. Use `-s N` to limit expansions.
+
 ### Bulk email/username scanning
 
 Scan multiple emails/usernames from a file (one email/username per line):
