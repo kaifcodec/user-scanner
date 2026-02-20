@@ -1,12 +1,13 @@
-import subprocess
+import subprocess  # nosec B404 - subprocess used with fixed arg lists, shell=False
 import sys
+from importlib.metadata import PackageNotFoundError, version
+
 from colorama import Fore
 
-def get_version(package_name):
+def get_version(package_name: str) -> str:
     try:
-        from importlib.metadata import version  # Python 3.8+
         return version(package_name)
-    except Exception:
+    except PackageNotFoundError:
         return "Unknown"
 
 def update_self():
@@ -14,12 +15,15 @@ def update_self():
     try:
         subprocess.check_call([
             sys.executable, "-m", "pip", "uninstall", "user-scanner", "-y"
-        ])
+        ])  # nosec B603
         subprocess.check_call([
             sys.executable, "-m", "pip", "install", "user-scanner"
-        ])
+        ])  # nosec B603
     except subprocess.CalledProcessError as e:
-        print(f"{Fore.RED}Failed to update user-scanner: {e}{Fore.reset}")
+        print(f"{Fore.RED}Failed to update user-scanner: {e}{Fore.RESET}")
+        return
+    except OSError as e:
+        print(f"{Fore.RED}Failed to run updater command: {e}{Fore.RESET}")
         return
 
 
