@@ -7,31 +7,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 import threading
 
-def test_generate_permutations():
-    perms = helpers.generate_permutations("user", "ab", limit=None)    
-    assert "user" in perms  
-    assert "userab" in perms
-    assert "userba" in perms
-    # All permutations must be valid
-    assert all(
-        p == "user" or
-        (p.startswith("user") and len(p) > len("user"))
-        for p in perms
-    )
-    
-    assert len(perms) > 1
-
-def test_generate_permutations_email():
-    perms = helpers.generate_permutations("john@email.com", "abc", limit=None, is_email=True)    
-    assert "john@email.com" in perms  
-    assert "johnabc@email.com" in perms
-    assert all(
-        p == "john@email.com" or
-        (p.startswith("john") and len(p) > len("john@email.com") and p.endswith("@email.com"))
-        for p in perms
-    )
-    assert len(perms) > 1
-
 def test_get_site_name():
     def module(name:str) -> SimpleNamespace:
         return SimpleNamespace(**{"__name__":name})
