@@ -35,16 +35,27 @@ async def _check(email: str) -> Result:
                 'priority': "u=0, i"
             }
             res2 = await client.get(url2, params=params2, headers=headers2)
+
             html = res2.text
 
-            j_match = re.search(r'name="jazoest" value="(\d+)"', html)
-            l_match = re.search(r'name="lsd" value="([^"]+)"', html)
+            # Try to find LSD New JSON format first, then old HTML format
+            lsd_match = re.search(r'\["LSD",\[\],\{"token":"([^"]+)"\}', html) or \
+                re.search(r'name="lsd"\s+value="([^"]+)"', html) or \
+                re.search(r'"lsd":"([^"]+)"', html)
 
-            if not j_match or not l_match:
+            # Try to find jazoest URL param first, then hidden input
+            j_match = re.search(r'jazoest=(\d+)', html) or \
+                re.search(r'name="jazoest"\s+value="(\d+)"', html)
+
+            lsd = lsd_match.group(1) if lsd_match else None
+            jazoest = j_match.group(1) if j_match else None
+
+            # see which one is missing
+            if not lsd or not jazoest:
+                return Result.error(f"Token extraction failed (LSD: {bool(lsd)}, Jazoest: {bool(jazoest)})")
+
+            if not j_match or not lsd_match:
                 return Result.error("Failed to extract tokens (LSD/Jazoest)")
-
-            jazoest = j_match.group(1)
-            lsd = l_match.group(1)
 
             url3 = "https://www.facebook.com/ajax/login/help/identify.php"
             params3 = {'ctx': "recover"}
