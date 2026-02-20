@@ -1,12 +1,14 @@
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_chess_com(user):
     url = f"https://www.chess.com/callback/user/valid?username={user}"
+    show_url = "https://chess.com"
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        'User-Agent':get_random_user_agent(),
         'Accept': "application/json, text/plain, */*",
         'Accept-Encoding': "identity",
         'Accept-Language': "en-US,en;q=0.9",
@@ -23,7 +25,7 @@ def validate_chess_com(user):
                 return Result.taken()
         return Result.error("Invalid status code")
 
-    return generic_validate(url, process, headers=headers)
+    return generic_validate(url, process, show_url=show_url, headers=headers)
 
 
 if __name__ == "__main__":

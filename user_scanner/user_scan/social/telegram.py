@@ -5,6 +5,7 @@ from user_scanner.core.result import Result
 
 def validate_telegram(user: str) -> Result:
     url = f"https://t.me/{user}"
+    show_url = "https://t.me"
 
     def process(r):
         if r.status_code == 200:
@@ -14,7 +15,7 @@ def validate_telegram(user: str) -> Result:
                 return Result.available()
         return Result.error()
 
-    return generic_validate(url, process, follow_redirects=True)
+    return generic_validate(url, process, show_url=show_url, follow_redirects=True)
 
 
 if __name__ == "__main__":

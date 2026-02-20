@@ -6,6 +6,7 @@ async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=False) as client:
         try:
             url = "https://www.patreon.com/api/auth"
+            show_url = "https://patreon.com"
 
             params = {
                 'include': "user.null",
@@ -39,9 +40,9 @@ async def _check(email: str) -> Result:
                 "attributes", {}).get("next_auth_step")
 
             if next_step == "password":
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif next_step == "signup":
-                return Result.available()
+                return Result.available(url=show_url)
             else:
                 return Result.error("Unexpected auth step")
 
@@ -51,8 +52,3 @@ async def _check(email: str) -> Result:
 
 async def validate_patreon(email: str) -> Result:
     return await _check(email)
-
-
-
-
-

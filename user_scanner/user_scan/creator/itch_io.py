@@ -14,8 +14,9 @@ def validate_itch_io(user: str) -> Result:
         return Result.error("Only use lowercase letters, numbers, underscores, and hyphens.")
 
     url = f"https://itch.io/profile/{user}"
+    show_url = "https://itch.io"
 
-    return status_validate(url, 404, 200, follow_redirects=True)
+    return status_validate(url, 404, 200, show_url=show_url, follow_redirects=True)
 
 
 if __name__ == "__main__":

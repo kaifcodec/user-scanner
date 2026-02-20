@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     url = "https://identitytoolkit.googleapis.com/v1/accounts:createAuthUri"
+    show_url = "https://justwatch.com"
     params = {
         'key': "AIzaSyDv6JIzdDvbTBS-JWdR4Kl22UvgWGAyuo8"
     }
@@ -33,9 +34,9 @@ async def _check(email: str) -> Result:
                 registered = data.get("registered")
 
                 if registered is True:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif registered is False:
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 

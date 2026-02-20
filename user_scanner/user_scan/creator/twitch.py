@@ -2,6 +2,7 @@ import json
 import re
 import httpx
 from user_scanner.core.orchestrator import generic_validate, Result
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_twitch(user: str) -> Result:
@@ -12,6 +13,7 @@ def validate_twitch(user: str) -> Result:
         return Result.error("Username can only contain alphanumeric characters (a-z, 0-9)")
 
     url = "https://gql.twitch.tv/gql"
+    show_url = "https://twitch.tv"
 
     payload = [
       {
@@ -30,7 +32,7 @@ def validate_twitch(user: str) -> Result:
     ]
 
     headers = {
-      'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
+      'User-Agent': get_random_user_agent(),
       'Accept-Encoding': "identity",
       'Content-Type': "application/json",
       'sec-ch-ua-platform': "\"Android\"",
@@ -61,9 +63,7 @@ def validate_twitch(user: str) -> Result:
             return Result.error("Unexpected GraphQL response structure or type.")
 
     return generic_validate(
-        url,
-        process,
-        headers=headers,
+        url, process, show_url=show_url, headers=headers,
         method='POST',
         content=json.dumps(payload),
         follow_redirects=False

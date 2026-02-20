@@ -3,6 +3,7 @@ from user_scanner.core.orchestrator import generic_validate
 
 def validate_discord(user):
     url = "https://discord.com/api/v9/unique-username/username-attempt-unauthed"
+    show_url = "https://discord.com"
 
     headers = {
         "authority": "discord.com",
@@ -24,7 +25,7 @@ def validate_discord(user):
                 return Result.available()
         return Result.error("Invalid status code")
 
-    return generic_validate(url, process, method="POST", json=data, headers=headers, timeout=3.0)
+    return generic_validate(url, process, show_url=show_url, method="POST", json=data, headers=headers, timeout=3.0)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,9 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
+    show_url = "https://xnxx.com"
     url = "https://www.xnxx.com/account/checkemail"
     params = {'email': email}
     headers = {
@@ -33,14 +35,15 @@ async def _check(email: str) -> Result:
             exists_bool = data.get("result")
 
             if exists_bool is True:
-                return Result.available()
+                return Result.available(url=show_url)
             elif exists_bool is False:
-                return Result.taken()
+                return Result.taken(url=show_url)
             else:
                 return Result.error("Unexpected error, report it via GitHub issues")
 
         except Exception as e:
             return Result.error(e)
+
 
 async def validate_xnxx(email: str) -> Result:
     return await _check(email)

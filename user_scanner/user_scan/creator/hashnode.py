@@ -1,9 +1,11 @@
 from user_scanner.core.result import Result
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_hashnode(user):
     url = "https://hashnode.com/utility/ajax/check-username"
+    show_url = "https://hashnode.com"
 
     payload = {
         "username": user,
@@ -11,7 +13,7 @@ def validate_hashnode(user):
     }
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+        'User-Agent': get_random_user_agent(),
         'Accept': "application/json",
         'Content-Type': "application/json",
         'Origin': "https://hashnode.com",
@@ -33,7 +35,7 @@ def validate_hashnode(user):
         else:
             return Result.error("Invalid status code")
 
-    return generic_validate(url, process, method="POST", json=payload, headers=headers, timeout=3.0)
+    return generic_validate(url, process, show_url=show_url, method="POST", json=payload, headers=headers, timeout=3.0)
 
 if __name__ == "__main__":
     user = input("Username?: ").strip()

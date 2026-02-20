@@ -1,10 +1,12 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=True) as client:
         try:
             url = "https://www.chess.com/rpc/chesscom.authentication.v1.EmailValidationService/Validate"
+            show_url = "https://chess.com"
 
             payload = {
                 "email": email
@@ -34,14 +36,15 @@ async def _check(email: str) -> Result:
             status = data.get("status")
 
             if status == "EMAIL_STATUS_TAKEN":
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif status == "EMAIL_STATUS_AVAILABLE":
-                return Result.available()
+                return Result.available(url=show_url)
             else:
                 return Result.error(f"Unknown status: {status}, report is via GitHub issues")
 
         except Exception as e:
             return Result.error(f"unexpected exception: {e}")
+
 
 async def validate_chess_com(email: str) -> Result:
     return await _check(email)

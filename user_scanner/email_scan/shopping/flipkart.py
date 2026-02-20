@@ -1,8 +1,10 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
-    url = "https://1.rome.api.flipkart.com/1/action/view"
+    show_url = "https://flipkart.com"
+    url = "https://2.rome.api.flipkart.com/1/action/view"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
@@ -17,11 +19,13 @@ async def _check(email: str) -> Result:
             "type": "LOGIN_IDENTITY_VERIFY",
             "loginIdPrefix": "",
             "loginId": email,
-            "clientQueryParamMap": {"ret": "/"},
+            "clientQueryParamMap": {
+                "ret": "/"
+            },
             "loginType": "EMAIL",
             "verificationType": "PASSWORD",
             "screenName": "LOGIN_V4_EMAIL",
-            "sourceContext": "DEFAULT"
+            "sourceContext": "SIGNUP_REDIRECT"
         }
     }
 
@@ -38,15 +42,16 @@ async def _check(email: str) -> Result:
             response_text = response.text
 
             if "Looks like you're new here!" in response_text:
-                return Result.available()
+                return Result.available(url=show_url)
 
-            if "LOGIN_P_CHECK" in response_text or '"statusSuccess":true' in response_text:
-                return Result.taken()
+            if "supportedAuthenticationTypes=password" in response_text:
+                return Result.taken(url=show_url)
 
-            return Result.taken()
+            return Result.error("Unexpected response body, report it via GitHub issues")
 
         except Exception as e:
             return Result.error(e)
+
 
 async def validate_flipkart(email: str) -> Result:
     return await _check(email)

@@ -3,6 +3,7 @@ from user_scanner.core.result import Result
 
 def validate_stackoverflow(user: str) -> Result:
     url = f"https://stackoverflow.com/users/filter?search={user}"
+    show_url = "https://stackoverflow.com"
 
     def process(response):
         if response.status_code == 200:
@@ -19,7 +20,7 @@ def validate_stackoverflow(user: str) -> Result:
 
         return Result.error("Unexpected status code from Stack Overflow")
 
-    return generic_validate(url, process)
+    return generic_validate(url, process, show_url=show_url)
 
 
 if __name__ == "__main__":

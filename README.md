@@ -2,12 +2,12 @@
 
 ![User Scanner Logo](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.1.1.0-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.3.0.2-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
-  <img src="https://img.shields.io/badge/Tested%20on-Linux-balck?style=for-the-badge&logo=Linux" />
-  <img src="https://img.shields.io/pepy/dt/user-scanner?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tested%20on-Linux-black?style=for-the-badge&logo=Linux" />
+  <img src="https://img.shields.io/pypi/dm/user-scanner?style=for-the-badge" />
 </p>
 
 ---
@@ -53,28 +53,10 @@ python -m pip install --upgrade pip
 pip install user-scanner
 ```
 ---
+### Important Flags
 
-## Important Flags
+See [Important flags](docs/FLAGS.md) here and use the tool powerfully
 
-| Flag | Description |
-|------|-------------|
-| `-u, --username USERNAME` | Scan a single username across platforms |
-| `-e, --email EMAIL`       | Scan a single email across platforms |
-| `-uf, --username-file FILE` | Scan multiple usernames from file (one per line) |
-| `-ef, --email-file FILE`  | Scan multiple emails from file (one per line) |
-| `-c, --category CATEGORY` | Scan all platforms in a specific category |
-| `-lu, --list-user` | List all available modules for username scanning |
-| `-le, --list-email` | List all available modules for email scanning |
-| `-m, --module MODULE`     | Scan a single specific module |
-| `-p, --permute PERMUTE`   | Generate username permutations using a pattern/suffix |
-| `-P, --proxy-file FILE`   | Use proxies from file (one per line) |
-| `--validate-proxies`      | Validate proxies before scanning (tests against google.com) |
-| `-s, --stop STOP`         | Limit the number of permutations generated |
-| `-d, --delay DELAY`       | Delay (in seconds) between requests |
-| `-f, --format {csv,json}` | Select output format |
-| `-o, --output OUTPUT`     | Save results to a file |
-
----
 
 ## Usage
 
@@ -86,14 +68,29 @@ Scan a single email or username across **all** available modules/platforms:
 user-scanner -e john_doe@gmail.com   # single email scanning 
 user-scanner -u john_doe             # single username scanning 
 ```
+### Verbose mode 
+
+Use `-v` flag to show the url of the sites being checked
+```bash
+user-scanner -v -e johndoe@gmail.com -c dev
+```
+Output:
+```sh
+  ...
+  [✔] Huggingface [https://huggingface.co] (johndoe@gmail.com): Registered
+  [✔] Envato [https://account.envato.com] (johndoe@gmail.com): Registered
+  [✔] Replit [https://replit.com] (johndoe@gmail.com): Registered
+  [✔] Xda [https://xda-developers.com] (johndoe@gmail.com): Registered
+  ...
+```
 
 ### Selective scanning
 
 Scan only specific categories or single modules:
 
 ```bash
-user-scanner -u john_doe -c dev # developer platforms only
-user-scanner -u john_doe -m github # only GitHub
+user-scanner -u john_doe -c dev                # developer platforms only
+user-scanner -e john_doe@gmail.com -m github   # only GitHub
 ```
 
 ### Bulk email/username scanning
@@ -105,22 +102,47 @@ Scan multiple emails/usernames from a file (one email/username per line):
 user-scanner -ef emails.txt     # bulk email scan
 user-scanner -uf usernames.txt  # bulk username scan
 ```
+---
+### Library mode for email_scan
+Only available for `user-scanner>=1.2.0`
 
-### Username/Email variations (suffix only)
+See full usage (eg. category checks, full scan) guide [library usage](docs/USAGE.md)
 
-Generate & check username variations using a permutation from the given suffix:
+- Email scan example (single module):
 
-```bash
-user-scanner -u john_ -p ab # john_a, ..., john_ab, john_ba
+```python
+
+import asyncio
+from user_scanner.core import engine
+from user_scanner.email_scan.dev import github
+
+async def main():
+    # Engine detects 'email_scan' path -> returns "Registered" status
+    result = await engine.check(github, "test@gmail.com")
+    json_data = result.to_json() # returns JSON output
+    csv_data = result.to_csv()   # returns CSV output
+    print(json_data)             # prints the json data
+
+asyncio.run(main())
+
 ```
+Output:
+
+```json
+
+{
+        "email": "test@gmail.com",
+        "category": "Dev",
+        "site_name": "Github",
+        "status": "Registered",
+        "url": "https://github.com",
+        "reason": ""
+}
+```
+---
+
 
 ### Using Proxies
-
-Route requests through proxy servers:
-
-```bash
-user-scanner -u john_doe -P proxies.txt
-```
 
 Validate proxies before scanning (tests each proxy against google.com):
 
@@ -133,20 +155,31 @@ This will:
 2. Save working proxies to `validated_proxies.txt`
 3. Use only validated proxies for scanning
 
+
 ---
 
 ## Screenshots: 
 
 - Note*: New modules are constantly getting added so screenshots might show only limited, outdated output:
 
-<img width="1080" height="800" alt="1000146237" src="https://github.com/user-attachments/assets/1bb7d7cb-9b78-495a-ae95-01a9ef48d9a2" />
+<img width="1080" height="930" alt="1000146237" src="https://github.com/user-attachments/assets/3cbcecaf-3620-49be-9d0a-8f94790acdf0" />
 
 ---
+
 
 <img width="1072" height="848" alt="user-scanner's main usage screenshot" src="https://github.com/user-attachments/assets/34e44ca6-e314-419e-9035-d951b493b47f" />
 
 ---
 
+
+## ❤️ Support the project
+
+If this project helps you, consider supporting its development:
+
+**BTC (SegWit):** `bc1q0dzkuav8lq9lwu7gc457vwlda4utfcr5hpv7ka`
+
+
+---
 ## Contributing
 
 Modules are organized under `user_scanner/`:
@@ -166,17 +199,7 @@ user_scanner/
     ...
 ```
 
-**Module guidelines:**
-This project contains small "validator" modules that check whether a username exists on a given platform. Each validator is a single function that returns a Result object (see `core/orchestrator.py`).
-
-Result semantics:
-- Result.available() → `available`
-- Result.taken() → `taken`
-- Result.error(message: Optional[str]) → `error`, blocked, unknown, or request failure (include short diagnostic message when helpful)
-
-Follow this document when adding or updating validators.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for examples.
+See detailed [Contributing guidelines](CONTRIBUTING.md)
 
 ---
 
@@ -211,3 +234,4 @@ Some sites may return **403 Forbidden** or **connection timeout** errors, especi
 - Then run the tool again.
 
 These issues are caused by regional or network restrictions, not by the tool itself. If it still fails, report the error by opening an issue.
+

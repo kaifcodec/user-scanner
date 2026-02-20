@@ -1,10 +1,12 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=False, follow_redirects=True) as client:
         try:
             url = "https://stackoverflow.com/users/login"
+            show_url = "https://stackoverflow.com"
 
             payload = {
                 'ssrc': "login",
@@ -27,14 +29,15 @@ async def _check(email: str) -> Result:
             body = response.text
 
             if "No user found with matching email" in body:
-                return Result.available()
+                return Result.available(url=show_url)
             elif "The email or password is incorrect" in body:
-                return Result.taken()
+                return Result.taken(url=show_url)
             else:
                 return Result.error("Unexpected response body")
 
         except Exception as e:
             return Result.error(f"unexpected exception: {e}")
+
 
 async def validate_stackoverflow(email: str) -> Result:
     return await _check(email)

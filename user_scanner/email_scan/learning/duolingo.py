@@ -1,7 +1,9 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
+    show_url = "https://duolingo.com"
     headers = {
         'authority': 'www.duolingo.com',
         'Accept': 'application/json, text/plain, */*',
@@ -21,16 +23,17 @@ async def _check(email: str) -> Result:
                 data = response.json()
                 # Duolingo returns a list of users matching the email
                 if data.get("users") and len(data["users"]) > 0:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 else:
-                    return Result.available()
-            
+                    return Result.available(url=show_url)
+
             return Result.error(f"HTTP {response.status_code}")
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
     except Exception as e:
         return Result.error(e)
+
 
 async def validate_duolingo(email: str) -> Result:
     return await _check(email)

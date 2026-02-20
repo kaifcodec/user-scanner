@@ -2,8 +2,10 @@ import httpx
 import re
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
     base_url = "https://www.pornhub.com"
+    show_url = "https://pornhub.com"
     check_api = f"{base_url}/api/v1/user/create_account_check"
 
     headers = {
@@ -17,7 +19,8 @@ async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=5.0) as client:
         try:
             landing_resp = await client.get(base_url, headers=headers)
-            token_match = re.search(r'var\s+token\s*=\s*"([^"]+)"', landing_resp.text)
+            token_match = re.search(
+                r'var\s+token\s*=\s*"([^"]+)"', landing_resp.text)
 
             if not token_match:
                 return Result.error("Failed to extract dynamic token from HTML")
@@ -48,9 +51,9 @@ async def _check(email: str) -> Result:
             error_msg = data.get("error_message", "")
 
             if status == "create_account_passed":
-                return Result.available()
+                return Result.available(url=show_url)
             elif "already in use" in error_msg.lower() or status != "create_account_passed":
-                return Result.taken()
+                return Result.taken(url=show_url)
             else:
                 return Result.error(f"Unexpected API response: {status}")
 

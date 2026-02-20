@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     url = "https://www.babestation.tv/user/send/username-reminder"
+    show_url = "https://babestation.tv"
 
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
@@ -28,12 +29,12 @@ async def _check(email: str) -> Result:
                 success = data.get("success")
 
                 if success is True:
-                    return Result.taken()
+                    return Result.taken(url=show_url)
 
                 if success is False:
                     errors = data.get("errors", [])
                     if "Email not found" in errors:
-                        return Result.available()
+                        return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 

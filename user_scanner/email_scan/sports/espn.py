@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     url = "https://registerdisney.go.com/jgc/v8/client/ESPN-ONESITE.WEB-PROD/guest-flow"
+    show_url = "https://espn.com"
     params = {
         'langPref': "en",
         'feature': "no-password-reuse"
@@ -31,9 +32,9 @@ async def _check(email: str) -> Result:
                 flow = data.get("guestFlow")
 
                 if flow == "LOGIN_FLOW":
-                    return Result.taken()
+                    return Result.taken(url=show_url)
                 elif flow == "REGISTRATION_FLOW":
-                    return Result.available()
+                    return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues")
 

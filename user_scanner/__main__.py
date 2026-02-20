@@ -74,7 +74,7 @@ def main():
                         help="List all available modules for email scanning")
 
     parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Enable verbose output")
+                        help="Enable verbose output to show urls of the websites")
 
     parser.add_argument("-s", "--stop", type=int,
                         default=MAX_PERMUTATIONS_LIMIT, help="Limit permutations")
@@ -258,11 +258,11 @@ def main():
             print(f"\n{Fore.CYAN} Checking username: {target}{Style.RESET_ALL}")
 
         if args.module:
-            modules = find_module(args.module, is_email)
+            modules = find_module(args.module.replace(".", "_"), is_email)
             fn = run_email_module_batch if is_email else run_user_module
             if modules:
                 for module in modules:
-                    results.extend(fn(module, target))
+                    results.extend(fn(module, target, show_url=args.verbose))
             else:
                 print(
                     R +
@@ -274,7 +274,7 @@ def main():
             cat_path = load_categories(is_email).get(args.category)
             fn = run_email_category_batch if is_email else run_user_category
             if cat_path:
-                results.extend(fn(cat_path, target))
+                results.extend(fn(cat_path, target, show_url=args.verbose))
             else:
                 print(
                     R +
@@ -283,7 +283,7 @@ def main():
                 )
         else:
             fn = run_email_full_batch if is_email else run_user_full
-            results.extend(fn(target))
+            results.extend(fn(target, show_url=args.verbose))
 
     if args.output:
         content = formatter.into_csv(

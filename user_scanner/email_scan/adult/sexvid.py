@@ -1,7 +1,9 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email: str) -> Result:
+    show_url = "https://sexvid.pro"
     url = "https://www.sexvid.pro/reset-password/"
 
     payload = {
@@ -28,9 +30,9 @@ async def _check(email: str) -> Result:
             res_text = response.text
 
             if "doesnt_exist" in res_text or "No user with such email exists" in res_text:
-                return Result.available()
+                return Result.available(url=show_url)
             elif "A new generated password has been sent" in res_text or "status\":\"success" in res_text:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif response.status_code == 429:
                 return Result.error("Rate-limited")
             else:
@@ -38,6 +40,7 @@ async def _check(email: str) -> Result:
 
         except Exception as e:
             return Result.error(e)
+
 
 async def validate_sexvid(email: str) -> Result:
     return await _check(email)

@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     url = "https://huggingface.co/api/check-user-email"
+    show_url = "https://huggingface.co"
     params = {'email': email}
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
@@ -15,19 +16,20 @@ async def _check(email: str) -> Result:
     async with httpx.AsyncClient(http2=True) as client:
         try:
             response = await client.get(url, params=params, headers=headers, timeout=5)
+            res_text = response.text
+            st_code = response.status_code
 
-            if response.status_code == 429:
+            if st_code == 429:
                 return Result.error("Rate limited wait for few minutes")
 
-            if response.status_code == 400:
-                data = response.json()
-                if "already exists" in data.get("error", ""):
-                    return Result.taken()
+            if st_code == 200:
+                if "already exists" in res_text:
+                    return Result.taken(url=show_url)
 
-            if response.status_code == 200:
-                return Result.available()
+                if "This email address is available." in res_text:
+                    return Result.available(url=show_url)
 
-            return Result.error(f"HTTP Error: {response.status_code}")
+            return Result.error(f"HTTP Error: {response.status_code}, report it via GitHub issues")
 
         except Exception as e:
             return Result.error(e)

@@ -4,6 +4,7 @@ from user_scanner.core.result import Result
 
 def validate_reddit(user):
     url = f"https://www.reddit.com/user/{user}/"
+    show_url = "https://reddit.com"
 
     def process(response):
         if response.status_code == 200:
@@ -14,7 +15,7 @@ def validate_reddit(user):
         else:
             return Result.error()
 
-    return generic_validate(url, process, follow_redirects=True)
+    return generic_validate(url, process, show_url=show_url, follow_redirects=True)
 
 
 if __name__ == "__main__":

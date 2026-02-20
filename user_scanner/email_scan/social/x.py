@@ -1,8 +1,10 @@
 import httpx
 from user_scanner.core.result import Result
 
+
 async def _check(email):
     url = "https://api.x.com/i/users/email_available.json"
+    show_url = "https://x.com"
     params = {"email": email}
     headers = {
         "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
@@ -27,9 +29,9 @@ async def _check(email):
             taken_bool = data.get("taken")
 
             if taken_bool is True:
-                return Result.taken()
+                return Result.taken(url=show_url)
             elif taken_bool is False:
-                return Result.available()
+                return Result.available(url=show_url)
             else:
                 return Result.error("Unexpected error, report it via GitHub issues")
 

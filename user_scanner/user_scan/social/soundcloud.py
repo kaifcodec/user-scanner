@@ -4,8 +4,12 @@ from user_scanner.core.result import Result
 
 def validate_soundcloud(user):
     url = f"https://soundcloud.com/{user}"
+    show_url = "https://soundcloud.com"
 
     def process(response):
+        if response.status_code == 403:
+            return Result.error("[403] Request forbidden try using proxy or VPN")
+
         if response.status_code == 404:
             return Result.available()
 
@@ -19,11 +23,11 @@ def validate_soundcloud(user):
             if 'soundcloud://users:' in text and '"username":"' in text:
                 return Result.taken()
 
-            return Result.available()
+            return Result.error("Unexpected response, report it via GitHub issues")
 
-        return Result.error()
+        return Result.error("Unknown Error report it via GitHub issues")
 
-    return generic_validate(url, process, follow_redirects=True)
+    return generic_validate(url, process, show_url=show_url, follow_redirects=True)
 
 
 if __name__ == "__main__":
