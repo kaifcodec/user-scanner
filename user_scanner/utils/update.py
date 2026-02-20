@@ -1,4 +1,5 @@
-import subprocess  # nosec B404 - subprocess used with fixed arg lists, shell=False
+# Subprocess calls use fixed argument lists and shell=False.
+import subprocess  # nosec B404
 import sys
 from importlib.metadata import PackageNotFoundError, version
 
@@ -13,9 +14,11 @@ def get_version(package_name: str) -> str:
 def update_self():
     print("Updating user-scanner using pip...\n")
     try:
+        # Fixed command arguments; no user input is interpolated.
         subprocess.check_call([
             sys.executable, "-m", "pip", "uninstall", "user-scanner", "-y"
         ])  # nosec B603
+        # Fixed command arguments; no user input is interpolated.
         subprocess.check_call([
             sys.executable, "-m", "pip", "install", "user-scanner"
         ])  # nosec B603
