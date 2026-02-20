@@ -283,7 +283,7 @@ def main():
             else:
                 print(
                     R +
-                    f"[!] {'Email' if is_email else 'User'} category '{args.module}' not found." +
+                    f"[!] {'Email' if is_email else 'User'} category '{args.category}' not found." +
                     Style.RESET_ALL
                 )
         else:
