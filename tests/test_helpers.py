@@ -186,6 +186,14 @@ def test_bulk_usernames_skip_comments_blank_lines(tmp_path, run_main, capsys):
     assert "Loaded 2 usernames" in out
     assert exit_code == 0
 
+def test_category_not_found_reports_category_name(run_main, capsys):
+    missing_category = "not_a_real_category"
+    exit_code = run_main(["-u", "someone", "-c", missing_category])
+    out = capsys.readouterr().out
+
+    assert f"category '{missing_category}' not found." in out
+    assert exit_code == 0
+
 def test_username_file_unreadable(tmp_path, run_main):
     username_file = tmp_path / "test_usernames.txt"
     username_file.write_text("user")
