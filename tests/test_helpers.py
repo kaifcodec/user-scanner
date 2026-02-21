@@ -7,27 +7,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 import threading
 
-def test_generate_permutations():
-    perms = helpers.generate_permutations("user", "ab", limit=None)    
-    assert "user" in perms  
-    # All permutations must be valid
-    assert all(
-        p == "user" or
-        (p.startswith("user") and len(p) > len("user"))
-        for p in perms
-    )
-    
-    assert len(perms) > 1
-
-def test_generate_permutations_email():
-    perms = helpers.generate_permutations("john@email.com", "abc", limit=None, is_email=True)    
-    assert "john@email.com" in perms  
-    assert all(
-        p == "john@email.com" or
-        (p.startswith("john") and len(p) > len("john@email.com") and p.endswith("@email.com"))
-        for p in perms
-    )
-    assert len(perms) > 1
 
 def test_get_site_name():
     def module(name:str) -> SimpleNamespace:
@@ -65,7 +44,7 @@ def test_bulk_emails_valid(tmp_path, run_main, capsys):
     email_file.write_text("""user1@example.com
     user2@test.com
     user3@domain.org""")
-   
+
     exit_code = run_main(["-ef", str(email_file), "-m", "github"])
     out = capsys.readouterr().out
 
@@ -120,11 +99,11 @@ def test_bulk_emails_skip_comments_blank_lines(tmp_path, run_main, capsys):
     email_file = tmp_path / "test_emails.txt"
     email_file.write_text("""user1@example.com
     # comment
-    
+
     user@example.com
-                          
+
     """)
-    
+
     exit_code = run_main(["-ef", str(email_file), "-m", "github"])
     out = capsys.readouterr().out
 
@@ -143,7 +122,7 @@ def test_bulk_usernames_valid(tmp_path, run_main, capsys):
     username_file.write_text("""user1
     user2
     user3""")
-   
+
     exit_code = run_main(["-uf", str(username_file), "-m", "github"])
     out = capsys.readouterr().out
 
@@ -174,9 +153,9 @@ def test_bulk_usernames_skip_comments_blank_lines(tmp_path, run_main, capsys):
     username_file = tmp_path / "test_usernames.txt"
     username_file.write_text("""user1
 # comment
-                             
+
     user2""")
-    
+
     exit_code = run_main(["-uf", str(username_file), "-m", "github"])
     out = capsys.readouterr().out
 
@@ -216,7 +195,7 @@ def test_validate_proxy_partially_invalid(mock_client):
         instance.__enter__.return_value = instance
         instance.__exit__.return_value = None
         return instance
-    
+
     mock_client.side_effect = side_effect
     proxies = ["http://invalid",
                "socks5://socks-proxy.example.com:1080"]
@@ -232,7 +211,7 @@ def test_validate_proxy_timeout(mock_client):
     instance = mock_client.return_value.__enter__.return_value
     instance.get.side_effect = helpers.httpx.TimeoutException("timeout")
     proxies = ["http://proxy1.example.com:8080"]
-    
+
     result = helpers.validate_proxies(proxies, timeout=1)
     assert result == []
 
@@ -268,7 +247,7 @@ def test_proxy_manager_no_poxy_file(tmp_path):
 def test_proxy_manager_empty_file_only_comments(tmp_path):
     proxy_file = tmp_path / "test_proxy.txt"
     proxy_file.write_text("""#comment
-                          
+
     """)
     with pytest.raises(Exception):
         helpers.ProxyManager(str(proxy_file))

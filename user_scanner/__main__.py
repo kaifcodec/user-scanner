@@ -4,6 +4,7 @@ import re
 import sys
 import time
 from colorama import Fore, Style
+from itertools import islice
 
 from user_scanner.cli.banner import print_banner
 from user_scanner.core.version import load_local_version
@@ -16,7 +17,6 @@ from user_scanner.core.helpers import (
     load_modules,
     find_module,
     get_site_name,
-    generate_permutations,
     set_proxy_manager,
     get_proxy_count
 )
@@ -32,6 +32,8 @@ from user_scanner.core.email_orchestrator import (
     run_email_category_batch,
     run_email_module_batch
 )
+
+from user_scanner.core.patterns import expand_patterns_random
 
 # Color configs
 R = Fore.RED
@@ -73,9 +75,6 @@ def main():
 
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Enable verbose output to show urls of the websites")
-
-    parser.add_argument("-p", "--permute", type=str,
-                        help="Generate permutations using a pattern")
 
     parser.add_argument("-s", "--stop", type=int,
                         default=MAX_PERMUTATIONS_LIMIT, help="Limit permutations")
@@ -156,8 +155,7 @@ def main():
                     print(f"{R}[✘] No working proxies found{X}")
                     sys.exit(1)
 
-                print(
-                    f"{G}[+] Found {len(working_proxies)} working proxies out of {len(all_proxies)}{X}")
+                print(f"{G}[+] Found {len(working_proxies)} working proxies out of {len(all_proxies)}{X}")
 
                 # Save working proxies to temp file
                 temp_proxy_file = "validated_proxies.txt"
@@ -184,8 +182,7 @@ def main():
     if args.email_file:
         try:
             with open(args.email_file, 'r', encoding='utf-8') as f:
-                emails = [line.strip() for line in f if line.strip()
-                                     and not line.startswith('#')]
+                emails = [line.strip() for line in f if line.strip() and not line.startswith('#')]
 
             # Validate email formats
             valid_emails = []
@@ -200,10 +197,9 @@ def main():
                     f"{R}[✘] Error: No valid emails found in {args.email_file}{X}")
                 sys.exit(1)
 
-            print(
-                f"{C}[+] Loaded {len(valid_emails)} {'email' if len(valid_emails) == 1 else 'emails'} from {args.email_file}{X}")
+            print(f"{C}[+] Loaded {len(valid_emails)} {'email' if len(valid_emails) == 1 else 'emails'} from {args.email_file}{X}")
             is_email = True
-            targets = valid_emails
+            targets_found = valid_emails
         except FileNotFoundError:
             print(f"{R}[✘] Error: File not found: {args.email_file}{X}")
             sys.exit(1)
@@ -223,7 +219,7 @@ def main():
             print(
                 f"{C}[+] Loaded {len(usernames)} {'username' if len(usernames) == 1 else 'usernames'} from {args.username_file}{X}")
             is_email = False
-            targets = usernames
+            targets_found = usernames
         except FileNotFoundError:
             print(f"{R}[✘] Error: File not found: {args.username_file}{X}")
             sys.exit(1)
@@ -237,19 +233,18 @@ def main():
             sys.exit(1)
 
         target_name = args.username or args.email
-        targets = [target_name]
+        targets_found = [target_name]
 
     # Handle permutations (only for single username/email)
-    if args.permute and not (args.username_file or args.email_file):
-        target_name = args.username or args.email
-        targets = generate_permutations(
-            target_name, args.permute, args.stop, is_email)
-        print(
-            C + f"[+] Generated {len(targets)} permutations" + Style.RESET_ALL)
-    elif args.permute and (args.username_file or args.email_file):
-        print(
-            f"{R}[✘] Error: Permutations not supported with file-based scanning{X}")
-        sys.exit(1)
+
+    targets = []
+    for target_name in targets_found:
+        temp_targets = list(islice(expand_patterns_random(target_name), args.stop))
+        targets.extend(temp_targets)
+        if len(temp_targets) > 1:
+            print(
+                C + f"[+] Generated {len(temp_targets)} permutations" + Style.RESET_ALL
+            )
 
     results = []
 
