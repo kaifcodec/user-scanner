@@ -72,7 +72,7 @@ async def _check(email: str) -> Result:
 
             payload = {
                 'user[name]': "St33l_h3art_g3t_n0_l0v3",
-                'user[username]': "kn0l3dg3_is_curs3",
+                'user[username]': "kn0wl3dg3_is_curs3",
                 'user[email]': email,
                 'user[password]': "thisw0rldwasn3v3rg00d",
                 'user[password_confirmation]': "mismatch_on_purpose"
