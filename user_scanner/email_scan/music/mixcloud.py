@@ -20,7 +20,7 @@ async def _check(email: str) -> Result:
 
     try:
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            r_csrf = await client.get(refresh_url, headers=headers)
+            await client.get(refresh_url, headers=headers)
 
             csrf = client.cookies.get("csrftoken")
             if not csrf:
