@@ -10,6 +10,8 @@ import threading
 def test_generate_permutations():
     perms = helpers.generate_permutations("user", "ab", limit=None)    
     assert "user" in perms  
+    assert "userab" in perms
+    assert "userba" in perms
     # All permutations must be valid
     assert all(
         p == "user" or
@@ -22,6 +24,7 @@ def test_generate_permutations():
 def test_generate_permutations_email():
     perms = helpers.generate_permutations("john@email.com", "abc", limit=None, is_email=True)    
     assert "john@email.com" in perms  
+    assert "johnabc@email.com" in perms
     assert all(
         p == "john@email.com" or
         (p.startswith("john") and len(p) > len("john@email.com") and p.endswith("@email.com"))
@@ -183,6 +186,14 @@ def test_bulk_usernames_skip_comments_blank_lines(tmp_path, run_main, capsys):
     assert "Loaded 2 usernames" in out
     assert exit_code == 0
 
+def test_category_not_found_reports_category_name(run_main, capsys):
+    missing_category = "not_a_real_category"
+    exit_code = run_main(["-u", "someone", "-c", missing_category])
+    out = capsys.readouterr().out
+
+    assert f"category '{missing_category}' not found." in out
+    assert exit_code == 0
+
 def test_username_file_unreadable(tmp_path, run_main):
     username_file = tmp_path / "test_usernames.txt"
     username_file.write_text("user")
@@ -208,7 +219,7 @@ def test_validate_proxy_partially_invalid(mock_client):
         proxy = kwargs.get("proxy")
         instance = MagicMock()
         if "invalid" in proxy:
-            instance.get.side_effect = Exception("connection failed")
+            instance.get.side_effect = helpers.httpx.HTTPError("connection failed")
         else:
             response = MagicMock()
             response.status_code = 200

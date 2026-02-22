@@ -1,25 +1,32 @@
-import subprocess
+# Subprocess calls use fixed argument lists and shell=False.
+import subprocess  # nosec B404
 import sys
+from importlib.metadata import PackageNotFoundError, version
+
 from colorama import Fore
 
-def get_version(package_name):
+def get_version(package_name: str) -> str:
     try:
-        from importlib.metadata import version  # Python 3.8+
         return version(package_name)
-    except Exception:
+    except PackageNotFoundError:
         return "Unknown"
 
 def update_self():
     print("Updating user-scanner using pip...\n")
     try:
+        # Fixed command arguments; no user input is interpolated.
         subprocess.check_call([
             sys.executable, "-m", "pip", "uninstall", "user-scanner", "-y"
-        ])
+        ])  # nosec B603
+        # Fixed command arguments; no user input is interpolated.
         subprocess.check_call([
             sys.executable, "-m", "pip", "install", "user-scanner"
-        ])
+        ])  # nosec B603
     except subprocess.CalledProcessError as e:
-        print(f"{Fore.RED}Failed to update user-scanner: {e}{Fore.reset}")
+        print(f"{Fore.RED}Failed to update user-scanner: {e}{Fore.RESET}")
+        return
+    except OSError as e:
+        print(f"{Fore.RED}Failed to run updater command: {e}{Fore.RESET}")
         return
 
 

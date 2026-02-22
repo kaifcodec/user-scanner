@@ -31,11 +31,13 @@ def validate_monkeytype(user: str) -> Result:
         # Surface Monkeytype validation errors (e.g. special characters)
         try:
             data = response.json()
+        except ValueError:
+            return Result.error("Invalid status code")
+
+        if isinstance(data, dict):
             errors = data.get("validationErrors")
             if errors:
                 return Result.error("; ".join(errors))
-        except Exception:
-            pass
 
         return Result.error("Invalid status code")
 
