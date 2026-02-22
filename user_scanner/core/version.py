@@ -14,15 +14,15 @@ def load_local_version():
         return "N/A", "file_missing"
     except json.JSONDecodeError:
         return "N/A", "json_error"
-    except OSError:
+    except Exception:
         return "N/A", "error"
 
 
 def get_pypi_version(pypi_url):
     try:
-        response = httpx.get(pypi_url, timeout=7)
-        pypi_version = response.json()["info"]["version"]
-    except (httpx.HTTPError, ValueError, KeyError, TypeError):
+        pypi_version = httpx.get(pypi_url, timeout=7).json()["info"]["version"]
+    except Exception as e:
+        print(e)
         return None
     return pypi_version
 

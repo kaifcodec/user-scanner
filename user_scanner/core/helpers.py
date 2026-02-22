@@ -1,9 +1,10 @@
 import importlib
 import importlib.util
+from itertools import permutations
 from types import ModuleType
 from pathlib import Path
 from typing import Dict, List, Optional
-import secrets
+import random
 import threading
 import httpx
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -69,6 +70,35 @@ def find_category(module: ModuleType) -> str | None:
     return None
 
 
+def generate_permutations(username: str, pattern: str, limit: int | None = None, is_email: bool = False) -> List[str]:
+    """
+    Generate all order-based permutations of characters in `pattern`
+    appended after `username`.
+    """
+
+    if limit and limit <= 0:
+        return []
+
+    permutations_set = {username}
+    chars = list(pattern)
+
+    domain = ""
+    if is_email:
+        username, domain = username.strip().split("@")
+
+    # generate permutations of length 1 → len(chars)
+    for r in range(len(chars)):
+        for combo in permutations(chars, r):
+            new = username + ''.join(combo)
+            if is_email:
+                new += "@" + domain
+            permutations_set.add(new)
+            if limit and len(permutations_set) >= limit:
+                return sorted(permutations_set)
+
+    return sorted(permutations_set)
+
+
 def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int = 50) -> List[str]:
     """Validate proxies by testing them against google.com. Returns list of working proxies."""
     working_proxies = []
@@ -79,8 +109,8 @@ def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int =
                 response = client.get("https://www.google.com")
                 if response.status_code == 200:
                     return proxy
-        except (httpx.HTTPError, OSError, ValueError):
-            return None
+        except Exception:
+            pass
         return None
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -136,7 +166,7 @@ class ProxyManager:
         """Get a random proxy from the list."""
         if not self.proxies:
             return None
-        return secrets.choice(self.proxies)
+        return random.choice(self.proxies)
     
     def count(self) -> int:
         """Return the number of loaded proxies."""
@@ -172,7 +202,7 @@ def get_proxy_count() -> int:
 
 # Function to return random user agent
 
-def get_random_user_agent() -> str:
+def get_random_user_agent():
     agents = [                                                                                                                                                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
@@ -184,5 +214,6 @@ def get_random_user_agent() -> str:
         "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36"
              ]
     """return random"""
-    return secrets.choice(agents)
+    random_agent = random.choice(agents)
+    return random_agent
 

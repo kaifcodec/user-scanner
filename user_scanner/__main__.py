@@ -3,8 +3,6 @@ import json
 import re
 import sys
 import time
-from itertools import islice
-
 from colorama import Fore, Style
 
 from user_scanner.cli.banner import print_banner
@@ -18,10 +16,10 @@ from user_scanner.core.helpers import (
     load_modules,
     find_module,
     get_site_name,
+    generate_permutations,
     set_proxy_manager,
     get_proxy_count
 )
-from user_scanner.core.patterns import expand_patterns, expand_patterns_random
 
 from user_scanner.core.orchestrator import (
     run_user_full,
@@ -76,12 +74,11 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Enable verbose output to show urls of the websites")
 
-    parser.add_argument("-s", "--stop", type=int,
-                        default=MAX_PERMUTATIONS_LIMIT,
-                        help="Limit pattern expansions (e.g. john[0-9] with -s 5)")
+    parser.add_argument("-p", "--permute", type=str,
+                        help="Generate permutations using a pattern")
 
-    parser.add_argument("-r", "--random", action="store_true",
-                        help="Randomize pattern expansion order")
+    parser.add_argument("-s", "--stop", type=int,
+                        default=MAX_PERMUTATIONS_LIMIT, help="Limit permutations")
 
     parser.add_argument("-d", "--delay", type=float,
                         default=0, help="Delay between requests")
@@ -242,19 +239,17 @@ def main():
         target_name = args.username or args.email
         targets = [target_name]
 
-    # Expand patterns: each target can contain [chars]{lens} syntax
-    # e.g. john[0-9]{1-2} -> john0, john1, ... john99
-    expand_fn = expand_patterns_random if args.random else expand_patterns
-    expanded_targets: list[str] = []
-    for target in targets:
-        limited = list(islice(expand_fn(target), args.stop))
-        expanded_targets.extend(limited)
-        if len(limited) > 1:
-            print(
-                C + f"[+] Expanded to {len(limited)} variants from pattern"
-                + Style.RESET_ALL
-            )
-    targets = expanded_targets
+    # Handle permutations (only for single username/email)
+    if args.permute and not (args.username_file or args.email_file):
+        target_name = args.username or args.email
+        targets = generate_permutations(
+            target_name, args.permute, args.stop, is_email)
+        print(
+            C + f"[+] Generated {len(targets)} permutations" + Style.RESET_ALL)
+    elif args.permute and (args.username_file or args.email_file):
+        print(
+            f"{R}[✘] Error: Permutations not supported with file-based scanning{X}")
+        sys.exit(1)
 
     results = []
 
@@ -288,7 +283,7 @@ def main():
             else:
                 print(
                     R +
-                    f"[!] {'Email' if is_email else 'User'} category '{args.category}' not found." +
+                    f"[!] {'Email' if is_email else 'User'} category '{args.module}' not found." +
                     Style.RESET_ALL
                 )
         else:
@@ -306,8 +301,8 @@ def main():
                     old = json.load(f)
                     if isinstance(old, list) and all(isinstance(x, dict) for x in old):
                         data = old
-            except (FileNotFoundError, json.JSONDecodeError, OSError):
-                data = []
+            except Exception:
+                pass
 
             new_items = json.loads(content)
             if isinstance(new_items, list) and all(isinstance(x, dict) for x in new_items):
@@ -320,7 +315,7 @@ def main():
             try:
                 with open(args.output, "r", encoding="utf-8") as init_file:
                     has_content = init_file.read().strip() != ""
-            except OSError:
+            except Exception:
                 has_content = False
 
             with open(args.output, "a", encoding="utf-8") as f:
