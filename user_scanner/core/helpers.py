@@ -4,7 +4,7 @@ from itertools import permutations
 from types import ModuleType
 from pathlib import Path
 from typing import Dict, List, Optional
-import random
+import secrets
 import threading
 import httpx
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -86,8 +86,8 @@ def generate_permutations(username: str, pattern: str, limit: int | None = None,
     if is_email:
         username, domain = username.strip().split("@")
 
-    # generate permutations of length 1 → len(chars)
-    for r in range(len(chars)):
+    # generate permutations of length 1 -> len(chars)
+    for r in range(1, len(chars) + 1):
         for combo in permutations(chars, r):
             new = username + ''.join(combo)
             if is_email:
@@ -109,8 +109,8 @@ def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int =
                 response = client.get("https://www.google.com")
                 if response.status_code == 200:
                     return proxy
-        except Exception:
-            pass
+        except (httpx.HTTPError, OSError, ValueError):
+            return None
         return None
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -166,7 +166,7 @@ class ProxyManager:
         """Get a random proxy from the list."""
         if not self.proxies:
             return None
-        return random.choice(self.proxies)
+        return secrets.choice(self.proxies)
     
     def count(self) -> int:
         """Return the number of loaded proxies."""
@@ -202,7 +202,7 @@ def get_proxy_count() -> int:
 
 # Function to return random user agent
 
-def get_random_user_agent():
+def get_random_user_agent() -> str:
     agents = [                                                                                                                                                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
@@ -214,6 +214,5 @@ def get_random_user_agent():
         "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36"
              ]
     """return random"""
-    random_agent = random.choice(agents)
-    return random_agent
+    return secrets.choice(agents)
 

@@ -283,7 +283,7 @@ def main():
             else:
                 print(
                     R +
-                    f"[!] {'Email' if is_email else 'User'} category '{args.module}' not found." +
+                    f"[!] {'Email' if is_email else 'User'} category '{args.category}' not found." +
                     Style.RESET_ALL
                 )
         else:
@@ -301,8 +301,8 @@ def main():
                     old = json.load(f)
                     if isinstance(old, list) and all(isinstance(x, dict) for x in old):
                         data = old
-            except Exception:
-                pass
+            except (FileNotFoundError, json.JSONDecodeError, OSError):
+                data = []
 
             new_items = json.loads(content)
             if isinstance(new_items, list) and all(isinstance(x, dict) for x in new_items):
@@ -315,7 +315,7 @@ def main():
             try:
                 with open(args.output, "r", encoding="utf-8") as init_file:
                     has_content = init_file.read().strip() != ""
-            except Exception:
+            except OSError:
                 has_content = False
 
             with open(args.output, "a", encoding="utf-8") as f:
