@@ -10,17 +10,15 @@ async def _check(email: str) -> Result:
     # Hardcoded values as leetcode accepting this value, weird but it works!
     static_csrf = "bMwA82bLs7IrhigK19Bu6uDj4DhZnVnE"
 
+    # Use signup email validation instead of password reset to avoid sending emails
     payload = {
         "query": """
-            mutation AuthRequestPasswordResetByEmail($email: String!) {
-                authRequestPasswordResetByEmail(email: $email) {
-                    ok
-                    error
-                }
+            query checkIfEmailExist($email: String!) {
+                checkIfEmailExist(email: $email)
             }
         """,
         "variables": {"email": email},
-        "operationName": "AuthRequestPasswordResetByEmail"
+        "operationName": "checkIfEmailExist"
     }
 
     headers = {
@@ -28,7 +26,7 @@ async def _check(email: str) -> Result:
         'Content-Type': "application/json",
         'x-csrftoken': static_csrf,
         'Origin': "https://leetcode.com",
-        'Referer': "https://leetcode.com/accounts/password/reset/",
+        'Referer': "https://leetcode.com/accounts/signup/",
         'Cookie': f"csrftoken={static_csrf}"
     }
 
@@ -37,18 +35,20 @@ async def _check(email: str) -> Result:
             response = await client.post(url, content=json.dumps(payload), headers=headers)
             data = response.json()
 
-            result_obj = data.get("data", {}).get(
-                "authRequestPasswordResetByEmail", {})
-            is_ok = result_obj.get("ok")
-            error_msg = result_obj.get("error")
+            # checkIfEmailExist returns true if email is registered, false otherwise
+            email_exists = data.get("data", {}).get("checkIfEmailExist")
 
-            if is_ok is True:
+            if email_exists is True:
                 return Result.taken(url=show_url)
-
-            if is_ok is False and error_msg == "Email does not exist":
+            elif email_exists is False:
                 return Result.available(url=show_url)
 
-            return Result.error(f"LeetCode Error: {error_msg}")
+            # Handle potential errors in response
+            errors = data.get("errors")
+            if errors:
+                return Result.error(f"LeetCode Error: {errors[0].get('message', 'Unknown error')}")
+
+            return Result.error("Unexpected response format")
 
     except Exception as e:
         return Result.error(e)
