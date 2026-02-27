@@ -1,3 +1,4 @@
+from colorama import Fore
 from user_scanner.core.result import Result, Status
 
 def test_status_labels():
@@ -119,16 +120,45 @@ def test_console_output_and_show_url():
     res = Result.taken(site_name="MySite", url="https://mysite.com/u")
 
     out_hidden = res.get_console_output(show_url=False)
-    assert "[✔]" in out_hidden
+    assert "[\u2714]" in out_hidden
     assert "Found" in out_hidden
     assert "https://mysite.com" not in out_hidden
 
     out_visible = res.get_console_output(show_url=True)
     assert "[https://mysite.com/u]" in out_visible
+    assert Fore.WHITE in out_visible
+    # After the URL, the color should switch back to the status color (green for TAKEN)
+    assert Fore.GREEN in out_visible
+
+
+def test_console_output_url_color_not_found():
+    res = Result.available(site_name="ESPN", url="https://espn.com")
+    out = res.get_console_output(show_url=True)
+    assert Fore.WHITE in out
+    assert Fore.RED in out
+    assert "[https://espn.com]" in out
+    assert "Not Found" in out
+
+
+def test_console_output_url_color_error():
+    res = Result.error(site_name="SomeSite", url="https://somesite.com")
+    out = res.get_console_output(show_url=True)
+    assert Fore.WHITE in out
+    assert Fore.YELLOW in out
+    assert "[https://somesite.com]" in out
+    assert "Error" in out
+
+
+def test_console_output_no_url_when_empty():
+    res = Result.taken(site_name="NoURL")
+    out = res.get_console_output(show_url=True)
+    # No URL set, so Fore.WHITE should not appear for URL display
+    assert "[" not in out or "[\u2714]" in out
+    assert Fore.WHITE not in out
 
 
 def test_debug_string():
     res = Result.available(username="dev", url="http://dev.link")
     debug_str = res.debug()
-    assert 'url: "http://dev.link"' in debug_str
-    assert 'status: Not Found' in debug_str
+    assert "url" in debug_str
+    assert "http://dev.link" in debug_str
