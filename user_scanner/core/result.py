@@ -126,6 +126,24 @@ class Result:
     def to_csv(self) -> str:
         return CSV_TEMPLATE.format(**self.as_dict())
 
+    def get_console_output(self, show_url: bool = False) -> str:
+        if self.status == Status.TAKEN:
+            color = Fore.GREEN
+            icon = "[\u2714]"
+        elif self.status == Status.AVAILABLE:
+            color = Fore.RED
+            icon = "[\u2718]"
+        else:
+            color = Fore.YELLOW
+            icon = "[!]"
+
+        label = self.status.to_label(self.is_email)
+        site = self.site_name or ""
+        username_display = f" ({self.username})" if self.username else ""
+        url_display = f" {Fore.WHITE}[{self.url}]{color}" if show_url and self.url else ""
+
+        return f"{color}{icon} {site}{url_display}{username_display}: {label}{Style.RESET_ALL}"
+
     def __str__(self):
         return self.get_reason()
 
@@ -133,49 +151,7 @@ class Result:
         if isinstance(other, Status):
             return self.status == other
         if isinstance(other, Result):
-            return self.status == other.status
+            return self.status == other.status and self.reason == other.reason
         if isinstance(other, int):
-            return self.to_number() == other
+            return self.status.value == other
         return NotImplemented
-
-    def get_output_color(self) -> str:
-        if self == Status.ERROR:
-            return Fore.YELLOW
-        else:
-            return Fore.GREEN if self == Status.TAKEN else Fore.RED
-
-    def get_output_icon(self) -> str:
-        if self == Status.ERROR:
-            return "[!]"
-        else:
-            return "[✔]" if self == Status.TAKEN else "[✘]"
-
-    def get_console_output(self, show_url=False) -> str:
-        site_name = self.site_name
-        status_text = self.status.to_label(self.is_email)
-        username = ""
-        if self.username:
-            username = f"({self.username})"
-        
-        # Added logic to include URL in console output if show_url is True
-        url_display = f" [{self.url}]" if show_url and self.url else ""
-
-        color = self.get_output_color()
-        icon = self.get_output_icon()
-
-        reason = f" ({self.get_reason()})" if self.has_reason() else ""
-        return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{Style.RESET_ALL}"
-
-    def is_found(self) -> bool:
-        """Returns True if the target was found or registered (Status.TAKEN)"""
-        return self.status == Status.TAKEN
-
-
-    def show(self, show_url=False, only_found=False):
-        """Prints the console output and returns itself for chaining.
-        If only_found is True, only results with Status.TAKEN are printed."""
-        # Updated show() to accept and pass the show_url flag
-        if only_found and self.status != Status.TAKEN:
-            return self
-        print(self.get_console_output(show_url=show_url))
-        return self
