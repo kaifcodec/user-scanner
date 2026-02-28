@@ -1,4 +1,6 @@
+from user_scanner.core.helpers import ScanConfig
 from user_scanner.core.result import Result, Status
+
 
 def test_status_labels():
     assert Status.TAKEN.to_label(is_email=False) == "Found"
@@ -34,10 +36,19 @@ def test_get_reason_and_humanize():
     assert Result.available().get_reason() == ""
     assert Result.available("manual reason").get_reason() == "manual reason"
 
-    assert "Could not resolve hostname" in Result.error(Exception("Error 11001")).get_reason()
-    assert "Connection closed by remote server" in Result.error(Exception("Error 10054")).get_reason()
+    assert (
+        "Could not resolve hostname"
+        in Result.error(Exception("Error 11001")).get_reason()
+    )
+    assert (
+        "Connection closed by remote server"
+        in Result.error(Exception("Error 10054")).get_reason()
+    )
 
-    assert Result.available(Exception("some error")).get_reason() == "Exception: Some error"
+    assert (
+        Result.available(Exception("some error")).get_reason()
+        == "Exception: Some error"
+    )
 
 
 def test_has_reason():
@@ -82,7 +93,7 @@ def test_update_and_fields():
         site_name="GitHub",
         category="Social",
         url="https://github.com/alice",
-        is_email=False
+        is_email=False,
     )
 
     assert res.username == "alice"
@@ -96,7 +107,7 @@ def test_output_formats():
         username="testuser",
         site_name="Example",
         category="Tech",
-        url="https://example.com/user"
+        url="https://example.com/user",
     )
 
     d = res.as_dict()
@@ -118,12 +129,16 @@ def test_output_formats():
 def test_console_output_and_show_url():
     res = Result.taken(site_name="MySite", url="https://mysite.com/u")
 
-    out_hidden = res.get_console_output(show_url=False)
+    out_hidden = res.get_console_output()
     assert "[✔]" in out_hidden
     assert "Found" in out_hidden
     assert "https://mysite.com" not in out_hidden
 
-    out_visible = res.get_console_output(show_url=True)
+    out_visible = res.get_console_output(
+        ScanConfig(
+            show_url=True,
+        )
+    )
     assert "[https://mysite.com/u]" in out_visible
 
 
@@ -131,4 +146,4 @@ def test_debug_string():
     res = Result.available(username="dev", url="http://dev.link")
     debug_str = res.debug()
     assert 'url: "http://dev.link"' in debug_str
-    assert 'status: Not Found' in debug_str
+    assert "status: Not Found" in debug_str

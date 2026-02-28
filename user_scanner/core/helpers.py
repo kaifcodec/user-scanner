@@ -1,17 +1,26 @@
 import importlib
 import importlib.util
-from itertools import permutations
-from types import ModuleType
-from pathlib import Path
-from typing import Dict, List, Optional
 import random
 import threading
-import httpx
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from itertools import permutations
+from pathlib import Path
+from types import ModuleType
+from typing import Dict, List, Optional
+
+import httpx
+
+
+@dataclass(frozen=True)
+class ScanConfig:
+    allow_loud: bool = False
+    only_found: bool = False
+    show_url: bool = False
 
 
 def get_site_name(module) -> str:
-    name = module.__name__.split('.')[-1].capitalize().replace("_", ".")
+    name = module.__name__.split(".")[-1].capitalize().replace("_", ".")
     if name == "X":
         return "X (Twitter)"
     return name
@@ -38,9 +47,11 @@ def load_categories(is_email: bool = False) -> Dict[str, Path]:
     categories = {}
 
     for subfolder in root.iterdir():
-        if subfolder.is_dir() and \
-                subfolder.name.lower() not in ["cli", "utils", "core"] and \
-                "__" not in subfolder.name:  # Removes __pycache__
+        if (
+            subfolder.is_dir()
+            and subfolder.name.lower() not in ["cli", "utils", "core"]
+            and "__" not in subfolder.name
+        ):  # Removes __pycache__
             categories[subfolder.name] = subfolder.resolve()
 
     return categories
@@ -58,8 +69,7 @@ def find_module(name: str, is_email: bool = False) -> List[ModuleType]:
 
 
 def find_category(module: ModuleType) -> str | None:
-
-    module_file = getattr(module, '__file__', None)
+    module_file = getattr(module, "__file__", None)
     if not module_file:
         return None
 
@@ -70,7 +80,9 @@ def find_category(module: ModuleType) -> str | None:
     return None
 
 
-def generate_permutations(username: str, pattern: str, limit: int | None = None, is_email: bool = False) -> List[str]:
+def generate_permutations(
+    username: str, pattern: str, limit: int | None = None, is_email: bool = False
+) -> List[str]:
     """
     Generate all order-based permutations of characters in `pattern`
     appended after `username`.
@@ -89,7 +101,7 @@ def generate_permutations(username: str, pattern: str, limit: int | None = None,
     # generate permutations of length 1 → len(chars)
     for r in range(len(chars)):
         for combo in permutations(chars, r):
-            new = username + ''.join(combo)
+            new = username + "".join(combo)
             if is_email:
                 new += "@" + domain
             permutations_set.add(new)
@@ -99,10 +111,12 @@ def generate_permutations(username: str, pattern: str, limit: int | None = None,
     return sorted(permutations_set)
 
 
-def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int = 50) -> List[str]:
+def validate_proxies(
+    proxy_list: List[str], timeout: int = 5, max_workers: int = 50
+) -> List[str]:
     """Validate proxies by testing them against google.com. Returns list of working proxies."""
     working_proxies = []
-    
+
     def test_proxy(proxy: str) -> Optional[str]:
         try:
             with httpx.Client(proxy=proxy, timeout=timeout) as client:
@@ -112,62 +126,62 @@ def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int =
         except Exception:
             pass
         return None
-    
+
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(test_proxy, proxy): proxy for proxy in proxy_list}
         for future in as_completed(futures):
             result = future.result()
             if result:
                 working_proxies.append(result)
-    
+
     return working_proxies
 
 
 class ProxyManager:
     """Thread-safe proxy manager that loads and rotates proxies from a file."""
-    
+
     def __init__(self, proxy_file: str):
         self.proxies: list[str] = []
         self.current_index = 0
         self.lock = threading.Lock()
         self._load_proxies(proxy_file)
-    
+
     def _load_proxies(self, proxy_file: str) -> None:
         """Load proxies from a text file. Supports http://, https://, and socks5:// proxies."""
         try:
-            with open(proxy_file, 'r', encoding='utf-8') as f:
+            with open(proxy_file, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
-                    if line and not line.startswith('#'):
+                    if line and not line.startswith("#"):
                         # Add protocol if not present
-                        if not line.startswith(('http://', 'https://', 'socks5://')):
-                            line = 'http://' + line
+                        if not line.startswith(("http://", "https://", "socks5://")):
+                            line = "http://" + line
                         self.proxies.append(line)
-            
+
             if not self.proxies:
                 raise ValueError("No valid proxies found in file")
-                
+
         except FileNotFoundError:
             raise FileNotFoundError(f"Proxy file not found: {proxy_file}")
         except Exception as e:
             raise Exception(f"Error loading proxies: {e}")
-    
+
     def get_next_proxy(self) -> Optional[str]:
         """Get the next proxy in rotation (round-robin)."""
         if not self.proxies:
             return None
-        
+
         with self.lock:
             proxy = self.proxies[self.current_index]
             self.current_index = (self.current_index + 1) % len(self.proxies)
             return proxy
-    
+
     def get_random_proxy(self) -> Optional[str]:
         """Get a random proxy from the list."""
         if not self.proxies:
             return None
         return random.choice(self.proxies)
-    
+
     def count(self) -> int:
         """Return the number of loaded proxies."""
         return len(self.proxies)
@@ -202,8 +216,10 @@ def get_proxy_count() -> int:
 
 # Function to return random user agent
 
+
 def get_random_user_agent():
-    agents = [                                                                                                                                                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+    agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
@@ -211,9 +227,8 @@ def get_random_user_agent():
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0",
         "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Mobile/15E148 Safari/604.1",
         "Mozilla/5.0 (Linux; Android 15; Pixel 9 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
-        "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36"
-             ]
+        "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+    ]
     """return random"""
     random_agent = random.choice(agents)
     return random_agent
-

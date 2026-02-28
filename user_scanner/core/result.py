@@ -1,5 +1,8 @@
 from enum import Enum
+
 from colorama import Fore, Style
+
+from user_scanner.core.helpers import ScanConfig
 
 # Added {url} to the debug message
 DEBUG_MSG = """Result {{
@@ -110,7 +113,7 @@ class Result:
             "username": self.username,
             "site_name": self.site_name,
             "category": self.category,
-            "url": self.url, # Added url to dictionary output
+            "url": self.url,  # Added url to dictionary output
             "is_email": self.is_email,
         }
 
@@ -150,7 +153,7 @@ class Result:
         else:
             return "[✔]" if self == Status.TAKEN else "[✘]"
 
-    def get_console_output(self, show_url=False) -> str:
+    def get_console_output(self, configs: ScanConfig | None = None) -> str:
         site_name = self.site_name
         status_text = self.status.to_label(self.is_email)
         username = ""
@@ -161,7 +164,11 @@ class Result:
 
         # Added logic to include URL in console output if show_url is True
         ## Color the URL in white for better visibility
-        url_display = f" {Fore.WHITE}[{self.url}]{color}" if show_url and self.url else ""
+        url_display = (
+            f" {Fore.WHITE}[{self.url}]{color}"
+            if (configs and configs.show_url) and self.url
+            else ""
+        )
 
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
         return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{Style.RESET_ALL}"
@@ -170,12 +177,11 @@ class Result:
         """Returns True if the target was found or registered (Status.TAKEN)"""
         return self.status == Status.TAKEN
 
-
-    def show(self, show_url=False, only_found=False):
+    def show(self, configs: ScanConfig):
         """Prints the console output and returns itself for chaining.
         If only_found is True, only results with Status.TAKEN are printed."""
         # Updated show() to accept and pass the show_url flag
-        if only_found and self.status != Status.TAKEN:
+        if configs.only_found and self.status != Status.TAKEN:
             return self
-        print(self.get_console_output(show_url=show_url))
+        print(self.get_console_output(configs))
         return self
