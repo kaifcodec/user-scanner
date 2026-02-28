@@ -89,6 +89,8 @@ class Result:
 
     @classmethod
     def skipped(cls, reason: str | Exception | None = None, **kwargs):
+        if reason is None:
+            reason = "Notifies the target by forgot password email or similar"
         return cls(Status.SKIPPED, reason, **kwargs)
 
     @classmethod
@@ -106,6 +108,8 @@ class Result:
         return self.reason is not None
 
     def get_reason(self) -> str:
+        if self.status == Status.SKIPPED:
+            return "Notifies the target by forgot password email or similar"
         if self.reason is None:
             return ""
         if isinstance(self.reason, str):
