@@ -12,8 +12,18 @@ from typing import Any, Callable, Dict, List, Optional
 
 import httpx
 
-LOUD_MODULES: Dict[str, List[str]] = {"user": [], "email": ["leetcode"]}
-
+LOUD_MODULES: Dict[str, List[str]] = {
+    "user": [],
+    "email": [
+        "leetcode",
+        "instagram",
+        "sexvid",
+        "made_porn",
+        "flirtbate",
+        "polarsteps",
+        "babestation",
+    ],
+}
 
 @dataclass(frozen=True)
 class ScanConfig:
