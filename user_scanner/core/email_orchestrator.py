@@ -8,6 +8,9 @@ from colorama import Fore, Style
 from user_scanner.core.helpers import (
     ScanConfig,
     find_category,
+    get_scan_func,
+    get_site_name,
+    is_loud,
     load_categories,
     load_modules,
 )
@@ -25,25 +28,24 @@ async def _async_worker(
     printed_cats: Optional[Set] = None,
 ) -> Result:
     async with sem:
-        module_name = module.__name__.split(".")[-1]
-        func_name = f"validate_{module_name}"
+        site_name = get_site_name(module)
+        func = get_scan_func(module)
         actual_cat = find_category(module) or "Email"
 
         params = {
-            "site_name": module_name.capitalize(),
+            "site_name": site_name.capitalize(),
             "username": email,
             "category": actual_cat,
             "is_email": True,
         }
 
-        if not hasattr(module, func_name):
-            return (
-                Result.error(f"Function {func_name} not found")
-                .update(**params)
-                .show(configs)
-            )
+        if not func:
+            return Result.error(
+                f"{site_name} has no validate_ function", **params
+            ).show(configs)
 
-        func = getattr(module, func_name)
+        if not configs.allow_loud and is_loud(site_name, is_email=True):
+            return Result.skipped().update(**params).show(configs)
 
         try:
             res = func(email)

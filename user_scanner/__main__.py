@@ -19,6 +19,7 @@ from user_scanner.core.helpers import (
     generate_permutations,
     get_proxy_count,
     get_site_name,
+    is_loud,
     load_categories,
     load_modules,
     set_proxy_manager,
@@ -28,6 +29,7 @@ from user_scanner.core.orchestrator import (
     run_user_full,
     run_user_module,
 )
+from user_scanner.core.result import Status
 from user_scanner.core.version import load_local_version
 from user_scanner.utils.update import update_self
 from user_scanner.utils.updater_logic import check_for_updates
@@ -147,22 +149,17 @@ def main():
         print(f"user-scanner current version -> {G}{version}{X}")
         sys.exit(0)
 
-    if args.list_user:
-        categories = load_categories()
+    if args.list_user or args.list_email:
+        categories = load_categories(is_email=args.list_email)
         for cat_name, cat_path in categories.items():
             modules = load_modules(cat_path)
             print(Fore.MAGENTA + f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
             for module in modules:
-                print(f"  - {get_site_name(module)}")
-        return
-
-    if args.list_email:
-        categories = load_categories(is_email=True)
-        for cat_name, cat_path in categories.items():
-            modules = load_modules(cat_path)
-            print(Fore.MAGENTA + f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
-            for module in modules:
-                print(f"  - {get_site_name(module)}")
+                name = get_site_name(module)
+                loud = (
+                    f" {R}(loud){X}" if is_loud(name, is_email=args.list_email) else ""
+                )
+                print(f"  - {name}{loud}")
         return
 
     if not (args.username or args.email or args.username_file or args.email_file):
@@ -292,9 +289,9 @@ def main():
     results = []
 
     config = ScanConfig(
-        show_url=args.verbose,
-        only_found=args.only_found,
         allow_loud=args.allow_loud,
+        only_found=args.only_found,
+        verbose=args.verbose,
     )
 
     for i, target in enumerate(targets):
@@ -379,15 +376,16 @@ def main():
                 f.write(content)
 
         print(G + f"\n[+] Results saved to {args.output}" + Style.RESET_ALL)
-    total_found = len([r for r in results if r.is_found()])
 
-    if args.only_found:
-        if total_found == 0:
-            print(f"\n{R}[✘] No results found for the given target(s).{X}")
-        else:
-            print(f"\n{G}[✔] Total hits found:{X} {total_found}")
+    total_found = len([r for r in results if r.is_found()])
+    total_skipped = len([r for r in results if r == Status.SKIPPED])
+
+    if args.only_found and total_found == 0:
+        print(f"\n{R}[✘] No results found for the given target(s).{X}")
     else:
-        print(f"\n{C}[i] Scan complete. Total hits:{X} {total_found}")
+        print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")
+        if total_skipped > 0:
+            print(f"  {C}Skipped:{X} {total_skipped}")
 
 
 if __name__ == "__main__":

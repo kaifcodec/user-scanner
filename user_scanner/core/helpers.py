@@ -1,5 +1,6 @@
 import importlib
 import importlib.util
+import inspect
 import random
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -7,16 +8,18 @@ from dataclasses import dataclass
 from itertools import permutations
 from pathlib import Path
 from types import ModuleType
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import httpx
+
+LOUD_JSON: Dict[str, List[str]] = {"user": [], "email": ["leetcode"]}
 
 
 @dataclass(frozen=True)
 class ScanConfig:
     allow_loud: bool = False
     only_found: bool = False
-    show_url: bool = False
+    verbose: bool = False
 
 
 def get_site_name(module) -> str:
@@ -55,6 +58,22 @@ def load_categories(is_email: bool = False) -> Dict[str, Path]:
             categories[subfolder.name] = subfolder.resolve()
 
     return categories
+
+
+def is_loud(name: str, is_email: bool = False) -> bool:
+    key = "email" if is_email else "user"
+    return name.lower() in LOUD_JSON[key]
+
+
+def get_scan_func(module) -> Optional[Callable[[str], Any]]:
+    for attr_name in dir(module):
+        if not attr_name.startswith("validate_"):
+            continue
+
+        f = getattr(module, attr_name)
+        if inspect.isfunction(f) or inspect.iscoroutinefunction(f):
+            return f
+    return None
 
 
 def find_module(name: str, is_email: bool = False) -> List[ModuleType]:

@@ -10,44 +10,42 @@ from user_scanner.core.helpers import (
     ScanConfig,
     find_category,
     get_proxy,
+    get_scan_func,
     get_site_name,
+    is_loud,
     load_categories,
     load_modules,
 )
 from user_scanner.core.result import Result
 
 
-def _worker_single(module: ModuleType, username: str) -> Result:
-    func = next(
-        (
-            getattr(module, f)
-            for f in dir(module)
-            if f.startswith("validate_") and callable(getattr(module, f))
-        ),
-        None,
-    )
-
+def _worker_single(module: ModuleType, username: str, configs: ScanConfig) -> Result:
     site_name = get_site_name(module)
+    func = get_scan_func(module)
+
+    params = {
+        "site_name": site_name.capitalize(),
+        "username": username,
+    }
 
     if not func:
-        return Result.error(
-            f"{site_name} has no validate_ function",
-            site_name=site_name,
-            username=username,
-        )
+        return Result.error(f"{site_name} has no validate_ function", **params)
+
+    if not configs.allow_loud and is_loud(site_name):
+        return Result.skipped().update(**params)
 
     try:
         result: Result = func(username)
-        result.update(site_name=site_name, username=username)
+        result.update(**params)
         return result
     except Exception as e:
-        return Result.error(e, site_name=site_name, username=username)
+        return Result.error(e, **params)
 
 
 def run_user_module(
     module: ModuleType, username: str, configs: ScanConfig
 ) -> List[Result]:
-    result = _worker_single(module, username)
+    result = _worker_single(module, username, configs)
 
     category = find_category(module)
     if category:
@@ -69,7 +67,7 @@ def run_user_category(
 
     with ThreadPoolExecutor(max_workers=20) as executor:
         # map returns results as they are finished, allowing for "streaming" output
-        exec_map = executor.map(lambda m: _worker_single(m, username), modules)
+        exec_map = executor.map(lambda m: _worker_single(m, username, configs), modules)
         for result in exec_map:
             result.update(category=category_name)
             results.append(result)
@@ -108,7 +106,9 @@ def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
             module_to_cat[get_site_name(m)] = display_name
 
     with ThreadPoolExecutor(max_workers=60) as executor:
-        exec_map = executor.map(lambda m: _worker_single(m, username), all_modules)
+        exec_map = executor.map(
+            lambda m: _worker_single(m, username, configs), all_modules
+        )
         for result in exec_map:
             site_name = result.site_name
             cat_name = (

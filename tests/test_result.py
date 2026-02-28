@@ -70,7 +70,7 @@ def test_from_number():
     assert Result.from_number(0) == Status.TAKEN
     assert Result.from_number(1) == Status.AVAILABLE
     assert Result.from_number(2) == Status.ERROR
-    for i in [-2, -1, 3, 4, 5, 6, 7, 8, 9, 10]:
+    for i in [-2, -1, 4, 5, 6, 7, 8, 9, 10]:
         assert Result.from_number(i) == Status.ERROR
 
 
@@ -136,7 +136,7 @@ def test_console_output_and_show_url():
 
     out_visible = res.get_console_output(
         ScanConfig(
-            show_url=True,
+            verbose=True,
         )
     )
     assert "[https://mysite.com/u]" in out_visible

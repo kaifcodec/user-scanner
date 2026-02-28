@@ -42,10 +42,13 @@ class Status(Enum):
     TAKEN = 0
     AVAILABLE = 1
     ERROR = 2
+    SKIPPED = 3
 
     def to_label(self, is_email=False):
         if self == Status.ERROR:
             return "Error"
+        elif self == Status.SKIPPED:
+            return "Skipped"
         if is_email:
             return "Registered" if self == Status.TAKEN else "Not Registered"
         return "Found" if self == Status.TAKEN else "Not Found"
@@ -83,6 +86,10 @@ class Result:
     @classmethod
     def error(cls, reason: str | Exception | None = None, **kwargs):
         return cls(Status.ERROR, reason, **kwargs)
+
+    @classmethod
+    def skipped(cls, reason: str | Exception | None = None, **kwargs):
+        return cls(Status.SKIPPED, reason, **kwargs)
 
     @classmethod
     def from_number(cls, i: int, reason: str | Exception | None = None):
@@ -144,12 +151,16 @@ class Result:
     def get_output_color(self) -> str:
         if self == Status.ERROR:
             return Fore.YELLOW
+        elif self == Status.SKIPPED:
+            return Fore.WHITE
         else:
             return Fore.GREEN if self == Status.TAKEN else Fore.RED
 
     def get_output_icon(self) -> str:
         if self == Status.ERROR:
             return "[!]"
+        elif self == Status.SKIPPED:
+            return "[~]"
         else:
             return "[✔]" if self == Status.TAKEN else "[✘]"
 
@@ -166,7 +177,7 @@ class Result:
         ## Color the URL in white for better visibility
         url_display = (
             f" {Fore.WHITE}[{self.url}]{color}"
-            if (configs and configs.show_url) and self.url
+            if (configs and configs.verbose) and self.url
             else ""
         )
 
