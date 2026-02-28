@@ -31,6 +31,10 @@ def test_equality():
     assert error == Status.ERROR
     assert error == 2
 
+    skipped = Result.skipped()
+    assert skipped == Status.SKIPPED
+    assert skipped == 3
+
 
 def test_get_reason_and_humanize():
     assert Result.available().get_reason() == ""
@@ -59,7 +63,6 @@ def test_has_reason():
     assert not Result.error().has_reason()
     assert Result.error("Has reason").has_reason()
 
-
 def test_to_number():
     assert Result.error().to_number() == 2
     assert Result.available().to_number() == 1
@@ -70,6 +73,8 @@ def test_from_number():
     assert Result.from_number(0) == Status.TAKEN
     assert Result.from_number(1) == Status.AVAILABLE
     assert Result.from_number(2) == Status.ERROR
+    assert Result.from_number(3) == Status.SKIPPED
+
     for i in [-2, -1, 4, 5, 6, 7, 8, 9, 10]:
         assert Result.from_number(i) == Status.ERROR
 
@@ -127,19 +132,23 @@ def test_output_formats():
 
 
 def test_console_output_and_show_url():
+    conf = ScanConfig()
+    v_conf = ScanConfig(verbose=True)
+
     res = Result.taken(site_name="MySite", url="https://mysite.com/u")
 
-    out_hidden = res.get_console_output()
+    out_hidden = res.get_console_output(conf)
     assert "[✔]" in out_hidden
     assert "Found" in out_hidden
     assert "https://mysite.com" not in out_hidden
 
-    out_visible = res.get_console_output(
-        ScanConfig(
-            verbose=True,
-        )
-    )
+    out_visible = res.get_console_output(v_conf)
     assert "[https://mysite.com/u]" in out_visible
+
+    res_skip = Result.skipped(site_name="PrivacySite")
+    output = res_skip.get_console_output(conf)
+    assert "[~]" in output
+    assert "Skipped" in output
 
 
 def test_debug_string():
