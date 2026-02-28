@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import httpx
 
-LOUD_JSON: Dict[str, List[str]] = {"user": [], "email": ["leetcode"]}
+LOUD_MODULES: Dict[str, List[str]] = {"user": [], "email": ["leetcode"]}
 
 
 @dataclass(frozen=True)
@@ -62,7 +62,7 @@ def load_categories(is_email: bool = False) -> Dict[str, Path]:
 
 def is_loud(name: str, is_email: bool = False) -> bool:
     key = "email" if is_email else "user"
-    return name.lower() in LOUD_JSON[key]
+    return name.lower() in LOUD_MODULES[key]
 
 
 def get_scan_func(module) -> Optional[Callable[[str], Any]]:
