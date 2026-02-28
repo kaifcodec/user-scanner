@@ -5,6 +5,7 @@ import sys
 import time
 
 from colorama import Fore, Style
+from dataclasses import replace
 
 from user_scanner.cli.banner import print_banner
 from user_scanner.core import formatter
@@ -307,8 +308,9 @@ def main():
             modules = find_module(args.module.replace(".", "_"), is_email)
             fn = run_email_module_batch if is_email else run_user_module
             if modules:
+                module_config = replace(config, allow_loud=True)
                 for module in modules:
-                    results.extend(fn(module, target, config))
+                    results.extend(fn(module, target, module_config))
             else:
                 print(
                     R
@@ -386,7 +388,8 @@ def main():
         print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")
         if total_skipped > 0:
             print(f"  {C}Skipped:{X} {total_skipped}")
-
+            print(f"  {Y}Reason for skip: Module(s) notify the target with password reset email(s){X}")
+            print(f"  {Y}Use {G}--allow-loud{X}{Y} to include those module(s) to be scanned{X}")
 
 if __name__ == "__main__":
     main()
