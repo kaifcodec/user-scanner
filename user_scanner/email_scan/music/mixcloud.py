@@ -4,7 +4,6 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     show_url = "https://mixcloud.com"
-    refresh_url = "https://app.mixcloud.com/csrf/refresh/"
     register_url = "https://app.mixcloud.com/authentication/email-register/"
 
     headers = {
@@ -19,18 +18,11 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            await client.get(refresh_url, headers=headers)
-
-            csrf = client.cookies.get("csrftoken")
-            if not csrf:
-                return Result.error("Failed to extract csrftoken from refresh endpoint")
-
-            headers['x-csrftoken'] = csrf
+        async with httpx.AsyncClient(timeout=7.0, follow_redirects=True) as client:
 
             payload = {
                 'email': email,
-                'username': "scanner_user_99",
+                'username': "you_ar3_al0n3_fight",
                 'password': "",
                 'ch': 'y'
             }
