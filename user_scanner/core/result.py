@@ -106,14 +106,19 @@ class Result:
         return self.reason is not None
 
     def get_reason(self) -> str:
-        if self.status == Status.SKIPPED:
+        if self.status == Status.SKIPPED and self.reason is None:
             return "Notifies the target by forgot password email or similar"
+
         if self.reason is None:
             return ""
+
         if isinstance(self.reason, str):
             return self.reason
+
         msg = humanize_exception(self.reason)
         return f"{type(self.reason).__name__}: {msg.capitalize()}"
+
+
 
     def as_dict(self) -> dict:
         return {
