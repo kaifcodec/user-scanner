@@ -1,4 +1,6 @@
+from user_scanner.core.helpers import ScanConfig
 from user_scanner.core.result import Result, Status
+
 
 def test_status_labels():
     assert Status.TAKEN.to_label(is_email=False) == "Found"
@@ -29,15 +31,28 @@ def test_equality():
     assert error == Status.ERROR
     assert error == 2
 
+    skipped = Result.skipped()
+    assert skipped == Status.SKIPPED
+    assert skipped == 3
+
 
 def test_get_reason_and_humanize():
     assert Result.available().get_reason() == ""
     assert Result.available("manual reason").get_reason() == "manual reason"
 
-    assert "Could not resolve hostname" in Result.error(Exception("Error 11001")).get_reason()
-    assert "Connection closed by remote server" in Result.error(Exception("Error 10054")).get_reason()
+    assert (
+        "Could not resolve hostname"
+        in Result.error(Exception("Error 11001")).get_reason()
+    )
+    assert (
+        "Connection closed by remote server"
+        in Result.error(Exception("Error 10054")).get_reason()
+    )
 
-    assert Result.available(Exception("some error")).get_reason() == "Exception: Some error"
+    assert (
+        Result.available(Exception("some error")).get_reason()
+        == "Exception: Some error"
+    )
 
 
 def test_has_reason():
@@ -47,7 +62,6 @@ def test_has_reason():
     assert Result.taken("Has reason").has_reason()
     assert not Result.error().has_reason()
     assert Result.error("Has reason").has_reason()
-
 
 def test_to_number():
     assert Result.error().to_number() == 2
@@ -59,7 +73,9 @@ def test_from_number():
     assert Result.from_number(0) == Status.TAKEN
     assert Result.from_number(1) == Status.AVAILABLE
     assert Result.from_number(2) == Status.ERROR
-    for i in [-2, -1, 3, 4, 5, 6, 7, 8, 9, 10]:
+    assert Result.from_number(3) == Status.SKIPPED
+
+    for i in [-2, -1, 4, 5, 6, 7, 8, 9, 10]:
         assert Result.from_number(i) == Status.ERROR
 
 
@@ -82,7 +98,7 @@ def test_update_and_fields():
         site_name="GitHub",
         category="Social",
         url="https://github.com/alice",
-        is_email=False
+        is_email=False,
     )
 
     assert res.username == "alice"
@@ -96,7 +112,7 @@ def test_output_formats():
         username="testuser",
         site_name="Example",
         category="Tech",
-        url="https://example.com/user"
+        url="https://example.com/user",
     )
 
     d = res.as_dict()
@@ -116,19 +132,27 @@ def test_output_formats():
 
 
 def test_console_output_and_show_url():
+    conf = ScanConfig()
+    v_conf = ScanConfig(verbose=True)
+
     res = Result.taken(site_name="MySite", url="https://mysite.com/u")
 
-    out_hidden = res.get_console_output(show_url=False)
+    out_hidden = res.get_console_output(conf)
     assert "[✔]" in out_hidden
     assert "Found" in out_hidden
     assert "https://mysite.com" not in out_hidden
 
-    out_visible = res.get_console_output(show_url=True)
+    out_visible = res.get_console_output(v_conf)
     assert "[https://mysite.com/u]" in out_visible
+
+    res_skip = Result.skipped(site_name="PrivacySite")
+    output = res_skip.get_console_output(conf)
+    assert "[~]" in output
+    assert "Skipped" in output
 
 
 def test_debug_string():
     res = Result.available(username="dev", url="http://dev.link")
     debug_str = res.debug()
     assert 'url: "http://dev.link"' in debug_str
-    assert 'status: Not Found' in debug_str
+    assert "status: Not Found" in debug_str
