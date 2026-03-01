@@ -388,7 +388,7 @@ def main():
         print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")
         if total_skipped > 0:
             print(f"  {C}Skipped:{X} {total_skipped}")
-            print(f"  {Y}Reason for skip: Module(s) notify the target with password reset email(s) (but only if target exist there){X}")
+            print(f"  {Y}Reason for skip: Module(s) notify{X} (but only if target exists there) {Y}the target with password reset email(s){X}")
             print(f"  {Y}Use {G}--allow-loud{X}{Y} to include those module(s) to be scanned{X}")
 
 if __name__ == "__main__":
