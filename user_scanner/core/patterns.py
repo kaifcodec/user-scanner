@@ -176,11 +176,30 @@ def _iter_pattern(blocks: List[Block]) -> Iterator[str]:
 
 
 def expand_patterns(input: str) -> Iterator[str]:
+    """Expand a pattern string into all matching combinations.
+
+    Syntax:
+        [chars]      — character set, e.g. [a-z], [0-9], [abc]
+        [chars]{len} — with length control, e.g. [a-z]{0-2}, [0-9]{1;3}
+        \\[ \\] \\\\   — escaped literal brackets and backslash
+
+    Examples:
+        "john[a-c]"       → "johna", "johnb", "johnc"
+        "john[0-9]{0-2}"  → "john", "john0", ..., "john99"
+        "hello\\[world\\]" → "hello[world]"
+    """
     blocks = _parse_patterns(input)
     yield from _iter_pattern(blocks)
 
 
 def expand_patterns_random(input: str, capacity: int = 1000) -> Iterator[str]:
+    """Expand a pattern string in randomized order using reservoir sampling.
+
+    Yields the same set of results as expand_patterns, but in a shuffled order.
+    For small result sets (<= capacity), all items are buffered and shuffled.
+    For larger sets, reservoir sampling ensures uniform randomness without
+    loading everything into memory at once.
+    """
     patterns = expand_patterns(input)
     buffer = []
 
@@ -201,3 +220,18 @@ def expand_patterns_random(input: str, capacity: int = 1000) -> Iterator[str]:
 
     random.shuffle(buffer)
     yield from buffer
+
+
+def count_patterns(input: str) -> int:
+    """Return the total number of expansions for a pattern without generating them.
+
+    Useful for showing the user how many permutations a pattern produces
+    before actually expanding it (e.g. "Scanning 100 of 18,279 permutations").
+    Runs in O(number of blocks) — instant even for huge patterns.
+    """
+    blocks = _parse_patterns(input)
+    total = 1
+    for block in blocks:
+        if isinstance(block, PatternBlock):
+            total *= sum(len(block.charset) ** length for length in block.lenset)
+    return total

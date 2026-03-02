@@ -1,6 +1,6 @@
 import pytest
 from itertools import islice
-from user_scanner.core.patterns import expand_patterns, expand_patterns_random
+from user_scanner.core.patterns import expand_patterns, expand_patterns_random, count_patterns
 
 
 # ── expand_patterns: plain text (no pattern syntax) ──────────────────────
@@ -266,3 +266,32 @@ def test_random_reservoir_sampling():
 def test_random_is_iterator():
     result = expand_patterns_random("[ab]")
     assert hasattr(result, "__next__")
+
+
+# ── count_patterns ───────────────────────────────────────────────────────
+
+def test_count_plain_text():
+    assert count_patterns("john") == 1
+
+
+def test_count_empty():
+    assert count_patterns("") == 1
+
+
+def test_count_charset():
+    assert count_patterns("[a-z]") == 26
+
+
+def test_count_with_lenset():
+    # length 0: 1 + length 1: 26 + length 2: 676 = 703
+    assert count_patterns("[a-z]{0-2}") == 703
+
+
+def test_count_multiple_blocks():
+    assert count_patterns("[a-c][0-9]") == 30  # 3 * 10
+
+
+def test_count_matches_expansion():
+    """count_patterns must match the actual number of expansions."""
+    pattern = "pre[ab]{1-2}mid[xy]post"
+    assert count_patterns(pattern) == len(list(expand_patterns(pattern)))
