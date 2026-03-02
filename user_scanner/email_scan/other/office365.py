@@ -19,24 +19,6 @@ async def _check(email: str) -> Result:
     try:
         async with httpx.AsyncClient(timeout=10.0, follow_redirects=False) as client:
 
-            # Step 1: Try with random local-part but same domain
-            random_email = f"{get_random_string(30)}@{email.split('@')[1]}"
-            r = await client.get(
-                f"{base_url}/{random_email}?Protocol=Autodiscoverv1",
-                headers=headers,
-            )
-
-            if r.status_code == 403:
-                return Result.error("Caught by WAF or IP Block (403)")
-
-            if r.status_code == 429:
-                return Result.error("Rate limited (429)")
-
-            # If random email returns 200 → likely rate limiting or unusual behavior
-            if r.status_code == 200:
-                return Result.error("Possible rate limit or detection triggered")
-
-            # Step 2: Check actual email
             r = await client.get(
                 f"{base_url}/{email}?Protocol=Autodiscoverv1",
                 headers=headers,
@@ -60,7 +42,7 @@ async def _check(email: str) -> Result:
         return Result.error("Server took too long to respond")
 
     except Exception as e:
-        return Result.error(str(e))
+        return Result.error(e)
 
 
 async def validate_office365(email: str) -> Result:
