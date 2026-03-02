@@ -13,8 +13,8 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
-            await client.get("https://www.netflix.com/in/", headers=headers)
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            await client.get("https://www.netflix.com/", headers=headers)
 
             flwssn = client.cookies.get("flwssn")
             if not flwssn:
@@ -32,8 +32,8 @@ async def _check(email: str) -> Result:
             payload = {
                 "operationName": "CLCSWebInitSignup",
                 "variables": {
-                    "inputUserJourneyNode": "WELCOME",
-                    "locale": "en-IN",
+                    "inputUserJourneyNode": "LOGIN",
+                    "locale": "en-US",
                     "inputFields": [
                         {"name": "flwssn", "value": {"stringValue": flwssn}},
                         {"name": "email", "value": {"stringValue": email}}
@@ -52,13 +52,13 @@ async def _check(email: str) -> Result:
             if response.status_code == 200:
                 resp_text = response.text
 
-                if "sign-up link to" in resp_text:
-                    return Result.available(url=show_url)
-
-                elif "Welcome back!" in resp_text:
+                if "already have an account" in resp_text:
                     return Result.taken(url=show_url)
-                else:
-                    return Result.error("Unexpected response, Try an India-based VPN or report it via GitHub issues")
+
+                if '"errors"' in resp_text:
+                    return Result.error("GraphQL error, report it via GitHub issues")
+
+                return Result.available(url=show_url)
 
             return Result.error(f"HTTP {response.status_code}")
 
