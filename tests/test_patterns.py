@@ -177,7 +177,7 @@ def test_error_unclosed_bracket():
 
 
 def test_error_unmatched_close_bracket():
-    with pytest.raises(ValueError, match="unscaped"):
+    with pytest.raises(ValueError, match="unescaped"):
         list(expand_patterns("test]"))
 
 

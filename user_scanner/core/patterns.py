@@ -15,7 +15,7 @@ Block = str | PatternBlock
 
 class Lexer:
     def __init__(self, input: str) -> None:
-        self.tokens = [char for char in input]
+        self.tokens = list(input)
 
     def peek(self) -> str:
         if self.tokens:
@@ -32,7 +32,7 @@ class Lexer:
         while (next := self.peek()) and next in "0123456789":
             self.next()
             n = int(next)
-            if res:
+            if res is not None:
                 res = res * 10 + n
             else:
                 res = n
@@ -67,7 +67,7 @@ def _parse_charset(lexer: Lexer) -> Set[str]:
                 other = lexer.next()
 
                 if not other:
-                    raise ValueError()
+                    raise ValueError('Incomplete range in charset (e.g. "a-" without end)')
 
                 charset.update(_char_range(cur, other))
             else:
@@ -111,13 +111,13 @@ def _parse_lenset(lexer: Lexer) -> Set[int]:
     return lenset
 
 
-def _append_string(list: list, new: str):
-    if not list:
-        list.append(new)
-    elif isinstance(list[-1], str):
-        list[-1] += new
+def _append_string(blocks: list, new: str):
+    if not blocks:
+        blocks.append(new)
+    elif isinstance(blocks[-1], str):
+        blocks[-1] += new
     else:
-        list.append(new)
+        blocks.append(new)
 
 
 def _parse_patterns(input: str) -> List[Block]:
@@ -145,7 +145,7 @@ def _parse_patterns(input: str) -> List[Block]:
         elif cur == "]":
             # Should already be handled by parse_charset,
             # therefore is invalid.
-            raise ValueError('Invalid unscaped "]"')
+            raise ValueError('Invalid unescaped "]"')
 
         else:
             _append_string(res, cur)
@@ -154,7 +154,7 @@ def _parse_patterns(input: str) -> List[Block]:
 
 
 def _iter_block(block: PatternBlock) -> Iterator[str]:
-    for length in sorted(block.lenset):
+    for length in block.lenset:
         for combo in itertools.product(block.charset, repeat=length):
             yield "".join(combo)
 
