@@ -1,9 +1,18 @@
 import httpx
+import json
 from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
-    url = "https://api.accounts.firefox.com/v1/account/status"
-    show_url = "https://firefox.com"
+    url = "https://sm-prod2.any.do/check_email"
+    show_url = "https://any.do"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept": "*/*",
+        "Content-Type": "application/json; charset=UTF-8",
+        "Origin": "https://desktop.any.do",
+        "Referer": "https://desktop.any.do/",
+    }
 
     payload = {
         "email": email
@@ -11,23 +20,27 @@ async def _check(email: str) -> Result:
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(url, data=payload)
+            response = await client.post(
+                url,
+                content=json.dumps(payload),
+                headers=headers
+            )
 
             if response.status_code == 403:
                 return Result.error("Caught by WAF or IP Block (403)")
 
             if response.status_code == 429:
-                return Result.error("Rate limited by Firefox (429)")
+                return Result.error("Rate limited by Any.do (429)")
 
             if response.status_code != 200:
                 return Result.error(f"HTTP Error: {response.status_code}")
 
-            text = response.text.lower()
+            data = response.json()
 
-            if "true" in text:
+            if data.get("user_exists") is True:
                 return Result.taken(url=show_url)
 
-            elif "false" in text:
+            elif data.get("user_exists") is False:
                 return Result.available(url=show_url)
 
             return Result.error("Unexpected response body structure")
@@ -39,5 +52,5 @@ async def _check(email: str) -> Result:
     except Exception as e:
         return Result.error(e)
 
-async def validate_firefox(email: str) -> Result:
+async def validate_anydo(email: str) -> Result:
     return await _check(email)
