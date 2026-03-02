@@ -17,6 +17,7 @@ LOUD_MODULES: Dict[str, List[str]] = {
     "email": [
         "leetcode",
         "instagram",
+        "netflix",
         "sexvid",
         "made_porn",
         "flirtbate",
