@@ -49,7 +49,7 @@ async def _check(email: str) -> Result:
         return Result.error("Server took too long to respond")
 
     except Exception as e:
-        return Result.error(str(e))
+        return Result.error(e)
 
 
 async def validate_plurk(email: str) -> Result:
