@@ -1,43 +1,43 @@
 import httpx
 from user_scanner.core.result import Result
 
-
 async def _check(email: str) -> Result:
-    url = "https://sm-prod2.any.do/check_email"
-    show_url = "https://any.do"
+    url = "https://api.accounts.firefox.com/v1/account/status"
+    show_url = "https://firefox.com"
 
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "*/*",
-        "Accept-Language": "en,en-US;q=0.5",
-        "Referer": "https://desktop.any.do/",
-        "Content-Type": "application/json; charset=UTF-8",
-        "X-Platform": "3",
-        "Origin": "https://desktop.any.do",
-        "DNT": "1",
-        "Connection": "keep-alive",
+    payload = {
+        "email": email
     }
 
-    data = {"email": email}
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(url, data=payload)
 
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        try:
-            response = await client.post(url, json=data, headers=headers)
+            if response.status_code == 403:
+                return Result.error("Caught by WAF or IP Block (403)")
 
-            if response.status_code == 200:
-                json_data = response.json()
+            if response.status_code == 429:
+                return Result.error("Rate limited by Firefox (429)")
 
-                if json_data.get("user_exists") is True:
-                    return Result.taken(url=show_url)
+            if response.status_code != 200:
+                return Result.error(f"HTTP Error: {response.status_code}")
 
-                if json_data.get("user_exists") is False:
-                    return Result.available(url=show_url)
+            text = response.text.lower()
 
-            return Result.error("Rate limited or unexpected response")
+            if "true" in text:
+                return Result.taken(url=show_url)
 
-        except Exception as e:
-            return Result.error(str(e))
+            elif "false" in text:
+                return Result.available(url=show_url)
 
+            return Result.error("Unexpected response body structure")
 
-async def validate_anydo(email: str) -> Result:
+    except httpx.ConnectTimeout:
+        return Result.error("Connection timed out! maybe region blocks")
+    except httpx.ReadTimeout:
+        return Result.error("Server took too long to respond (Read Timeout)")
+    except Exception as e:
+        return Result.error(e)
+
+async def validate_firefox(email: str) -> Result:
     return await _check(email)
