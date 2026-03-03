@@ -11,10 +11,10 @@ def validate_valorant(user: str) -> Result:
     show_url = "https://playvalorant.com"
 
     user = user.strip()
-    if "#" not in user:
+    if user.count("#") != 1:
         return Result.error("Riot ID format required: Name#Tag (e.g. TenZ#00005)")
 
-    name, tag = user.split("#", 1)
+    name, tag = user.split("#")
     if not name or not tag:
         return Result.error("Both name and tag are required (e.g. TenZ#00005)")
 
