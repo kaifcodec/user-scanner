@@ -33,7 +33,7 @@ from user_scanner.core.email_orchestrator import (
     run_email_module_batch
 )
 
-from user_scanner.core.patterns import expand_patterns_random
+from user_scanner.core.patterns import expand_patterns_random, count_patterns
 
 # Color configs
 R = Fore.RED
@@ -242,9 +242,15 @@ def main():
         temp_targets = list(islice(expand_patterns_random(target_name), args.stop))
         targets.extend(temp_targets)
         if len(temp_targets) > 1:
-            print(
-                C + f"[+] Generated {len(temp_targets)} permutations" + Style.RESET_ALL
-            )
+            total = count_patterns(target_name)
+            if total > len(temp_targets):
+                print(
+                    C + f"[+] Scanning {len(temp_targets)} of {total} permutations" + Style.RESET_ALL
+                )
+            else:
+                print(
+                    C + f"[+] Scanning {len(temp_targets)} permutations" + Style.RESET_ALL
+                )
 
     results = []
 
