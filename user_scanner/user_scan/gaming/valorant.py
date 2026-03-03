@@ -1,4 +1,4 @@
-from curl_cffi import requests as cf_requests
+from curl_cffi import requests as cf_requests  # type: ignore[import-not-found]
 from user_scanner.core.result import Result
 
 
