@@ -102,6 +102,10 @@ Scan multiple emails/usernames from a file (one email/username per line):
 user-scanner -ef emails.txt     # bulk email scan
 user-scanner -uf usernames.txt  # bulk username scan
 ```
+
+### Pattern generation
+See [Pattern Syntax](docs/PATTERNS.md) for more details
+
 ---
 ### Library mode for email_scan
 Only available for `user-scanner>=1.2.0`
