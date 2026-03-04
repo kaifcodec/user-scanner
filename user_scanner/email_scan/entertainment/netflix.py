@@ -6,7 +6,7 @@ from user_scanner.core.result import Result
 async def _check(email: str) -> Result:
     show_url = "https://netflix.com"
     headers = {
-        'User-Agent': get_random_user_agent(),
+        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
         'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         'Accept-Language': "en-US,en;q=0.9",
         'Origin': "https://www.netflix.com",
