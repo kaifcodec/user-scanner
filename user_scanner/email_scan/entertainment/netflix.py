@@ -6,7 +6,7 @@ async def _check(email: str) -> Result:
     show_url = "https://netflix.com"
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         'Accept-Language': "en-US,en;q=0.9",
         'Origin': "https://www.netflix.com",
         'Referer': "https://www.netflix.com/",
@@ -32,7 +32,7 @@ async def _check(email: str) -> Result:
             payload = {
                 "operationName": "CLCSWebInitSignup",
                 "variables": {
-                    "inputUserJourneyNode": "LOGIN",
+                    "inputUserJourneyNode": "WELCOME",
                     "locale": "en-US",
                     "inputFields": [
                         {"name": "flwssn", "value": {"stringValue": flwssn}},
@@ -52,13 +52,16 @@ async def _check(email: str) -> Result:
             if response.status_code == 200:
                 resp_text = response.text
 
-                if "already have an account" in resp_text:
+                if "Welcome back!" in resp_text:
                     return Result.taken(url=show_url)
+
+                if "sign-up link" in resp_text or "create your account" in resp_text:
+                    return Result.available(url=show_url)
 
                 if '"errors"' in resp_text:
                     return Result.error("GraphQL error, report it via GitHub issues")
 
-                return Result.available(url=show_url)
+                return Result.error("Unexpected response from Netflix")
 
             return Result.error(f"HTTP {response.status_code}")
 
