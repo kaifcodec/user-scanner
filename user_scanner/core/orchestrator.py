@@ -103,7 +103,8 @@ def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
         display_name = cat_name.capitalize()
         for m in modules:
             all_modules.append(m)
-            site_key = get_site_name(m).capitalize()
+            # Match the worker's capitalization exactly to prevent "Unknown" category bugs
+            site_key = get_site_name(m).capitalize() 
             module_to_cat[site_key] = display_name
 
     with ThreadPoolExecutor(max_workers=60) as executor:
@@ -111,7 +112,7 @@ def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
             lambda m: _worker_single(m, username, configs), all_modules
         )
         for result in exec_map:
-            cat_name = module_to_cat.get(result.site_name, "Unknown")
+            cat_name = module_to_cat.get(result.site_name, "Unknown") if result.site_name else "Unknown"
 
             result.update(category=cat_name)
             results.append(result)
@@ -126,6 +127,7 @@ def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
             result.show(configs)
 
     return results
+
 
 
 
