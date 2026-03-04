@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_bdsmsingles(user):
     url = f"https://www.bdsmsingles.com/members/{user}/"
-    show_url = "https://www.bdsmsingles.com"
+    show_url = f"https://www.bdsmsingles.com/members/{user}/"
 
     def process(response):
         if response.status_code == 200 and "<title>Profile" in response.text:

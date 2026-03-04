@@ -4,7 +4,7 @@ from user_scanner.core.result import Result
 
 def validate_reddit(user):
     url = f"https://www.reddit.com/user/{user}/"
-    show_url = "https://reddit.com"
+    show_url = f"https://www.reddit.com/user/{user}/"
 
     def process(response):
         if response.status_code == 200:

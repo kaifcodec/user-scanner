@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import status_validate
 
 def validate_instagram(user):
     url = "https://www.instagram.com/api/v1/users/web_profile_info/"
-    show_url = "https://instagram.com"
+    show_url = f"https://www.instagram.com/{user}/"
 
     params = {"username": user}
 

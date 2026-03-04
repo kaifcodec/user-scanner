@@ -16,7 +16,7 @@ def validate_bitbucket(user: str) -> Result:
         )
 
     url = f"https://bitbucket.org/{user}/"
-    show_url = "https://bitbucket.org"
+    show_url = f"https://bitbucket.org/{user}/"
 
     return status_validate(
         url, 404, [200, 302], show_url=show_url, follow_redirects=True

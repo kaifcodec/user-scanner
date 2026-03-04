@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import status_validate
 
 def validate_liberapay(user):
     url = f"https://en.liberapay.com/{user}"
-    show_url = "https://en.liberapay.com"
+    show_url = f"https://en.liberapay.com/{user}"
 
     headers = {
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",

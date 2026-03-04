@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_bentbox(user):
     url = f"https://bentbox.co/{user}"
-    show_url = "https://bentbox.co"
+    show_url = f"https://bentbox.co/{user}"
 
     def process(response):
         if response.status_code == 200 and "user_bar" in response.text:

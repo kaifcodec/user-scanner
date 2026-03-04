@@ -21,7 +21,7 @@ def validate_chess_com(user: str) -> Result:
         return Result.error("Username must start and end with a letter or number")
 
     url = f"https://www.chess.com/callback/user/valid?username={user}"
-    show_url = "https://chess.com"
+    show_url = f"https://www.chess.com/member/{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),

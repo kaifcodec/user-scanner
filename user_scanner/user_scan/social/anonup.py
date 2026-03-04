@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_anonup(user):
     url = f"https://anonup.com/@{user}"
-    show_url = "https://anonup.com"
+    show_url = f"https://anonup.com/@{user}"
 
     def process(response):
 

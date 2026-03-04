@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 
 def validate_medium(user):
     url = f"https://medium.com/@{user}"
-    show_url = "https://medium.com"
+    show_url = f"https://medium.com/@{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),

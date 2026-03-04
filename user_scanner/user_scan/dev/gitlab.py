@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 
 def validate_gitlab(user):
     url = f"https://gitlab.com/users/{user}/exists"
-    show_url = "https://gitlab.com"
+    show_url = f"https://gitlab.com/{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),

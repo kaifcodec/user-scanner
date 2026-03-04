@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_minds(user):
     url = f"https://www.minds.com/api/v3/register/validate?username={user}"
-    show_url = "https://www.minds.com"
+    show_url = f"https://www.minds.com/{user}"
 
     def process(response):
         if response.status_code == 200 and '"valid":false' in response.text:

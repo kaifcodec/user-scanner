@@ -7,7 +7,7 @@ def validate_linkedin(user: str) -> Result:
     # bypassing the anti-bot 999 response that blocks regular user agents.
     # Note: bulk scanning may trigger rate limiting (999) after ~3 rapid requests.
     url = f"https://www.linkedin.com/in/{user}"
-    show_url = "https://linkedin.com"
+    show_url = f"https://www.linkedin.com/in/{user}/"
 
     headers = {
         "User-Agent": "Twitterbot/1.0",

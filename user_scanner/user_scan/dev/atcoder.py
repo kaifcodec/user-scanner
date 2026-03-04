@@ -2,7 +2,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_atcoder(user):
     url = f"https://atcoder.jp/api/users/exists/?userScreenName={user}"
-    show_url = "https://atcoder.jp"
+    show_url = f"https://atcoder.jp/users/{user}"
 
     def process(response):
         if response.status_code == 200:

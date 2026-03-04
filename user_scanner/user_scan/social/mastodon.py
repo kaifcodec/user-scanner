@@ -17,7 +17,7 @@ def validate_mastodon(user: str) -> Result:
         return Result.error("Username must start and end with a letter or number")
 
     url = f"https://mastodon.social/api/v1/accounts/lookup?acct={user}"
-    show_url = "https://mastodon.social"
+    show_url = f"https://mastodon.social/@{user}"
 
     return status_validate(
         url, available=404, taken=200, show_url=show_url, follow_redirects=True

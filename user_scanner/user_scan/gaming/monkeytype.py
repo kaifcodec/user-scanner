@@ -8,7 +8,7 @@ from user_scanner.core.result import Result
 def validate_monkeytype(user: str) -> Result:
     safe_user = quote(user, safe="")
     url = f"https://api.monkeytype.com/users/checkName/{safe_user}"
-    show_url = "https://monkeytype.com"
+    show_url = f"https://monkeytype.com/profile/{safe_user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),

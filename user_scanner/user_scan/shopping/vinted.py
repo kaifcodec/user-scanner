@@ -9,7 +9,7 @@ def validate_vinted(user: str):
     user = user.lower().strip()
 
     url = f"https://www.vinted.pt/member/general/search?search_text={user}"
-    show_url = "https://vinted.pt"
+    show_url = f"https://www.vinted.pt/member/general/search?search_text={user}"
 
     if not re.match(r"^[a-zA-Z0-9_.-]+$", user):
         return Result.error(
