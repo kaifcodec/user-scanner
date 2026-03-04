@@ -1,5 +1,5 @@
 import httpx
-from colorama import Fore, Style
+from colorama import Fore
 
 # Color configs
 R = Fore.RED
