@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import status_validate
 
 def validate_launchpad(user):
     url = f"https://launchpad.net/~{user}"
-    show_url = "https://launchpad.net"
+    show_url = f"https://launchpad.net/~{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),

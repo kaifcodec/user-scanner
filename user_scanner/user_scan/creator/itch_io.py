@@ -16,6 +16,6 @@ def validate_itch_io(user: str) -> Result:
         )
 
     url = f"https://itch.io/profile/{user}"
-    show_url = "https://itch.io"
+    show_url = f"https://itch.io/profile/{user}"
 
     return status_validate(url, 404, 200, show_url=show_url, follow_redirects=True)

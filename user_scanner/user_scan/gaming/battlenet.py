@@ -30,7 +30,7 @@ def validate_battlenet(user: str) -> Result:
         return Result.error("Must start with letter, only letters and numbers allowed")
 
     url = f"https://overwatch.blizzard.com/en-us/search/account-by-name/{username}"
-    show_url = "https://battle.net"
+    show_url = f"https://overwatch.blizzard.com/en-us/search/account-by-name/{username}/"
 
     headers = {
         "User-Agent": get_random_user_agent(),

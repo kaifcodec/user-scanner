@@ -13,7 +13,7 @@ def validate_producthunt(user: str) -> Result:
         return Result.error("Only use letters, numbers, and underscores.")
 
     url = f"https://www.producthunt.com/@{user}"
-    show_url = "https://producthunt.com"
+    show_url = f"https://www.producthunt.com/@{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),

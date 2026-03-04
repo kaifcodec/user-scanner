@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import status_validate
 
 def validate_dockerhub(user):
     url = f"https://hub.docker.com/v2/users/{user}/"
-    show_url = "https://hub.docker.com"
+    show_url = f"https://hub.docker.com/u/{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),

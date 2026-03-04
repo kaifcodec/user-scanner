@@ -6,7 +6,7 @@ from user_scanner.core.result import Result
 
 def validate_telegram(user: str) -> Result:
     url = f"https://t.me/{user}"
-    show_url = "https://t.me"
+    show_url = f"https://t.me/{user}"
 
     def process(r):
         if r.status_code == 200:

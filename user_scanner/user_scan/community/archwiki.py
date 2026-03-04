@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import Result, generic_validate
 
 def validate_archwiki(user):
     url = f"https://wiki.archlinux.org/api.php?action=query&format=json&list=users&ususers={user}&usprop=cancreate&formatversion=2"
-    show_url = "https://wiki.archlinux.org"
+    show_url = f"https://wiki.archlinux.org/title/User:{user}"
 
     def process(response):
         if '"userid":' in response.text:

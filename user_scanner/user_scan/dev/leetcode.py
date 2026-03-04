@@ -14,7 +14,7 @@ def validate_leetcode(user: str) -> Result:
         )
 
     url = f"https://leetcode.com/u/{user}/"
-    show_url = "https://leetcode.com"
+    show_url = f"https://leetcode.com/u/{user}/"
 
     headers = {
         "User-Agent": get_random_user_agent(),

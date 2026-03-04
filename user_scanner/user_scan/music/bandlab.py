@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_bandlab(user):
     url = f"https://www.bandlab.com/api/v1.3/users/{user}"
-    show_url = "https://www.bandlab.com"
+    show_url = f"https://www.bandlab.com/{user}"
 
     def process(response):
         if response.status_code == 200 and "about" in response.text:

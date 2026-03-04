@@ -21,7 +21,7 @@ def validate_lichess(user: str) -> Result:
         return Result.error("Username must end with a letter or a number")
 
     url = f"https://lichess.org/api/player/autocomplete?term={user}&exists=1"
-    show_url = "https://lichess.org"
+    show_url = f"https://lichess.org/@/{user}"
 
     def process(response):
         res_text = response.text.strip().lower()

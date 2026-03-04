@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 
 def validate_hashnode(user):
     url = "https://hashnode.com/utility/ajax/check-username"
-    show_url = "https://hashnode.com"
+    show_url = f"https://hashnode.com/@{user}"
 
     payload = {"username": user, "name": "Dummy Dummy"}
 

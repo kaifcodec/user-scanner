@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_bandcamp(user):
     url = f"https://bandcamp.com/{user}"
-    show_url = "https://bandcamp.com"
+    show_url = f"https://bandcamp.com/{user}"
 
     def process(response):
         if response.status_code == 200 and " collection | Bandcamp</title>" in response.text:
