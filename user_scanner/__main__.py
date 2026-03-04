@@ -32,6 +32,7 @@ from user_scanner.core.orchestrator import (
 )
 from user_scanner.core.result import Status
 from user_scanner.core.version import load_local_version
+from user_scanner.core.hudson import run_hudson_scan
 from user_scanner.utils.update import update_self
 from user_scanner.utils.updater_logic import check_for_updates
 
@@ -135,6 +136,12 @@ def main():
     )
 
     parser.add_argument("-U", "--update", action="store_true", help="Update the tool")
+
+    parser.add_argument(
+        "--hudson-scan",
+        action="store_true",
+        help="Check for infostealer intelligence using Hudson Rock's API",
+    )
 
     parser.add_argument("--version", action="store_true", help="Print version")
 
@@ -338,6 +345,9 @@ def main():
         else:
             fn = run_email_full_batch if is_email else run_user_full
             results.extend(fn(target, config))
+
+        if args.hudson_scan:
+            run_hudson_scan(target, is_email)
 
     if args.output:
         content = (
