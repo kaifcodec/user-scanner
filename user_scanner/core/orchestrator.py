@@ -103,32 +103,38 @@ def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
         display_name = cat_name.capitalize()
         for m in modules:
             all_modules.append(m)
-            site_key = get_site_name(m).capitalize()
-            module_to_cat[site_key] = display_name
+            module_to_cat[get_site_name(m)] = display_name
 
     with ThreadPoolExecutor(max_workers=60) as executor:
         exec_map = executor.map(
             lambda m: _worker_single(m, username, configs), all_modules
         )
         for result in exec_map:
-            cat_name = module_to_cat.get(result.site_name, "Unknown")
+            site_name = result.site_name
+            cat_name = (
+                module_to_cat.get(site_name, "Unknown") if site_name else "Unknown"
+            )
 
             result.update(category=cat_name)
             results.append(result)
 
-            if configs.only_found and not result.is_found():
-                continue
-
-            if cat_name not in printed_categories:
-                print(f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}")
-                printed_categories.add(cat_name)
-
-            result.show(configs)
+            if configs.only_found:
+                if result.is_found():
+                    if cat_name not in printed_categories:
+                        print(
+                            f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}"
+                        )
+                        printed_categories.add(cat_name)
+                    result.show(configs)
+            else:
+                if cat_name not in printed_categories:
+                    print(
+                        f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}"
+                    )
+                    printed_categories.add(cat_name)
+                result.show(configs)
 
     return results
-
-
-
 
 
 def make_request(url: str, **kwargs) -> httpx.Response:
