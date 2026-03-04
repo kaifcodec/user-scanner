@@ -179,6 +179,7 @@ def make_request(url: str, **kwargs) -> httpx.Response:
         except (httpx.ConnectTimeout, httpx.ReadTimeout) as e:
             if attempt == max_retries:
                 raise e
+    raise RuntimeError("Request failed after retries")
 
 
 def generic_validate(
