@@ -1,6 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
+
 def validate_stackoverflow(user: str) -> Result:
     url = f"https://stackoverflow.com/users/filter?search={user}"
     show_url = "https://stackoverflow.com"
@@ -12,7 +13,7 @@ def validate_stackoverflow(user: str) -> Result:
             if "No users matched your search." in text:
                 return Result.available()
 
-            pattern = f'>{user}<'
+            pattern = f">{user}<"
             if pattern in text:
                 return Result.taken()
 
@@ -21,16 +22,3 @@ def validate_stackoverflow(user: str) -> Result:
         return Result.error("Unexpected status code from Stack Overflow")
 
     return generic_validate(url, process, show_url=show_url)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_stackoverflow(user)
-
-    if result == Result.available():
-        print("Available!")
-    elif result == Result.taken():
-        print("Unavailable!")
-    else:
-        msg = result.get_reason()
-        print("Error occurred!" + msg)

@@ -1,7 +1,8 @@
 import re
+
+from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
-from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_tiktok(user: str) -> Result:
@@ -11,42 +12,34 @@ def validate_tiktok(user: str) -> Result:
     if user.isdigit():
         return Result.error("Usernames cannot contain numbers only")
 
-    if not re.match(r'^[a-zA-Z0-9_.]+$', user):
-        return Result.error("Usernames can only contain letters, numbers, underscores and periods")
+    if not re.match(r"^[a-zA-Z0-9_.]+$", user):
+        return Result.error(
+            "Usernames can only contain letters, numbers, underscores and periods"
+        )
 
     if user.startswith(".") or user.endswith("."):
         return Result.error("Username cannot start nor end with a period")
 
     headers = {
-        'User-Agent': get_random_user_agent(),
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        'Accept-Encoding': "identity",
-        'Accept-Language': "en-US,en;q=0.9",
-        'sec-fetch-dest': "document",
-        'Connection': "keep-alive"
+        "User-Agent": get_random_user_agent(),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Encoding": "identity",
+        "Accept-Language": "en-US,en;q=0.9",
+        "sec-fetch-dest": "document",
+        "Connection": "keep-alive",
     }
 
     url = f"https://www.tiktok.com/@{user}"
-    show_url = "https://tiktok.com"
+    show_url = f"https://www.tiktok.com/@{user}"
 
     def process(response) -> Result:
         if response.status_code == 200:
-            if "statuscode\":10221" in response.text.lower():
+            if 'statuscode":10221' in response.text.lower():
                 return Result.available()
             else:
                 return Result.taken()
         return Result.error("Unable to load tiktok")
 
-    return generic_validate(url, process, show_url=show_url, headers=headers, timeout=4.0)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_tiktok(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print(f"Error occurred! Reason: {result.get_reason()}")
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers, timeout=4.0
+    )

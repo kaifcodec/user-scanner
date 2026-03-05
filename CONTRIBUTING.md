@@ -7,7 +7,6 @@ This project separates two kinds of checks:
 - Username availability checks (under `user_scanner/user_scan/*`) — synchronous validators that the main username scanner uses.
 - Email OSINT checks (under `user_scanner/email_scan/`) — asynchronous, multi-step flows that probe signup pages or email-focused APIs. Put email-focused modules in `user_scanner/email_scan/` (subfolders like `social/`, `dev/`, `community`, `creator` etc. are fine — follow the existing tree).
 
-
 ---
 
 ## Module naming for both `email_scan` and `user_scan` modules
@@ -17,10 +16,10 @@ This project separates two kinds of checks:
 
 ---
 
-
 ## Email-scan (email_scan) — guide for contributors
 
 Minimal best-practices checklist for email modules
+
 - [ ] Put file in `user_scanner/email_scan/<category>/service.py`.
 - [ ] Export `async def validate_<service>(email: str) -> Result`.
 - [ ] Use `httpx.AsyncClient` for requests, with sensible timeouts and follow_redirects when needed.
@@ -37,13 +36,13 @@ from user_scanner.core.result import Result
 async def _check(email: str) -> Result:
     """
     Internal helper that performs the multi-step signup probe.
-    
-    This function demonstrates how to handle CSRF tokens, custom error 
+
+    This function demonstrates how to handle CSRF tokens, custom error
     messages (like IP bans), and passing the target URL back to Results.
     """
     # The display URL used for output and error reporting
     show_url = "https://mastodon.social"
-    
+
     signup_url = f"{show_url}/auth/sign_up"
     post_url = f"{show_url}/auth"
 
@@ -87,17 +86,17 @@ async def _check(email: str) -> Result:
             # 3. Analyze the response to determine account status
             if "has already been taken" in res_text:
                 return Result.taken(url=show_url)
-            
+
             elif "registration attempt has been blocked" in res_text:
                 return Result.error("Your IP has been flagged by Mastodon", url=show_url)
-            
+
             elif res_status == 429:
                 return Result.error("Rate limited; try using the '-d' flag", url=show_url)
-            
+
             elif res_status in [200, 302]:
                 # If no 'taken' message is found and status is OK/Redirect, it's available
                 return Result.available(url=show_url)
-            
+
             else:
                 return Result.error("Unexpected response body", url=show_url)
 
@@ -109,8 +108,8 @@ async def _check(email: str) -> Result:
 async def validate_mastodon(email: str) -> Result:
     """
     Public validator used by the email mode.
-    
-    All email modules must export a 'validate_<name>' function that 
+
+    All email modules must export a 'validate_<name>' function that
     returns a Result object.
     """
     return await _check(email)
@@ -118,11 +117,9 @@ async def validate_mastodon(email: str) -> Result:
 
 ```
 
-
 ---
 
 ## Username availability check guide:
-
 
 ### Validator function (user_scan/)
 
@@ -134,6 +131,7 @@ def validate_<sitename>(user: str) -> Result:
 ```
 
 Rules:
+
 - Single parameter: the username (str).
 - Return a Result object (use Result.available(), Result.taken(), or Result.error(msg)).
 - Keep the function synchronous unless you are implementing an optional async variant; prefer sync for consistency.
@@ -146,6 +144,7 @@ Rules:
 To keep validators DRY, the repository provides helper functions in `core/orchestrator.py`. Use these where appropriate.
 
 1. generic_validate
+
 - Purpose: Run a request for a given URL and let a small callback (processor) inspect the httpx.Response and return a Result.
 - Typical signature (example — consult the actual orchestrator implementation for exact parameter names):
   - `generic_validate(url: str, processor: Callable[[httpx.Response], Result], headers: Optional[dict] = None, show_url=None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
@@ -155,6 +154,7 @@ To keep validators DRY, the repository provides helper functions in `core/orches
 - Use case: Sites that return 200 for both found and not-found states and require checking the HTML body for a unique "not found" string (or other content inspection).
 
 ### Example `github.py` module:
+
 - This example shows how to use `generic_validate()` and how to return Result values with optional error messages.
 
 ```python
@@ -166,7 +166,7 @@ def validate_github(user: str) -> Result:
     Use this when the site requires complex logic or response body parsing.
     """
     url = f"https://github.com/signup_check/username?value={user}"
-    
+
     # Define show_url for clean output display
     show_url = "https://github.com"
 
@@ -185,7 +185,7 @@ def validate_github(user: str) -> Result:
     def process(response):
         """
         Internal processing function.
-        Note: You don't need to pass 'url' here; 
+        Note: You don't need to pass 'url' here;
         generic_validate will attach it automatically from the kwargs.
         """
         if response.status_code == 200:
@@ -199,25 +199,13 @@ def validate_github(user: str) -> Result:
 
         return Result.error(f"GitHub returned unexpected status: {response.status_code}")
 
-    # Pass show_url into generic_validate so the Orchestrator 
+    # Pass show_url into generic_validate so the Orchestrator
     # can attach it to the final Result object.
     return generic_validate(url, process, headers=headers, show_url=show_url)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_github(user)
-
-    if result.is_available():
-        print("Available!")
-    elif result.is_taken():
-        print(f"Unavailable! Site: {result.url}")
-    else:
-        print(f"Error: {result.get_reason()}")
-
 ```
 
 2. status_validate
+
 - Purpose: Simple helper for sites where availability can be determined purely from HTTP status codes (e.g., 404 = available, 200 = taken).
 - Typical signature (example):
   - `status_validate(url: str, available_status: int, taken_status: int, show_url=None, headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
@@ -262,7 +250,6 @@ Note: The exact parameter names and behavior of the orchestrator functions are d
 - If a platform requires API keys, OAuth, or heavy JS rendering, document it in the PR and consider an "advanced" module that can be enabled separately.
 
 ---
-
 
 ## Return values and error handling
 

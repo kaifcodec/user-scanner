@@ -1,28 +1,16 @@
-from user_scanner.core.orchestrator import status_validate
 from user_scanner.core.helpers import get_random_user_agent
+from user_scanner.core.orchestrator import status_validate
 
 
 def validate_cratesio(user):
     url = f"https://crates.io/api/v1/users/{user}"
-    show_url = "https://crates.io"
+    show_url = f"https://crates.io/users/{user}"
 
     headers = {
-        'User-Agent': get_random_user_agent(),
-        'Accept': "application/json",
-        'Referer': "https://crates.io/",
-        'sec-fetch-mode': "cors",
+        "User-Agent": get_random_user_agent(),
+        "Accept": "application/json",
+        "Referer": "https://crates.io/",
+        "sec-fetch-mode": "cors",
     }
 
     return status_validate(url, 404, 200, show_url=show_url, headers=headers)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_cratesio(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print("Error occurred!")

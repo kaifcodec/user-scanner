@@ -4,7 +4,7 @@ from user_scanner.core.result import Result
 
 def validate_steam(user):
     url = f"https://steamcommunity.com/id/{user}/"
-    show_url = "https://steamcommunity.com"
+    show_url = f"https://steamcommunity.com/id/{user}/"
 
     def process(response):
         if response.status_code == 200:
@@ -16,15 +16,3 @@ def validate_steam(user):
         return Result.error("Invalid status code")
 
     return generic_validate(url, process, show_url=show_url)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_steam(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print("Error occurred!")

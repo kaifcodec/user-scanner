@@ -3,14 +3,41 @@ import importlib.util
 from types import ModuleType
 from pathlib import Path
 from typing import Dict, List, Optional
+import inspect
 import random
 import threading
-import httpx
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from itertools import permutations
+from pathlib import Path
+from types import ModuleType
+from typing import Any, Callable, Dict, List, Optional
+
+import httpx
+
+LOUD_MODULES: Dict[str, List[str]] = {
+    "user": [],
+    "email": [
+        "leetcode",
+        "instagram",
+        "netflix",
+        "sexvid",
+        "made_porn",
+        "flirtbate",
+        "polarsteps",
+        "babestation",
+    ],
+}
+
+@dataclass(frozen=True)
+class ScanConfig:
+    allow_loud: bool = False
+    only_found: bool = False
+    verbose: bool = False
 
 
 def get_site_name(module) -> str:
-    name = module.__name__.split('.')[-1].capitalize().replace("_", ".")
+    name = module.__name__.split(".")[-1].capitalize().replace("_", ".")
     if name == "X":
         return "X (Twitter)"
     return name
@@ -37,12 +64,30 @@ def load_categories(is_email: bool = False) -> Dict[str, Path]:
     categories = {}
 
     for subfolder in root.iterdir():
-        if subfolder.is_dir() and \
-                subfolder.name.lower() not in ["cli", "utils", "core"] and \
-                "__" not in subfolder.name:  # Removes __pycache__
+        if (
+            subfolder.is_dir()
+            and subfolder.name.lower() not in ["cli", "utils", "core"]
+            and "__" not in subfolder.name
+        ):  # Removes __pycache__
             categories[subfolder.name] = subfolder.resolve()
 
     return categories
+
+
+def is_loud(name: str, is_email: bool = False) -> bool:
+    key = "email" if is_email else "user"
+    return name.lower() in LOUD_MODULES[key]
+
+
+def get_scan_func(module) -> Optional[Callable[[str], Any]]:
+    for attr_name in dir(module):
+        if not attr_name.startswith("validate_"):
+            continue
+
+        f = getattr(module, attr_name)
+        if inspect.isfunction(f) or inspect.iscoroutinefunction(f):
+            return f
+    return None
 
 
 def find_module(name: str, is_email: bool = False) -> List[ModuleType]:
@@ -57,8 +102,7 @@ def find_module(name: str, is_email: bool = False) -> List[ModuleType]:
 
 
 def find_category(module: ModuleType) -> str | None:
-
-    module_file = getattr(module, '__file__', None)
+    module_file = getattr(module, "__file__", None)
     if not module_file:
         return None
 
@@ -105,13 +149,13 @@ class ProxyManager:
     def _load_proxies(self, proxy_file: str) -> None:
         """Load proxies from a text file. Supports http://, https://, and socks5:// proxies."""
         try:
-            with open(proxy_file, 'r', encoding='utf-8') as f:
+            with open(proxy_file, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
-                    if line and not line.startswith('#'):
+                    if line and not line.startswith("#"):
                         # Add protocol if not present
-                        if not line.startswith(('http://', 'https://', 'socks5://')):
-                            line = 'http://' + line
+                        if not line.startswith(("http://", "https://", "socks5://")):
+                            line = "http://" + line
                         self.proxies.append(line)
 
             if not self.proxies:
@@ -172,8 +216,10 @@ def get_proxy_count() -> int:
 
 # Function to return random user agent
 
+
 def get_random_user_agent():
-    agents = [                                                                                                                                                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+    agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
@@ -181,9 +227,8 @@ def get_random_user_agent():
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0",
         "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Mobile/15E148 Safari/604.1",
         "Mozilla/5.0 (Linux; Android 15; Pixel 9 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
-        "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36"
-             ]
+        "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+    ]
     """return random"""
     random_agent = random.choice(agents)
     return random_agent
-

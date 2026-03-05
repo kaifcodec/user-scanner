@@ -1,8 +1,8 @@
 import re
 
+from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
-from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_battlenet(user: str) -> Result:
@@ -30,7 +30,7 @@ def validate_battlenet(user: str) -> Result:
         return Result.error("Must start with letter, only letters and numbers allowed")
 
     url = f"https://overwatch.blizzard.com/en-us/search/account-by-name/{username}"
-    show_url = "https://battle.net"
+    show_url = f"https://overwatch.blizzard.com/en-us/search/account-by-name/{username}/"
 
     headers = {
         "User-Agent": get_random_user_agent(),
@@ -46,7 +46,9 @@ def validate_battlenet(user: str) -> Result:
             data = response.json()
 
             if isinstance(data, list) and len(data) == 0:
-                return Result.available("Battle.net allows duplicate usernames and distinguishes accounts with a numeric tag")
+                return Result.available(
+                    "Battle.net allows duplicate usernames and distinguishes accounts with a numeric tag"
+                )
             elif isinstance(data, list) and len(data) > 0:
                 end = "es" if len(data) > 1 else ""
                 return Result.taken(f"{len(data)} match{end}")
@@ -56,17 +58,10 @@ def validate_battlenet(user: str) -> Result:
             return Result.error("Failed to parse response")
 
     return generic_validate(
-        url, process, show_url=show_url, headers=headers, timeout=6.0, follow_redirects=True
+        url,
+        process,
+        show_url=show_url,
+        headers=headers,
+        timeout=6.0,
+        follow_redirects=True,
     )
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_battlenet(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print(f"Error occurred! Reason: {result.get_reason()}")

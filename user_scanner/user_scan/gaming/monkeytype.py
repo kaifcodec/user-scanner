@@ -1,12 +1,14 @@
+from urllib.parse import quote
+
+from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
-from urllib.parse import quote
-from user_scanner.core.helpers import get_random_user_agent
+
 
 def validate_monkeytype(user: str) -> Result:
     safe_user = quote(user, safe="")
     url = f"https://api.monkeytype.com/users/checkName/{safe_user}"
-    show_url = "https://monkeytype.com"
+    show_url = f"https://monkeytype.com/profile/{safe_user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),
@@ -40,15 +42,3 @@ def validate_monkeytype(user: str) -> Result:
         return Result.error("Invalid status code")
 
     return generic_validate(url, process, show_url=show_url, headers=headers)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_monkeytype(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print("Error occurred!")

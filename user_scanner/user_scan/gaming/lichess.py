@@ -1,22 +1,27 @@
 import re
-from user_scanner.core.orchestrator import generic_validate, Result
+
+from user_scanner.core.orchestrator import Result, generic_validate
 
 
 def validate_lichess(user: str) -> Result:
     if not (2 <= len(user) <= 20):
         return Result.error("Length must be 2-20 characters")
 
-    if not re.match(r'^[a-zA-Z0-9_-]+$', user):
-        return Result.error("Usernames can only contain letters, numbers, underscores, and hyphens")
+    if not re.match(r"^[a-zA-Z0-9_-]+$", user):
+        return Result.error(
+            "Usernames can only contain letters, numbers, underscores, and hyphens"
+        )
 
-    if re.search(r'[_-]{2,}', user):
-        return Result.error("Username cannot contain consecutive underscores or hyphens")
+    if re.search(r"[_-]{2,}", user):
+        return Result.error(
+            "Username cannot contain consecutive underscores or hyphens"
+        )
 
-    if not re.match(r'.*[a-zA-Z0-9]$', user):
+    if not re.match(r".*[a-zA-Z0-9]$", user):
         return Result.error("Username must end with a letter or a number")
 
     url = f"https://lichess.org/api/player/autocomplete?term={user}&exists=1"
-    show_url = "https://lichess.org"
+    show_url = f"https://lichess.org/@/{user}"
 
     def process(response):
         res_text = response.text.strip().lower()
@@ -27,15 +32,3 @@ def validate_lichess(user: str) -> Result:
         return Result.error("Unexpected error, report it via github issues")
 
     return generic_validate(url, process, show_url=show_url, timeout=3.0)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_lichess(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print(f"Error occurred! Reason: {result.get_reason()}")

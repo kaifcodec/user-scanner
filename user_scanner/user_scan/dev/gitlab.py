@@ -1,42 +1,30 @@
+from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
-from user_scanner.core.helpers import get_random_user_agent
 
 
 def validate_gitlab(user):
     url = f"https://gitlab.com/users/{user}/exists"
-    show_url = "https://gitlab.com"
+    show_url = f"https://gitlab.com/{user}"
 
     headers = {
-        'User-Agent': get_random_user_agent(),
-        'Accept': "application/json, text/plain, */*",
-        'X-Requested-With': "XMLHttpRequest",
-        'Referer': "https://gitlab.com/users/sign_up",
+        "User-Agent": get_random_user_agent(),
+        "Accept": "application/json, text/plain, */*",
+        "X-Requested-With": "XMLHttpRequest",
+        "Referer": "https://gitlab.com/users/sign_up",
     }
 
     def process(response):
         if response.status_code == 200:
             data = response.json()
-            if 'exists' in data:
+            if "exists" in data:
                 # Corrected: Compare against Python boolean True/False
                 # AVAILABLE (return 1) if "exists": true
-                if data['exists'] is False:
+                if data["exists"] is False:
                     return Result.available()
                 # UNAVAILABLE (return 0) if "exists": false
-                elif data['exists'] is True:
+                elif data["exists"] is True:
                     return Result.taken()
         return Result.error("Invalid status code")
 
     return generic_validate(url, process, show_url=show_url, headers=headers)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_gitlab(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print("Error occurred!")

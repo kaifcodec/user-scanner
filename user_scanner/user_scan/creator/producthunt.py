@@ -1,6 +1,7 @@
 import re
-from user_scanner.core.orchestrator import status_validate, Result
+
 from user_scanner.core.helpers import get_random_user_agent
+from user_scanner.core.orchestrator import Result, status_validate
 
 
 def validate_producthunt(user: str) -> Result:
@@ -8,29 +9,19 @@ def validate_producthunt(user: str) -> Result:
         return Result.error("Length must be 2-32 characters.")
 
     # Rules: Letters, numbers, and underscores only.
-    if not re.match(r'^[a-zA-Z0-9_]+$', user):
+    if not re.match(r"^[a-zA-Z0-9_]+$", user):
         return Result.error("Only use letters, numbers, and underscores.")
 
     url = f"https://www.producthunt.com/@{user}"
-    show_url = "https://producthunt.com"
+    show_url = f"https://www.producthunt.com/@{user}"
 
     headers = {
-        'User-Agent': get_random_user_agent(),
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        'Accept-Encoding': "gzip, deflate, br",
-        'Accept-Language': "en-US,en;q=0.9",
+        "User-Agent": get_random_user_agent(),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
     }
 
-    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_producthunt(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print(f"Error occurred! Reason: {result.get_reason()}")
+    return status_validate(
+        url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True
+    )

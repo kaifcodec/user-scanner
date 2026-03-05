@@ -1,8 +1,10 @@
 import json
 import re
+
 import httpx
-from user_scanner.core.orchestrator import generic_validate, Result
+
 from user_scanner.core.helpers import get_random_user_agent
+from user_scanner.core.orchestrator import Result, generic_validate
 
 
 def validate_twitch(user: str) -> Result:
@@ -10,37 +12,36 @@ def validate_twitch(user: str) -> Result:
         return Result.error("Username must be between 4 and 25 characters long")
 
     if not re.match(r"^[a-zA-Z0-9]+$", user):
-        return Result.error("Username can only contain alphanumeric characters (a-z, 0-9)")
+        return Result.error(
+            "Username can only contain alphanumeric characters (a-z, 0-9)"
+        )
 
     url = "https://gql.twitch.tv/gql"
-    show_url = "https://twitch.tv"
+    show_url = f"https://twitch.tv/{user}"
 
     payload = [
-      {
-        "operationName": "ChannelLayout",
-        "variables": {
-          "channelLogin": user,
-          "includeIsDJ": True
-        },
-        "extensions": {
-          "persistedQuery": {
-            "version": 1,
-            "sha256Hash": "4c361fa1874dc8f6a49e62b56aa1032eccb31311bdb653918a924f96a8b2d1a6"
-          }
+        {
+            "operationName": "ChannelLayout",
+            "variables": {"channelLogin": user, "includeIsDJ": True},
+            "extensions": {
+                "persistedQuery": {
+                    "version": 1,
+                    "sha256Hash": "4c361fa1874dc8f6a49e62b56aa1032eccb31311bdb653918a924f96a8b2d1a6",
+                }
+            },
         }
-      }
     ]
 
     headers = {
-      'User-Agent': get_random_user_agent(),
-      'Accept-Encoding': "identity",
-      'Content-Type': "application/json",
-      'sec-ch-ua-platform': "\"Android\"",
-      'accept-language': "en-US",
-      'client-id': "kimne78kx3ncx6brgo4mv6wki5h1ko",
-      'client-version': "7bb0442d-1175-4ab5-9d32-b1f370536cbf",
-      'origin': "https://m.twitch.tv",
-      'referer': "https://m.twitch.tv/",
+        "User-Agent": get_random_user_agent(),
+        "Accept-Encoding": "identity",
+        "Content-Type": "application/json",
+        "sec-ch-ua-platform": '"Android"',
+        "accept-language": "en-US",
+        "client-id": "kimne78kx3ncx6brgo4mv6wki5h1ko",
+        "client-version": "7bb0442d-1175-4ab5-9d32-b1f370536cbf",
+        "origin": "https://m.twitch.tv",
+        "referer": "https://m.twitch.tv/",
     }
 
     def process(response: httpx.Response) -> Result:
@@ -52,8 +53,8 @@ def validate_twitch(user: str) -> Result:
         except json.JSONDecodeError as e:
             return Result.error(f"Failed to decode JSON response: {e}")
 
-        user_data = data[0].get('data', {}).get('user', {})
-        typename = user_data.get('__typename')
+        user_data = data[0].get("data", {}).get("user", {})
+        typename = user_data.get("__typename")
 
         if typename == "User":
             return Result.taken()
@@ -63,21 +64,11 @@ def validate_twitch(user: str) -> Result:
             return Result.error("Unexpected GraphQL response structure or type.")
 
     return generic_validate(
-        url, process, show_url=show_url, headers=headers,
-        method='POST',
+        url,
+        process,
+        show_url=show_url,
+        headers=headers,
+        method="POST",
         content=json.dumps(payload),
-        follow_redirects=False
+        follow_redirects=False,
     )
-
-
-if __name__ == "__main__":
-    user = input("Twitch Username?: ").strip()
-    result = validate_twitch(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        reason = result.get_reason()
-        print(f"Error occurred! Reason: {reason}")

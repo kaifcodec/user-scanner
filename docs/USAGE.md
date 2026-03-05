@@ -6,7 +6,7 @@ User Scanner provides a powerful **Library Mode** via its core engine. This allo
 
 ### Quick Start: Single Module Scan
 
-The engine automatically detects whether you are using a module from `email_scan` or `user_scan` by inspecting its path. It then adjusts the result labels (e.g., "Registered" vs "Taken") automatically.
+The engine automatically detects whether you are using a module from `email_scan` or `user_scan` by inspecting its path. It then adjusts the result labels (e.g., "Registered" vs "Found") automatically.
 
 ### Email Scan Example
 ```python
@@ -45,7 +45,7 @@ from user_scanner.core import engine
 from user_scanner.user_scan.dev import github
 
 async def main():
-    # Engine detects 'user_scan' path -> Result status: "Available" / "Taken" / "Error"
+    # Engine detects 'user_scan' path -> Result status: "Not Found" / "Found" / "Error"
     result = await engine.check(github, "johndoe123")
     
     print(result.to_json())
@@ -59,7 +59,7 @@ Output:
         "username": "johndoe123",
         "category": "Dev",
         "site_name": "Github",
-        "status": "Taken",
+        "status": "Found",
         "url": "https://github.com",
         "reason": ""
 }
@@ -95,7 +95,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Bluesky",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://bsky.social",
     "reason": ""
   },
@@ -103,7 +103,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Discord",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://discord.com",
     "reason": ""
   },
@@ -111,7 +111,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Instagram",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://instagram.com",
     "reason": ""
   },
@@ -119,7 +119,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Mastodon",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://mastodon.social",
     "reason": ""
   },
@@ -127,7 +127,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Pinterest",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://pinterest.com",
     "reason": ""
   },
@@ -135,7 +135,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Reddit",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://reddit.com",
     "reason": ""
   },
@@ -143,7 +143,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Snapchat",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://snapchat.com",
     "reason": ""
   },
@@ -159,7 +159,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Telegram",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://t.me",
     "reason": ""
   },
@@ -167,7 +167,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Threads",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://threads.net",
     "reason": ""
   },
@@ -183,7 +183,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "X (Twitter)",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://x.com",
     "reason": ""
   },
@@ -191,7 +191,7 @@ Output:
     "username": "johndoe123",
     "category": "Social",
     "site_name": "Youtube",
-    "status": "Taken",
+    "status": "Found",
     "url": "https://m.youtube.com",
     "reason": ""
   }

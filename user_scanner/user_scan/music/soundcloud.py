@@ -4,7 +4,7 @@ from user_scanner.core.result import Result
 
 def validate_soundcloud(user):
     url = f"https://soundcloud.com/{user}"
-    show_url = "https://soundcloud.com"
+    show_url = f"https://soundcloud.com/{user}"
 
     def process(response):
         if response.status_code == 403:
@@ -16,11 +16,11 @@ def validate_soundcloud(user):
         if response.status_code == 200:
             text = response.text
 
-            if f'soundcloud://users:{user}' in text:
+            if f"soundcloud://users:{user}" in text:
                 return Result.taken()
             if f'"username":"{user}"' in text:
                 return Result.taken()
-            if 'soundcloud://users:' in text and '"username":"' in text:
+            if "soundcloud://users:" in text and '"username":"' in text:
                 return Result.taken()
 
             return Result.error("Unexpected response, report it via GitHub issues")
@@ -28,15 +28,3 @@ def validate_soundcloud(user):
         return Result.error("Unknown Error report it via GitHub issues")
 
     return generic_validate(url, process, show_url=show_url, follow_redirects=True)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_soundcloud(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print("Error occurred!")

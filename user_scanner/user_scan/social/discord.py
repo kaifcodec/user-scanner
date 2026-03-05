@@ -1,5 +1,6 @@
-from user_scanner.core.result import Result
 from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
+
 
 def validate_discord(user):
     url = "https://discord.com/api/v9/unique-username/username-attempt-unauthed"
@@ -11,7 +12,7 @@ def validate_discord(user):
         "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
         "content-type": "application/json",
         "origin": "https://discord.com",
-        "referer": "https://discord.com/register"
+        "referer": "https://discord.com/register",
     }
 
     data = {"username": user}
@@ -25,16 +26,12 @@ def validate_discord(user):
                 return Result.available()
         return Result.error("Invalid status code")
 
-    return generic_validate(url, process, show_url=show_url, method="POST", json=data, headers=headers, timeout=3.0)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_discord(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print("Error occurred!")
+    return generic_validate(
+        url,
+        process,
+        show_url=show_url,
+        method="POST",
+        json=data,
+        headers=headers,
+        timeout=3.0,
+    )

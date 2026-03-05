@@ -1,5 +1,8 @@
 from enum import Enum
+
 from colorama import Fore, Style
+
+from user_scanner.core.helpers import ScanConfig
 
 # Added {url} to the debug message
 DEBUG_MSG = """Result {{
@@ -39,13 +42,16 @@ class Status(Enum):
     TAKEN = 0
     AVAILABLE = 1
     ERROR = 2
+    SKIPPED = 3
 
     def to_label(self, is_email=False):
         if self == Status.ERROR:
             return "Error"
+        elif self == Status.SKIPPED:
+            return "Skipped"
         if is_email:
             return "Registered" if self == Status.TAKEN else "Not Registered"
-        return "Taken" if self == Status.TAKEN else "Available"
+        return "Found" if self == Status.TAKEN else "Not Found"
 
     def __str__(self):
         return self.to_label(is_email=False)
@@ -82,6 +88,10 @@ class Result:
         return cls(Status.ERROR, reason, **kwargs)
 
     @classmethod
+    def skipped(cls, reason: str | Exception | None = None, **kwargs):
+        return cls(Status.SKIPPED, reason, **kwargs)
+
+    @classmethod
     def from_number(cls, i: int, reason: str | Exception | None = None):
         try:
             status = Status(i)
@@ -96,12 +106,19 @@ class Result:
         return self.reason is not None
 
     def get_reason(self) -> str:
+        if self.status == Status.SKIPPED and self.reason is None:
+            return "Notifies the target by forgot password email or similar"
+
         if self.reason is None:
             return ""
+
         if isinstance(self.reason, str):
             return self.reason
+
         msg = humanize_exception(self.reason)
         return f"{type(self.reason).__name__}: {msg.capitalize()}"
+
+
 
     def as_dict(self) -> dict:
         return {
@@ -110,7 +127,7 @@ class Result:
             "username": self.username,
             "site_name": self.site_name,
             "category": self.category,
-            "url": self.url, # Added url to dictionary output
+            "url": self.url,  # Added url to dictionary output
             "is_email": self.is_email,
         }
 
@@ -141,37 +158,48 @@ class Result:
     def get_output_color(self) -> str:
         if self == Status.ERROR:
             return Fore.YELLOW
-        elif self.is_email:
-            return Fore.GREEN if self == Status.TAKEN else Fore.RED
+        elif self == Status.SKIPPED:
+            return Fore.WHITE
         else:
-            return Fore.GREEN if self == Status.AVAILABLE else Fore.RED
+            return Fore.GREEN if self == Status.TAKEN else Fore.RED
 
     def get_output_icon(self) -> str:
         if self == Status.ERROR:
             return "[!]"
-        elif self.is_email:
-            return "[✔]" if self == Status.TAKEN else "[✘]"
+        elif self == Status.SKIPPED:
+            return "[~]"
         else:
-            return "[✔]" if self == Status.AVAILABLE else "[✘]"
+            return "[✔]" if self == Status.TAKEN else "[✘]"
 
-    def get_console_output(self, show_url=False) -> str:
+    def get_console_output(self, configs: ScanConfig | None = None) -> str:
         site_name = self.site_name
         status_text = self.status.to_label(self.is_email)
         username = ""
         if self.username:
             username = f"({self.username})"
-        
-        # Added logic to include URL in console output if show_url is True
-        url_display = f" [{self.url}]" if show_url and self.url else ""
-
         color = self.get_output_color()
         icon = self.get_output_icon()
+
+        # Added logic to include URL in console output if show_url is True
+        ## Color the URL in white for better visibility
+        url_display = (
+            f" {Fore.WHITE}[{self.url}]{color}"
+            if (configs and configs.verbose) and self.url
+            else ""
+        )
 
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
         return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{Style.RESET_ALL}"
 
-    def show(self, show_url=False):
-        """Prints the console output and returns itself for chaining"""
+    def is_found(self) -> bool:
+        """Returns True if the target was found or registered (Status.TAKEN)"""
+        return self.status == Status.TAKEN
+
+    def show(self, configs: ScanConfig):
+        """Prints the console output and returns itself for chaining.
+        If only_found is True, only results with Status.TAKEN are printed."""
         # Updated show() to accept and pass the show_url flag
-        print(self.get_console_output(show_url=show_url))
+        if configs.only_found and self.status != Status.TAKEN:
+            return self
+        print(self.get_console_output(configs))
         return self

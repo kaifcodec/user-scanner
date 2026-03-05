@@ -39,16 +39,6 @@ def validate_roblox(user: str) -> Result:
     # If rate limited, uses a simple status validation
     url = f"https://www.roblox.com/user.aspx?username={user}"
 
-    return status_validate(url, 404, [200, 302], show_url=show_url, follow_redirects=True)
-
-
-if __name__ == "__main__":
-    user = input("Username?: ").strip()
-    result = validate_roblox(user)
-
-    if result == 1:
-        print("Available!")
-    elif result == 0:
-        print("Unavailable!")
-    else:
-        print("Error occurred!")
+    return status_validate(
+        url, 404, [200, 302], show_url=show_url, follow_redirects=True
+    )
