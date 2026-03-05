@@ -1,6 +1,8 @@
 import importlib
 import importlib.util
 import inspect
+import json
+import os
 import random
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -25,6 +27,9 @@ LOUD_MODULES: Dict[str, List[str]] = {
         "babestation",
     ],
 }
+
+CONFIG_PATH = Path(__file__).parent.parent / "config.json"
+
 
 @dataclass(frozen=True)
 class ScanConfig:
@@ -262,3 +267,47 @@ def get_random_user_agent():
     """return random"""
     random_agent = random.choice(agents)
     return random_agent
+
+
+def _get_config_path(path: str | Path | None = None) -> Path:
+    """
+    Determine the config path in this order:
+      1. explicit path argument (if provided)
+      2. environment variable USER_SCANNER_CONFIG (if set)
+      3. default CONFIG_PATH
+    """
+    if path:
+        return Path(path)
+    env = os.environ.get("USER_SCANNER_CONFIG")
+    if env:
+        return Path(env)
+    return CONFIG_PATH
+
+
+def load_config(path: str | Path | None = None) -> dict:
+    cp = _get_config_path(path)
+    if cp.exists():
+        try:
+            return json.loads(cp.read_text())
+        except json.JSONDecodeError:
+            # This prevents the crash on corrupted JSON
+            pass
+
+    default = {
+        "auto_update_status": True,
+        "auto_hudson_prompt": True
+    }
+    cp.parent.mkdir(parents=True, exist_ok=True)
+    cp.write_text(json.dumps(default, indent=2))
+    return default
+
+
+
+def save_config_value(key: str, value: Any, path: str | Path | None = None):
+    """Generic helper to update any specific key in the config."""
+    cp = _get_config_path(path)
+    content = load_config(path)
+    content[key] = value
+    cp.parent.mkdir(parents=True, exist_ok=True)
+    cp.write_text(json.dumps(content, indent=2))
+

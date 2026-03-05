@@ -1,5 +1,6 @@
 import sys
 import threading
+import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -8,6 +9,7 @@ import pytest
 from user_scanner.__main__ import main
 from user_scanner.core import helpers
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import _get_config_path, load_config, save_config_value, CONFIG_PATH
 
 
 def test_generate_permutations():
@@ -364,3 +366,75 @@ http://3""")
         t.join()
 
     assert len(results) == 50
+
+
+def test_get_config_path_default(monkeypatch):
+    """Test that it returns the default path when no environment variable is set."""
+    monkeypatch.delenv("USER_SCANNER_CONFIG", raising=False)
+    path = _get_config_path()
+    # This matches your default CONFIG_PATH logic
+    assert path == CONFIG_PATH
+
+def test_get_config_path_env_override(monkeypatch, tmp_path):
+    """Test that environment variable USER_SCANNER_CONFIG overrides the default path."""
+    custom_path = tmp_path / "custom_config.json"
+    monkeypatch.setenv("USER_SCANNER_CONFIG", str(custom_path))
+    path = _get_config_path()
+    assert path == custom_path
+
+def test_load_config_creates_default(tmp_path):
+    """Test that a default config is created with correct keys if the file doesn't exist."""
+    config_file = tmp_path / "new_config.json"
+    data = load_config(path=config_file)
+    
+    assert config_file.exists()
+    assert data["auto_update_status"] is True
+    assert data["auto_hudson_prompt"] is True
+
+def test_load_config_reads_existing(tmp_path):
+    """Test that existing config data is correctly loaded from the file."""
+    config_file = tmp_path / "existing.json"
+    existing_data = {
+        "auto_update_status": False, 
+        "auto_hudson_prompt": False
+    }
+    config_file.write_text(json.dumps(existing_data))
+    
+    data = load_config(path=config_file)
+    assert data == existing_data
+
+def test_save_config_value_updates_keys(tmp_path):
+    """Test that save_config_value updates specific keys without losing others."""
+    config_file = tmp_path / "test_save.json"
+    
+    # 1. Update update_status to False
+    save_config_value("auto_update_status", False, path=config_file)
+    data = load_config(path=config_file)
+    assert data["auto_update_status"] is False
+    assert data["auto_hudson_prompt"] is True  # Should remain default
+
+    # 2. Update hudson_prompt to False
+    save_config_value("auto_hudson_prompt", False, path=config_file)
+    data = load_config(path=config_file)
+    assert data["auto_hudson_prompt"] is False
+    assert data["auto_update_status"] is False # Should remain False from previous step
+
+def test_load_config_handles_corrupt_json(tmp_path):
+    """Test that corrupted JSON in the config file triggers a reset to defaults."""
+    config_file = tmp_path / "corrupt.json"
+    # Write invalid JSON content
+    config_file.write_text("{ 'broken': true, }") 
+    
+    # load_config should catch JSONDecodeError and return default dict
+    data = load_config(path=config_file)
+    assert data["auto_update_status"] is True
+    assert data["auto_hudson_prompt"] is True
+
+def test_save_config_value_creates_directory(tmp_path):
+    """Test that the helper creates the parent directory if it doesn't exist."""
+    nested_path = tmp_path / "subdir" / "nested_config.json"
+    
+    save_config_value("auto_update_status", True, path=nested_path)
+    
+    assert nested_path.exists()
+    assert nested_path.parent.is_dir()
