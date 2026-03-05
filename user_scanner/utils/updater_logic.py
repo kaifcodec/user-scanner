@@ -38,7 +38,7 @@ def check_for_updates():
                 sys.exit(0)
 
             elif choice == "d":
-                save_config_value(False)
+                save_config_value("auto_update_status", False)
                 print(f"[{Y}*{X}] {R}Auto-update checks disabled.{X}")
 
     except Exception as e:
