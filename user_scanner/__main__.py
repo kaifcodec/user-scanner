@@ -18,7 +18,6 @@ from user_scanner.core.email_orchestrator import (
 from user_scanner.core.helpers import (
     ScanConfig,
     find_module,
-    generate_permutations,
     get_proxy_count,
     get_site_name,
     is_loud,
