@@ -36,3 +36,4 @@ async def _check(email: str) -> Result:
 
 async def validate_boot(email: str) -> Result:
     return await _check(email)
+    

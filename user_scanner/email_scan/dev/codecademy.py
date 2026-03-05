@@ -1,30 +1,50 @@
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import generic_validate
+import httpx
+import re
 from user_scanner.core.result import Result
 
 
-def validate_boot(user):
-    url = f"https://gitlab.com/users/{user}/exists"
-    show_url = f"https://boot.dev/u/{user}"
-
+async def _check(email: str) -> Result:
+    show_url = "https://codecademy.com"
     headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "application/json, text/plain, */*",
-        "X-Requested-With": "XMLHttpRequest",
-        "Referer": "https://gitlab.com/users/sign_up",
+        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.codecademy.com/register?redirect=%2F',
+        'Content-Type': 'application/json',
+        'Origin': 'https://www.codecademy.com',
     }
 
-    def process(response):
-        if response.status_code == 200:
-            data = response.json()
-            if "exists" in data:
-                # Corrected: Compare against Python boolean True/False
-                # AVAILABLE (return 1) if "exists": true
-                if data["exists"] is False:
-                    return Result.available()
-                # UNAVAILABLE (return 0) if "exists": false
-                elif data["exists"] is True:
-                    return Result.taken()
-        return Result.error("Invalid status code")
+    try:
+        async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as client:
+            init_res = await client.get("https://www.codecademy.com/register", headers=headers)
 
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+            csrf_match = re.search(
+                r'name="csrf-token" content="([^"]+)"', init_res.text)
+            if not csrf_match:
+                return Result.error("Could not find CSRF token")
+
+            headers["X-CSRF-Token"] = csrf_match.group(1)
+
+            payload = {"user": {"email": email}}
+
+            response = await client.post(
+                'https://www.codecademy.com/register/validate',
+                headers=headers,
+                json=payload
+            )
+
+            if response.status_code == 400 and 'has already been taken' in response.text:
+                return Result.taken(url=show_url)
+            elif response.status_code == 200:
+                return Result.available(url=show_url)
+
+            return Result.error(f"Unexpected response: {response.status_code}")
+
+    except httpx.TimeoutException:
+        return Result.error("Connection timed out")
+    except Exception as e:
+        return Result.error(str(e))
+
+
+async def validate_codecademy(email: str) -> Result:
+    return await _check(email)
