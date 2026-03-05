@@ -5,6 +5,7 @@ import sys
 import time
 
 from colorama import Fore, Style
+from itertools import islice
 from dataclasses import replace
 
 from user_scanner.cli.banner import print_banner
@@ -17,7 +18,6 @@ from user_scanner.core.email_orchestrator import (
 from user_scanner.core.helpers import (
     ScanConfig,
     find_module,
-    generate_permutations,
     get_proxy_count,
     get_site_name,
     is_loud,
@@ -34,6 +34,8 @@ from user_scanner.core.result import Status
 from user_scanner.core.version import load_local_version
 from user_scanner.utils.update import update_self
 from user_scanner.utils.updater_logic import check_for_updates
+
+from user_scanner.core.patterns import expand_patterns_random, count_patterns
 
 # Color configs
 R = Fore.RED
@@ -86,10 +88,6 @@ def main():
         "--verbose",
         action="store_true",
         help="Enable verbose output to show urls of the websites",
-    )
-
-    parser.add_argument(
-        "-p", "--permute", type=str, help="Generate permutations using a pattern"
     )
 
     parser.add_argument(
@@ -237,7 +235,7 @@ def main():
                 f"{C}[+] Loaded {len(valid_emails)} {'email' if len(valid_emails) == 1 else 'emails'} from {args.email_file}{X}"
             )
             is_email = True
-            targets = valid_emails
+            targets_found = valid_emails
         except FileNotFoundError:
             print(f"{R}[✘] Error: File not found: {args.email_file}{X}")
             sys.exit(1)
@@ -262,7 +260,7 @@ def main():
                 f"{C}[+] Loaded {len(usernames)} {'username' if len(usernames) == 1 else 'usernames'} from {args.username_file}{X}"
             )
             is_email = False
-            targets = usernames
+            targets_found = usernames
         except FileNotFoundError:
             print(f"{R}[✘] Error: File not found: {args.username_file}{X}")
             sys.exit(1)
@@ -276,16 +274,24 @@ def main():
             sys.exit(1)
 
         target_name = args.username or args.email
-        targets = [target_name]
+        targets_found = [target_name]
 
     # Handle permutations (only for single username/email)
-    if args.permute and not (args.username_file or args.email_file):
-        target_name = args.username or args.email
-        targets = generate_permutations(target_name, args.permute, args.stop, is_email)
-        print(C + f"[+] Generated {len(targets)} permutations" + Style.RESET_ALL)
-    elif args.permute and (args.username_file or args.email_file):
-        print(f"{R}[✘] Error: Permutations not supported with file-based scanning{X}")
-        sys.exit(1)
+
+    targets = []
+    for target_name in targets_found:
+        temp_targets = list(islice(expand_patterns_random(target_name), args.stop))
+        targets.extend(temp_targets)
+        if len(temp_targets) > 1:
+            total = count_patterns(target_name)
+            if total > len(temp_targets):
+                print(
+                    C + f"[+] Scanning {len(temp_targets)} of {total} permutations" + Style.RESET_ALL
+                )
+            else:
+                print(
+                    C + f"[+] Scanning {len(temp_targets)} permutations" + Style.RESET_ALL
+                )
 
     results = []
 
