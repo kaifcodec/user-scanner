@@ -1,4 +1,3 @@
-from user_scanner.utils import updater_logic as ul
 from user_scanner.core import helpers as hl
 
 
