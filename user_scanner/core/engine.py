@@ -40,7 +40,7 @@ async def check(module: ModuleType, target: str) -> Result:
 
 
 async def check_category(category_name: str, target: str, is_email: bool = True) -> List[Result]:
-    categories = load_categories(is_email=is_email)
+    categories = load_categories(is_email=is_email, nsfw=True)
     cat_path = next((p for name, p in categories.items()
                     if name.lower() == category_name.lower()), None)
 
@@ -54,7 +54,7 @@ async def check_category(category_name: str, target: str, is_email: bool = True)
 
 
 async def check_all(target: str, is_email: bool = True) -> List[Result]:
-    categories = load_categories(is_email=is_email)
+    categories = load_categories(is_email=is_email, nsfw=True)
     results = []
 
     all_tasks = [check_category(cat_name, target, is_email)

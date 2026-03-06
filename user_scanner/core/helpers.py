@@ -30,6 +30,7 @@ LOUD_MODULES: Dict[str, List[str]] = {
 @dataclass(frozen=True)
 class ScanConfig:
     allow_loud: bool = False
+    nsfw: bool = False
     only_found: bool = False
     verbose: bool = False
 
@@ -58,7 +59,7 @@ def load_modules(category_path: Path) -> List[ModuleType]:
 
 
 @functools.lru_cache(maxsize=None)
-def load_categories(is_email: bool = False) -> Dict[str, Path]:
+def load_categories(is_email: bool = False, nsfw: bool = False) -> Dict[str, Path]:
     folder_name = "email_scan" if is_email else "user_scan"
     root = Path(__file__).resolve().parent.parent / folder_name
     categories = {}
@@ -67,8 +68,9 @@ def load_categories(is_email: bool = False) -> Dict[str, Path]:
         if (
             subfolder.is_dir()
             and subfolder.name.lower() not in ["cli", "utils", "core"]
-            and "__" not in subfolder.name
-        ):  # Removes __pycache__
+            and "__" not in subfolder.name  # Removes __pycache__
+            and (nsfw or subfolder.name != "adult")  # Remove nsfw sites
+        ):
             categories[subfolder.name] = subfolder.resolve()
 
     return categories
@@ -90,12 +92,12 @@ def get_scan_func(module) -> Optional[Callable[[str], Any]]:
     return None
 
 
-def find_module(name: str, is_email: bool = False) -> List[ModuleType]:
+def find_module(name: str, is_email: bool = False, nsfw: bool = False) -> List[ModuleType]:
     name = name.lower()
 
     return [
         module
-        for category_path in load_categories(is_email).values()
+        for category_path in load_categories(is_email, nsfw).values()
         for module in load_modules(category_path)
         if module.__name__.split(".")[-1].lower() == name
     ]
@@ -107,7 +109,7 @@ def find_category(module: ModuleType) -> str | None:
         return None
 
     category = Path(module_file).parent.name.lower()
-    if category in load_categories(False) or category in load_categories(True):
+    if category in load_categories(False, True) or category in load_categories(True, True):
         return category.capitalize()
 
     return None

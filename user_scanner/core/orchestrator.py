@@ -95,7 +95,7 @@ def run_user_category(
 def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
     results = []
     all_modules = []
-    categories = list(load_categories().items())
+    categories = list(load_categories(nsfw=configs.nsfw).items())
     module_to_cat = {}
     printed_categories = set()
 
@@ -105,7 +105,7 @@ def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
         for m in modules:
             all_modules.append(m)
             # Match the worker's capitalization exactly to prevent "Unknown" category bugs
-            site_key = get_site_name(m).capitalize() 
+            site_key = get_site_name(m).capitalize()
             module_to_cat[site_key] = display_name
 
     with ThreadPoolExecutor(max_workers=60) as executor:
@@ -171,7 +171,7 @@ def make_request(url: str, **kwargs) -> httpx.Response:
     use_http2 = kwargs.pop("http2", False)
 
     client = get_client(use_http2, proxy_val)
-    
+
     max_retries = 2
     for attempt in range(max_retries + 1):
         try:
