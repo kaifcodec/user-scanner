@@ -15,6 +15,6 @@ def validate_lemmy(user: str) -> Result:
         return Result.error("Only letters, numbers, and underscores allowed")
 
     url = f"https://lemmy.world/api/v3/user?username={user}"
-    show_url = "https://lemmy.world"
+    show_url = f"https://lemmy.world/u/{user}"
 
     return status_validate(url, [400, 404], 200, show_url=show_url, timeout=5.0)

@@ -4,7 +4,7 @@ from user_scanner.core.result import Result
 
 def validate_soundcloud(user):
     url = f"https://soundcloud.com/{user}"
-    show_url = "https://soundcloud.com"
+    show_url = f"https://soundcloud.com/{user}"
 
     def process(response):
         if response.status_code == 403:

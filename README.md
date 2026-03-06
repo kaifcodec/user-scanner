@@ -2,7 +2,7 @@
 
 ![User Scanner Logo](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.3.3.3-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.3.4-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
@@ -102,6 +102,10 @@ Scan multiple emails/usernames from a file (one email/username per line):
 user-scanner -ef emails.txt     # bulk email scan
 user-scanner -uf usernames.txt  # bulk username scan
 ```
+
+### Pattern generation
+See [Pattern Syntax](docs/PATTERNS.md) for more details
+
 ---
 ### Library mode for email_scan
 Only available for `user-scanner>=1.2.0`

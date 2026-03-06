@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_freesound(user):
     url = f"https://freesound.org/people/{user}/section/stats/?ajax=1"
-    show_url = "https://freesound.org"
+    show_url = f"https://freesound.org/people/{user}/"
 
     def process(response):
         if response.status_code == 200 and "forum posts" in response.text.lower():

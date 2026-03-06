@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 def validate_bdsmlr(user):
     user = user.replace(".", "")
     url = f"https://{user}.bdsmlr.com"
-    show_url = "https://bdsmlr.com"
+    show_url = f"https://{user}.bdsmlr.com"
 
     def process(response):
         if response.status_code == 200 and "login" in response.text:

@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import status_validate
 
 def validate_threads(user):
     url = f"https://www.threads.net/api/v1/users/web_profile_info/?username={user}"
-    show_url = "https://threads.net"
+    show_url = f"https://www.threads.net/@{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),

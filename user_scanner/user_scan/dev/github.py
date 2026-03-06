@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import Result, generic_validate
 
 def validate_github(user):
     url = f"https://github.com/signup_check/username?value={user}"
-    show_url = "https://github.com"
+    show_url = f"https://github.com/{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),

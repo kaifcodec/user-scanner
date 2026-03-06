@@ -6,7 +6,7 @@ from user_scanner.core.result import Result
 def validate_bluesky(user):
     handle = user if user.endswith(".bsky.social") else f"{user}.bsky.social"
     url = "https://bsky.social/xrpc/com.atproto.temp.checkHandleAvailability"
-    show_url = "https://bsky.social"
+    show_url = f"https://bsky.app/profile/{user}.bsky.social"
 
     headers = {
         "User-Agent": get_random_user_agent(),

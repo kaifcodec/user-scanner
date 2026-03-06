@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 
 def validate_x(user):
     url = "https://api.twitter.com/i/users/username_available.json"
-    show_url = "https://x.com"
+    show_url = f"https://x.com/{user}"
 
     params = {"username": user, "full_name": "John Doe", "email": "johndoe07@gmail.com"}
 

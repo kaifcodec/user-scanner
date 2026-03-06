@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import Result, status_validate
 
 def validate_youtube(user) -> Result:
     url = f"https://m.youtube.com/@{user}"
-    show_url = "https://m.youtube.com"
+    show_url = f"https://youtube.com/@{user}"
     headers = {
         "User-Agent": get_random_user_agent(),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",

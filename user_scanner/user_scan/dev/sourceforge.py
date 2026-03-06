@@ -14,6 +14,6 @@ def validate_sourceforge(user: str) -> Result:
         return Result.error("Only use lowercase letters, numbers, and dashes.")
 
     url = f"https://sourceforge.net/u/{user}/"
-    show_url = "https://sourceforge.net"
+    show_url = f"https://sourceforge.net/u/{user}/"
 
     return status_validate(url, 404, 200, show_url=show_url, follow_redirects=True)

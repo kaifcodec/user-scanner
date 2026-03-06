@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_discogs(user):
     url = f"https://api.discogs.com/users/{user}"
-    show_url = "https://www.discogs.com"
+    show_url = f"https://www.discogs.com/user/{user}"
 
     def process(response):
         if response.status_code == 200 and "\"id\":" in response.text:

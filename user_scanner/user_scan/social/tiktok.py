@@ -30,7 +30,7 @@ def validate_tiktok(user: str) -> Result:
     }
 
     url = f"https://www.tiktok.com/@{user}"
-    show_url = "https://tiktok.com"
+    show_url = f"https://www.tiktok.com/@{user}"
 
     def process(response) -> Result:
         if response.status_code == 200:

@@ -17,7 +17,7 @@ def validate_twitch(user: str) -> Result:
         )
 
     url = "https://gql.twitch.tv/gql"
-    show_url = "https://twitch.tv"
+    show_url = f"https://twitch.tv/{user}"
 
     payload = [
         {

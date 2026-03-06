@@ -14,7 +14,7 @@ def validate_substack(user: str) -> Result:
         return Result.error("Usernames can only contain lowercase letters and numbers")
 
     url = f"https://{user}.substack.com"
-    show_url = "https://substack.com"
+    show_url = f"https://{user}.substack.com"
 
     headers = {
         "User-Agent": get_random_user_agent(),

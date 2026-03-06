@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import Result, generic_validate
 
 def validate_adultforum(user):
     url = f"https://adultforum.gr/{user}-glamour-escorts/"
-    show_url = "https://adultforum.gr"
+    show_url = f"https://adultforum.gr/{user}-glamour-escorts/"
 
     headers = {
         "User-Agent": get_random_user_agent(),

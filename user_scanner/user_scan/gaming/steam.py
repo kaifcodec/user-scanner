@@ -4,7 +4,7 @@ from user_scanner.core.result import Result
 
 def validate_steam(user):
     url = f"https://steamcommunity.com/id/{user}/"
-    show_url = "https://steamcommunity.com"
+    show_url = f"https://steamcommunity.com/id/{user}/"
 
     def process(response):
         if response.status_code == 200:

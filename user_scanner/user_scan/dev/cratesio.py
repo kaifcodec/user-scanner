@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import status_validate
 
 def validate_cratesio(user):
     url = f"https://crates.io/api/v1/users/{user}"
-    show_url = "https://crates.io"
+    show_url = f"https://crates.io/users/{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),
