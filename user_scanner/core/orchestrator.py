@@ -1,7 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List
+from typing import Callable, List, Dict, Optional
+import threading
 
 import httpx
 from colorama import Fore, Style
@@ -133,6 +134,18 @@ def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
 
 
 
+_clients: Dict[tuple, httpx.Client] = {}
+_clients_lock = threading.Lock()
+
+def get_client(use_http2: bool, proxy_val: Optional[str]) -> httpx.Client:
+    key = (use_http2, proxy_val)
+    if key not in _clients:
+        with _clients_lock:
+            if key not in _clients:
+                _clients[key] = httpx.Client(http2=use_http2, proxy=proxy_val, verify=False)
+    return _clients[key]
+
+
 def make_request(url: str, **kwargs) -> httpx.Response:
     """Simple wrapper to **httpx.get** that predefines headers and timeout"""
     if "headers" not in kwargs:
@@ -157,8 +170,16 @@ def make_request(url: str, **kwargs) -> httpx.Response:
     method = kwargs.pop("method", "GET")
     use_http2 = kwargs.pop("http2", False)
 
-    with httpx.Client(http2=use_http2, proxy=proxy_val) as client:
-        return client.request(method.upper(), url, **kwargs)
+    client = get_client(use_http2, proxy_val)
+    
+    max_retries = 2
+    for attempt in range(max_retries + 1):
+        try:
+            return client.request(method.upper(), url, **kwargs)
+        except (httpx.ConnectTimeout, httpx.ReadTimeout) as e:
+            if attempt == max_retries:
+                raise e
+    raise RuntimeError("Request failed after retries")
 
 
 def generic_validate(

@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 import inspect
 import random
 import threading
+import functools
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -40,6 +41,7 @@ def get_site_name(module) -> str:
     return name
 
 
+@functools.lru_cache(maxsize=None)
 def load_modules(category_path: Path) -> List[ModuleType]:
     modules = []
     for file in category_path.glob("*.py"):
@@ -55,6 +57,7 @@ def load_modules(category_path: Path) -> List[ModuleType]:
     return modules
 
 
+@functools.lru_cache(maxsize=None)
 def load_categories(is_email: bool = False) -> Dict[str, Path]:
     folder_name = "email_scan" if is_email else "user_scan"
     root = Path(__file__).resolve().parent.parent / folder_name
