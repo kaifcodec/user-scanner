@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 import inspect
 import random
 import threading
+import functools
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Any, Callable
