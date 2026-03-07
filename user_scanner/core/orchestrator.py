@@ -95,7 +95,7 @@ def run_user_category(
 def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
     results = []
     all_modules = []
-    categories = list(load_categories(nsfw=configs.nsfw).items())
+    categories = list(load_categories(no_nsfw=configs.no_nsfw).items())
     module_to_cat = {}
     printed_categories = set()
 

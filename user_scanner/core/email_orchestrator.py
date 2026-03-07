@@ -118,7 +118,7 @@ def run_email_category_batch(
 
 
 def run_email_full_batch(email: str, configs: ScanConfig) -> List[Result]:
-    categories = load_categories(True, configs.nsfw)
+    categories = load_categories(True, configs.no_nsfw)
     all_results = []
     printed_cats = set()
 

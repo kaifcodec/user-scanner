@@ -155,7 +155,7 @@ async def test_check_category(monkeypatch, patreon_stub, medium_stub):
     async_mock = AsyncMock()
     async_mock.return_value = Result.taken()
 
-    monkeypatch.setattr(engine, "load_categories", lambda is_email, nsfw: {
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
         "creator": "/fake/path"
     })
     monkeypatch.setattr(engine, "load_modules",
@@ -185,7 +185,7 @@ async def test_is_email_passed_correctly(monkeypatch, github_stub):
     result = await engine.check_category("dev", "some_email")
 
     assert len(result) == 1
-    sync_mock.assert_called_once_with(is_email=True, nsfw=True)
+    sync_mock.assert_called_once_with(is_email=True)
 
 
 @pytest.mark.anyio
@@ -193,7 +193,7 @@ async def test_case_insensitive_category_match(monkeypatch, github_stub):
     async_mock = AsyncMock()
     async_mock.return_value = Result.taken()
 
-    monkeypatch.setattr(engine, "load_categories", lambda is_email, nsfw: {
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
         "dev": "/fake/path"
     })
     monkeypatch.setattr(engine, "load_modules", lambda x: [github_stub])
@@ -207,7 +207,7 @@ async def test_case_insensitive_category_match(monkeypatch, github_stub):
 
 @pytest.mark.anyio
 async def test_empty_category_list(monkeypatch):
-    monkeypatch.setattr(engine, "load_categories", lambda is_email, nsfw: {
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
         "dev": "/fake/path"
     })
     monkeypatch.setattr(engine, "load_modules", lambda x: [])
@@ -219,7 +219,7 @@ async def test_empty_category_list(monkeypatch):
 @pytest.mark.anyio
 async def test_category_not_found_email(monkeypatch):
     monkeypatch.setattr(engine, "load_categories",
-                        lambda is_email, nsfw: {"dev": "/fake/path"})
+                        lambda is_email: {"dev": "/fake/path"})
     with pytest.raises(ValueError) as exc_info:
         await engine.check_category("unknown", "some_email")
 
@@ -229,7 +229,7 @@ async def test_category_not_found_email(monkeypatch):
 @pytest.mark.anyio
 async def test_category_not_found_username(monkeypatch):
     monkeypatch.setattr(engine, "load_categories",
-                        lambda is_email, nsfw: {"dev": "/fake/path"})
+                        lambda is_email: {"dev": "/fake/path"})
     with pytest.raises(ValueError) as exc_info:
         await engine.check_category("unknown", "some_username", is_email=False)
 
@@ -241,7 +241,7 @@ async def test_category_not_found_username(monkeypatch):
 async def test_check_all(monkeypatch):
     async_mock = AsyncMock()
     async_mock.return_value = [Result.taken(), Result.available()]
-    monkeypatch.setattr(engine, "load_categories", lambda is_email, nsfw: {
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
         "creator": "/fake/path",
         "dev": "/fake/path2"
     })
@@ -272,7 +272,7 @@ async def test_check_all_email_passed_correct(monkeypatch):
     calls = [call("creator", "some_username", False),
              call("dev", "some_username", False)]
 
-    sync_mock.assert_called_once_with(is_email=False, nsfw=True)
+    sync_mock.assert_called_once_with(is_email=False)
     async_mock.assert_has_calls(calls, any_order=False)
 
 
@@ -281,7 +281,7 @@ async def test_check_all_nested_lis_flatten(monkeypatch):
     async_mock = AsyncMock()
     async_mock.side_effect = [[Result.taken(), Result.available()],
                               [Result.taken()]]
-    monkeypatch.setattr(engine, "load_categories", lambda is_email, nsfw: {
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
         "creator": "/fake/path",
         "dev": "/fake/path2"
     })
@@ -299,7 +299,7 @@ async def test_check_all_category_exception(monkeypatch):
             raise ValueError("Failed")
         return [Result.taken(), Result.available()]
 
-    monkeypatch.setattr(engine, "load_categories", lambda is_email, nsfw: {
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {
         "creator": "/fake/path",
         "dev": "/fake/path2"
     })
