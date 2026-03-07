@@ -37,11 +37,9 @@ def humanize_exception(e: Exception) -> str:
     if "11001" in msg:
         return "Could not resolve hostname"
 
-    # Linux/Termux specific DNS error (your error)
     if "errno 7" in msg or "no address associated with hostname" in msg:
         return "No internet connection or DNS failure"
 
-    # Linux/Termux Network Unreachable
     if "errno 101" in msg or "network is unreachable" in msg:
         return "Network unreachable (Is your internet on?)"
 
