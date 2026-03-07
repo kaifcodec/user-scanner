@@ -218,6 +218,7 @@ def main():
     check_for_updates()
     print_banner()
 
+
     # Handle bulk email file
     if args.email_file:
         try:
@@ -311,6 +312,17 @@ def main():
         else:
             print(f"\n{Fore.CYAN} Checking username: {target}{Style.RESET_ALL}")
 
+
+        if args.hudson_scan:
+            if args.category or args.module:
+                print(f"{R}[✘] Error: --hudson cannot be used with -m or -c {X}")
+                print(f"{Y}[i] Use it independently{X}")
+                sys.exit(1)
+
+            run_hudson_scan(target, is_email)
+            continue
+
+
         if args.module:
             modules = find_module(args.module.replace(".", "_"), is_email)
             fn = run_email_module_batch if is_email else run_user_module
@@ -346,60 +358,60 @@ def main():
             fn = run_email_full_batch if is_email else run_user_full
             results.extend(fn(target, config))
 
-        if args.hudson_scan:
-            run_hudson_scan(target, is_email)
 
-    if args.output:
-        content = (
-            formatter.into_csv(results)
-            if args.format == "csv"
-            else formatter.into_json(results)
-        )
+    if not args.hudson_scan:
+        if args.output:
+            content = (
+                formatter.into_csv(results)
+                if args.format == "csv"
+                else formatter.into_json(results)
+            )
 
-        if args.format == "json":
-            data = []
-            try:
-                with open(args.output, "r", encoding="utf-8") as f:
-                    old = json.load(f)
-                    if isinstance(old, list) and all(isinstance(x, dict) for x in old):
-                        data = old
-            except Exception:
-                pass
+            if args.format == "json":
+                data = []
+                try:
+                    with open(args.output, "r", encoding="utf-8") as f:
+                        old = json.load(f)
+                        if isinstance(old, list) and all(isinstance(x, dict) for x in old):
+                            data = old
+                except Exception:
+                    pass
 
-            new_items = json.loads(content)
-            if isinstance(new_items, list) and all(
-                isinstance(x, dict) for x in new_items
-            ):
-                data.extend(new_items)
+                new_items = json.loads(content)
+                if isinstance(new_items, list) and all(
+                    isinstance(x, dict) for x in new_items
+                ):
+                    data.extend(new_items)
 
-            with open(args.output, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
+                with open(args.output, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
 
-        if args.format == "csv":
-            try:
-                with open(args.output, "r", encoding="utf-8") as init_file:
-                    has_content = init_file.read().strip() != ""
-            except Exception:
-                has_content = False
+            if args.format == "csv":
+                try:
+                    with open(args.output, "r", encoding="utf-8") as init_file:
+                        has_content = init_file.read().strip() != ""
+                except Exception:
+                    has_content = False
 
-            with open(args.output, "a", encoding="utf-8") as f:
-                if has_content:
-                    f.write("\n")
-                f.write(content)
+                with open(args.output, "a", encoding="utf-8") as f:
+                    if has_content:
+                        f.write("\n")
+                    f.write(content)
 
-        print(G + f"\n[+] Results saved to {args.output}" + Style.RESET_ALL)
+            print(G + f"\n[+] Results saved to {args.output}" + Style.RESET_ALL)
 
-    total_found = len([r for r in results if r.is_found()])
-    total_skipped = len([r for r in results if r == Status.SKIPPED])
+        total_found = len([r for r in results if r.is_found()])
+        total_skipped = len([r for r in results if r.status == Status.SKIPPED])
 
-    if args.only_found and total_found == 0:
-        print(f"\n{R}[✘] No results found for the given target(s).{X}")
-    else:
-        print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")
-        if total_skipped > 0:
-            print(f"  {C}Skipped:{X} {total_skipped}")
-            print(f"  {Y}Reason for skip: Module(s) notify{X} (but only if target exists there) {Y}the target with password reset email(s){X}")
-            print(f"  {Y}Use {G}--allow-loud{X}{Y} to include those module(s) to be scanned{X}")
+        if args.only_found and total_found == 0:
+            print(f"\n{R}[✘] No results found for the given target(s).{X}")
+        else:
+            print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")
+            if total_skipped > 0:
+                print(f"  {C}Skipped:{X} {total_skipped}")
+                print(f"  {Y}Reason for skip: Module(s) notify{X} (but only if target exists there) {Y}the target with password reset email(s){X}")
+                print(f"  {Y}Use {G}--allow-loud{X}{Y} to include those module(s) to be scanned{X}")
+
 
 if __name__ == "__main__":
     main()
