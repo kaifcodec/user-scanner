@@ -138,10 +138,12 @@ def main():
     parser.add_argument("-U", "--update", action="store_true", help="Update the tool")
 
     parser.add_argument(
-        "--hudson-scan",
+        "--hudson", "--hudson-scan",
         action="store_true",
+        dest="hudson_scan",
         help="Check for infostealer intelligence using Hudson Rock's API",
     )
+
 
     parser.add_argument("--version", action="store_true", help="Print version")
 
@@ -359,59 +361,60 @@ def main():
             results.extend(fn(target, config))
 
 
-    if not args.hudson_scan:
-        if args.output:
-            content = (
-                formatter.into_csv(results)
-                if args.format == "csv"
-                else formatter.into_json(results)
-            )
+    if args.hudson_scan:
+        sys.exit(0)
 
-            if args.format == "json":
-                data = []
-                try:
-                    with open(args.output, "r", encoding="utf-8") as f:
-                        old = json.load(f)
-                        if isinstance(old, list) and all(isinstance(x, dict) for x in old):
-                            data = old
-                except Exception:
-                    pass
+    if args.output:
+        content = (
+            formatter.into_csv(results)
+            if args.format == "csv"
+            else formatter.into_json(results)
+        )
 
-                new_items = json.loads(content)
-                if isinstance(new_items, list) and all(
-                    isinstance(x, dict) for x in new_items
-                ):
-                    data.extend(new_items)
+        if args.format == "json":
+            data = []
+            try:
+                with open(args.output, "r", encoding="utf-8") as f:
+                    old = json.load(f)
+                    if isinstance(old, list) and all(isinstance(x, dict) for x in old):
+                        data = old
+            except Exception:
+                pass
 
-                with open(args.output, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2, ensure_ascii=False)
+            new_items = json.loads(content)
+            if isinstance(new_items, list) and all(
+                isinstance(x, dict) for x in new_items
+            ):
+                data.extend(new_items)
 
-            if args.format == "csv":
-                try:
-                    with open(args.output, "r", encoding="utf-8") as init_file:
-                        has_content = init_file.read().strip() != ""
-                except Exception:
-                    has_content = False
+            with open(args.output, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
 
-                with open(args.output, "a", encoding="utf-8") as f:
-                    if has_content:
-                        f.write("\n")
-                    f.write(content)
+        if args.format == "csv":
+            try:
+                with open(args.output, "r", encoding="utf-8") as init_file:
+                    has_content = init_file.read().strip() != ""
+            except Exception:
+                has_content = False
 
-            print(G + f"\n[+] Results saved to {args.output}" + Style.RESET_ALL)
+            with open(args.output, "a", encoding="utf-8") as f:
+                if has_content:
+                    f.write("\n")
+                f.write(content)
 
-        total_found = len([r for r in results if r.is_found()])
-        total_skipped = len([r for r in results if r.status == Status.SKIPPED])
+        print(G + f"\n[+] Results saved to {args.output}" + Style.RESET_ALL)
 
-        if args.only_found and total_found == 0:
-            print(f"\n{R}[✘] No results found for the given target(s).{X}")
-        else:
-            print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")
-            if total_skipped > 0:
-                print(f"  {C}Skipped:{X} {total_skipped}")
-                print(f"  {Y}Reason for skip: Module(s) notify{X} (but only if target exists there) {Y}the target with password reset email(s){X}")
-                print(f"  {Y}Use {G}--allow-loud{X}{Y} to include those module(s) to be scanned{X}")
+    total_found = len([r for r in results if r.is_found()])
+    total_skipped = len([r for r in results if r.status == Status.SKIPPED])
 
+    if args.only_found and total_found == 0:
+        print(f"\n{R}[✘] No results found for the given target(s).{X}")
+    else:
+        print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")
+        if total_skipped > 0:
+            print(f"  {C}Skipped:{X} {total_skipped}")
+            print(f"  {Y}Reason for skip: Module(s) notify{X} (but only if target exists there) {Y}the target with password reset email(s){X}")
+            print(f"  {Y}Use {G}--allow-loud{X}{Y} to include those module(s) to be scanned{X}")
 
 if __name__ == "__main__":
     main()
