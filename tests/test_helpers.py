@@ -1,5 +1,6 @@
 import sys
 import threading
+import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -8,6 +9,7 @@ import pytest
 from user_scanner.__main__ import main
 from user_scanner.core import helpers
 from user_scanner.core.result import Result
+from user_scanner.core.helpers import _get_config_path, load_config, save_config_value, CONFIG_PATH
 
 
 def test_get_site_name():
@@ -336,3 +338,72 @@ http://3""")
         t.join()
 
     assert len(results) == 50
+
+
+def test_get_config_path_default(monkeypatch):
+    monkeypatch.delenv("USER_SCANNER_CONFIG", raising=False)
+    path = _get_config_path()
+    assert path == CONFIG_PATH
+
+def test_get_config_path_env_override(monkeypatch, tmp_path):
+    custom_path = tmp_path / "custom_config.json"
+    monkeypatch.setenv("USER_SCANNER_CONFIG", str(custom_path))
+    path = _get_config_path()
+    assert path == custom_path
+
+def test_load_config_creates_default(tmp_path):
+    config_file = tmp_path / "new_config.json"
+    data = load_config(path=config_file)
+
+    assert config_file.exists()
+    assert data["auto_update_status"] is True
+    assert data["auto_hudson_prompt"] is True
+
+def test_load_config_reads_existing(tmp_path):
+    config_file = tmp_path / "existing.json"
+    existing_data = {
+        "auto_update_status": False,
+        "auto_hudson_prompt": False
+    }
+    config_file.write_text(json.dumps(existing_data))
+
+    data = load_config(path=config_file)
+    assert data == existing_data
+
+def test_save_config_value_updates_keys(tmp_path):
+    config_file = tmp_path / "test_save.json"
+
+    save_config_value("auto_update_status", False, path=config_file)
+    data = load_config(path=config_file)
+    assert data["auto_update_status"] is False
+    assert data["auto_hudson_prompt"] is True
+
+    save_config_value("auto_hudson_prompt", False, path=config_file)
+    data = load_config(path=config_file)
+    assert data["auto_hudson_prompt"] is False
+    assert data["auto_update_status"] is False
+
+def test_load_config_handles_corrupt_json(tmp_path):
+    config_file = tmp_path / "corrupt.json"
+    config_file.write_text("{ 'broken': true, }")
+
+    data = load_config(path=config_file)
+    assert data["auto_update_status"] is True
+    assert data["auto_hudson_prompt"] is True
+
+def test_save_config_value_creates_directory(tmp_path):
+    nested_path = tmp_path / "subdir" / "nested_config.json"
+
+    save_config_value("auto_update_status", True, path=nested_path)
+
+    assert nested_path.exists()
+    assert nested_path.parent.is_dir()
+
+def test_hudson_config_value():
+    from user_scanner.core.helpers import _get_config_path, load_config
+
+    actual_path = _get_config_path()
+    data = load_config(path=actual_path)
+    status = data.get("auto_hudson_prompt")
+
+    assert status is True, f"FAIL: Actual config at {actual_path} has auto_hudson_prompt set to {status} (Expected: True)"
