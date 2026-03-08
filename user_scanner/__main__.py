@@ -32,6 +32,7 @@ from user_scanner.core.orchestrator import (
 )
 from user_scanner.core.result import Status
 from user_scanner.core.version import load_local_version
+from user_scanner.core.hudson import run_hudson_scan
 from user_scanner.utils.update import update_self
 from user_scanner.utils.updater_logic import check_for_updates
 
@@ -134,6 +135,14 @@ def main():
 
     parser.add_argument("-U", "--update", action="store_true", help="Update the tool")
 
+    parser.add_argument(
+        "--hudson", "--hudson-scan",
+        action="store_true",
+        dest="hudson_scan",
+        help="Check for infostealer intelligence using Hudson Rock's API",
+    )
+
+
     parser.add_argument("--version", action="store_true", help="Print version")
 
     args = parser.parse_args()
@@ -208,6 +217,7 @@ def main():
 
     check_for_updates()
     print_banner()
+
 
     # Handle bulk email file
     if args.email_file:
@@ -310,6 +320,17 @@ def main():
         else:
             print(f"\n{Fore.CYAN} Checking username: {target}{Style.RESET_ALL}")
 
+
+        if args.hudson_scan:
+            if args.category or args.module:
+                print(f"{R}[✘] Error: --hudson cannot be used with -m or -c {X}")
+                print(f"{Y}[i] Use it independently{X}")
+                sys.exit(1)
+
+            run_hudson_scan(target, is_email)
+            continue
+
+
         if args.module:
             modules = find_module(args.module.replace(".", "_"), is_email)
             fn = run_email_module_batch if is_email else run_user_module
@@ -344,6 +365,10 @@ def main():
         else:
             fn = run_email_full_batch if is_email else run_user_full
             results.extend(fn(target, config))
+
+
+    if args.hudson_scan:
+        sys.exit(0)
 
     if args.output:
         content = (
@@ -386,7 +411,7 @@ def main():
         print(G + f"\n[+] Results saved to {args.output}" + Style.RESET_ALL)
 
     total_found = len([r for r in results if r.is_found()])
-    total_skipped = len([r for r in results if r == Status.SKIPPED])
+    total_skipped = len([r for r in results if r.status == Status.SKIPPED])
 
     if args.only_found and total_found == 0:
         print(f"\n{R}[✘] No results found for the given target(s).{X}")
