@@ -133,6 +133,12 @@ def main():
         "(password resets, etc.)",
     )
 
+    parser.add_argument(
+        "--no-nsfw",
+        action="store_true",
+        help="Disable NSFW site scanning",
+    )
+
     parser.add_argument("-U", "--update", action="store_true", help="Update the tool")
 
     parser.add_argument(
@@ -158,7 +164,7 @@ def main():
         sys.exit(0)
 
     if args.list_user or args.list_email:
-        categories = load_categories(is_email=args.list_email)
+        categories = load_categories(args.list_email, args.no_nsfw)
         for cat_name, cat_path in categories.items():
             modules = load_modules(cat_path)
             print(Fore.MAGENTA + f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
@@ -308,6 +314,7 @@ def main():
     config = ScanConfig(
         allow_loud=args.allow_loud,
         only_found=args.only_found,
+        no_nsfw=args.no_nsfw,
         verbose=args.verbose,
     )
 
@@ -332,7 +339,7 @@ def main():
 
 
         if args.module:
-            modules = find_module(args.module.replace(".", "_"), is_email)
+            modules = find_module(args.module.replace(".", "_"), is_email, args.no_nsfw)
             fn = run_email_module_batch if is_email else run_user_module
             if modules:
                 module_config = replace(config, allow_loud=True)
@@ -346,7 +353,7 @@ def main():
                 )
 
         elif args.category:
-            cat_path = load_categories(is_email).get(args.category)
+            cat_path = load_categories(is_email, args.no_nsfw).get(args.category)
             fn = run_email_category_batch if is_email else run_user_category
             if cat_path:
                 results.extend(

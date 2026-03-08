@@ -8,6 +8,7 @@
 | `-ef, --email-file FILE`    | Scan multiple emails from file (one per line)               |
 | `--only-found`              | Only show sites where the username/email was found          |
 | `--allow-loud`              | Enable scanning sites that may send emails/notifications    |
+| `--no-nsfw`                 | Disable NSFW site scanning                                  |
 | `--hudson, --hudson-scan`   | Check for infostealer intelligence using Hudson Rock's API  |
 | `-c, --category CATEGORY`   | Scan all platforms in a specific category                   |
 | `-lu, --list-user`          | List all available modules for username scanning            |
