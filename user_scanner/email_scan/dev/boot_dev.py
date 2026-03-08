@@ -21,7 +21,7 @@ async def _check(email: str) -> Result:
 
             if response.status_code == 200:
                 data = response.json()
-                if data.get("Exists") and data.get("Exists") == True:
+                if data.get("Exists") is True:
                     return Result.taken(url=show_url)
                 else:
                     return Result.available(url=show_url)
