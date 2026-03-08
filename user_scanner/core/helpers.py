@@ -69,8 +69,9 @@ def load_categories(is_email: bool = False, no_nsfw: bool = False) -> Dict[str, 
             subfolder.is_dir()
             and subfolder.name.lower() not in ["cli", "utils", "core"]
             and "__" not in subfolder.name  # Removes __pycache__
-            and (not no_nsfw or subfolder.name != "adult")  # Remove nsfw sites
         ):
+            if no_nsfw and subfolder.name == "adult":
+                continue
             categories[subfolder.name] = subfolder.resolve()
 
     return categories
