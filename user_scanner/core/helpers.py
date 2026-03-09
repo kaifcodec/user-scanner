@@ -155,14 +155,15 @@ class ProxyManager:
         self._load_proxies(proxy_file)
 
     def _load_proxies(self, proxy_file: str) -> None:
-        """Load proxies from a text file. Supports http://, https://, and socks5:// proxies."""
+        """Load proxies from a text file. Keep explicit schemes, default to http:// when missing."""
         try:
             with open(proxy_file, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if line and not line.startswith("#"):
-                        # Add protocol if not present
-                        if not line.startswith(("http://", "https://", "socks5://")):
+                        # Keep explicit schemes (http://, socks5://, socks5h://, etc.).
+                        # Only prepend http:// when no scheme is provided.
+                        if "://" not in line:
                             line = "http://" + line
                         self.proxies.append(line)
 

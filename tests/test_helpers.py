@@ -269,6 +269,21 @@ socks5://socks-proxy.example.com:1080""")
     assert manager.proxies[1].startswith("socks5://")
 
 
+def test_proxy_manager_preserves_explicit_schemes(tmp_path):
+    proxy_file = tmp_path / "test_proxies.txt"
+    proxy_file.write_text("""socks4://legacy-proxy.example.com:1080
+socks5h://onion-proxy.example.com:9050
+https://secure-proxy.example.com:443""")
+
+    manager = helpers.ProxyManager(str(proxy_file))
+
+    assert manager.proxies == [
+        "socks4://legacy-proxy.example.com:1080",
+        "socks5h://onion-proxy.example.com:9050",
+        "https://secure-proxy.example.com:443",
+    ]
+
+
 def test_proxy_manager_no_poxy_file(tmp_path):
     with pytest.raises(FileNotFoundError) as exc_info:
         helpers.ProxyManager("no_proxy_file.txt")
