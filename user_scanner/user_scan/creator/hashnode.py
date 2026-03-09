@@ -1,43 +1,23 @@
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import generic_validate
-from user_scanner.core.result import Result
-
+from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_hashnode(user):
-    url = "https://hashnode.com/utility/ajax/check-username"
-    show_url = f"https://hashnode.com/@{user}"
-
-    payload = {"username": user, "name": "Dummy Dummy"}
+    url = f"https://hashnode.com/@{user}"
+    show_url = url
 
     headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Origin": "https://hashnode.com",
-        "Referer": "https://hashnode.com/signup",
+        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        'Accept-Language': "en-US,en;q=0.9",
+        'Upgrade-Insecure-Requests': "1"
     }
 
     def process(response):
         if response.status_code == 200:
-            data = response.json()
+            if "Available for</h2>" in response.text:
+                return Result.taken()
+            else:
+                return Result.available()
 
-            if "status" in data:
-                if data["status"] == 1:
-                    return Result.available()
-                elif data["status"] == 0:
-                    return Result.taken()
+        return Result.error(f"Unexpected status code {response.status_code}, report it via GitHub issues.")
 
-            return Result.error("Status not found")
-
-        else:
-            return Result.error("Invalid status code")
-
-    return generic_validate(
-        url,
-        process,
-        show_url=show_url,
-        method="POST",
-        json=payload,
-        headers=headers,
-        timeout=3.0,
-    )
+    return generic_validate(url, process, headers=headers, show_url=show_url)
