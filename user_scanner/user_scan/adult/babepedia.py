@@ -11,6 +11,6 @@ def validate_babepedia(user):
         if response.status_code == 404 or "Profile not found" in response.text:
             return Result.available()
 
-        return Result.error(f"Unexpected response body, report it via GitHub issues. {response.text}")
+        return Result.error("Unexpected response body, report it via GitHub issues")
 
     return generic_validate(url, process, show_url=show_url)
