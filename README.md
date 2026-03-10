@@ -16,7 +16,7 @@ A powerful *Email OSINT tool* that checks if a specific email is registered on v
 
 Perfect for fast, accurate username and email OSINT
 
-Also perfect for finding a **unique username** across GitHub, Twitter, Reddit, Instagram, and more, all in a single command.  
+Also perfect for finding a **unique username** across GitHub, X (formerly Twitter), Reddit, Instagram, and more, all in a single command.  
 
 ## Features
 
