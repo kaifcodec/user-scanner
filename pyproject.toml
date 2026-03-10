@@ -9,7 +9,7 @@ description = "Check username availability across multiple popular platforms"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
-  {name = "Kaif", email = "kafcodec@gmail.com"}
+  {name = "Kaif", email = "kaifcodec@gmail.com"}
 ]
 
 dependencies = [
