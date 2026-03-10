@@ -12,6 +12,6 @@ def validate_newamerica(user):
         if "Page not found" in response.text:
             return Result.available()
 
-        return Result.error(f"{response.text}Unexpected response body, report it via GitHub issues.")
+        return Result.error("Unexpected response body, report it via GitHub issues.")
 
     return generic_validate(url, process, show_url=show_url)
