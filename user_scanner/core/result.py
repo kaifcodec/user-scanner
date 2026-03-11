@@ -12,6 +12,7 @@ DEBUG_MSG = """Result {{
   site_name: "{site_name}",
   category: "{category}",
   url: "{url}",
+  extra: "{extra}",
   is_email: "{is_email}"
 }}"""
 
@@ -22,11 +23,12 @@ JSON_TEMPLATE = """{{
 \t"site_name": "{site_name}",
 \t"status": "{status}",
 \t"url": "{url}",
+\t"extra": "{extra}",
 \t"reason": "{reason}"
 }}"""
 
 # Added {url} to the CSV template
-CSV_TEMPLATE = "{username},{category},{site_name},{status},{url},{reason}"
+CSV_TEMPLATE = "{username},{category},{site_name},{status},{url},{extra},{reason}"
 
 
 def humanize_exception(e: Exception) -> str:
@@ -74,12 +76,13 @@ class Result:
         self.site_name = None
         self.category = None
         self.url = ""  # Initialized url field
+        self.extra = ""
         self.is_email = False
         self.update(**kwargs)
 
     def update(self, **kwargs):
         # Added "url" to the list of fields allowed for dynamic updates
-        for field in ("username", "site_name", "category", "is_email", "url"):
+        for field in ("username", "site_name", "category", "is_email", "url", "extra"):
             if field in kwargs and kwargs[field] is not None:
                 setattr(self, field, kwargs[field])
         return self
@@ -137,6 +140,7 @@ class Result:
             "site_name": self.site_name,
             "category": self.category,
             "url": self.url,  # Added url to dictionary output
+            "extra": self.extra,
             "is_email": self.is_email,
         }
 
@@ -197,8 +201,14 @@ class Result:
             else ""
         )
 
+        extra_display = (
+            f" {Fore.CYAN}[{self.extra}]{color}"
+            if self.extra
+            else ""
+        )
+
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
-        return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{Style.RESET_ALL}"
+        return f"  {color}{icon} {site_name}{url_display}{extra_display} {username}: {status_text}{reason}{Style.RESET_ALL}"
 
     def is_found(self) -> bool:
         """Returns True if the target was found or registered (Status.TAKEN)"""
