@@ -27,7 +27,7 @@ def validate_protonmail(user: str) -> Result:
     }
 
     def process(response):
-        if response.status_code != 200:
+        if response.status_code not in [200, 409]:
             return Result.error("Unexpected status code from Proton")
 
         try:
