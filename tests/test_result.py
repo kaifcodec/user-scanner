@@ -146,12 +146,12 @@ def test_console_output_and_show_url():
     out_hidden = res.get_console_output(conf)
     assert "[✔]" in out_hidden
     assert "Found" in out_hidden
-    assert "[Info]" in out_hidden
+    assert "Info" in out_hidden
     assert "https://mysite.com" not in out_hidden
 
     out_visible = res.get_console_output(v_conf)
     assert "[https://mysite.com/u]" in out_visible
-    assert "[Info]" in out_visible
+    assert "Info" in out_visible
 
     res_skip = Result.skipped(site_name="PrivacySite")
     output = res_skip.get_console_output(conf)

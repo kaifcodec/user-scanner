@@ -48,7 +48,6 @@ def humanize_exception(e: Exception) -> str:
     return str(e)
 
 
-
 class Status(Enum):
     TAKEN = 0
     AVAILABLE = 1
@@ -130,8 +129,6 @@ class Result:
         msg = humanize_exception(self.reason)
         return f"{type(self.reason).__name__}: {msg.capitalize()}"
 
-
-
     def as_dict(self) -> dict:
         return {
             "status": self.status.to_label(self.is_email),
@@ -201,14 +198,10 @@ class Result:
             else ""
         )
 
-        extra_display = (
-            f" {Fore.CYAN}[{self.extra}]{color}"
-            if self.extra
-            else ""
-        )
-
+        extra_display = f"\n{' ' * 6}{Fore.CYAN}└── {self.extra}" if self.extra else ""
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
-        return f"  {color}{icon} {site_name}{url_display}{extra_display} {username}: {status_text}{reason}{Style.RESET_ALL}"
+
+        return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{extra_display}{Style.RESET_ALL}"
 
     def is_found(self) -> bool:
         """Returns True if the target was found or registered (Status.TAKEN)"""
