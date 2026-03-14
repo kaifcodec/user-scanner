@@ -1,21 +1,22 @@
 import httpx
+import json
 from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
     url = "https://huggingface.co/api/check-user-email"
     show_url = "https://huggingface.co"
-    params = {'email': email}
+    payload = {'email': email}
+
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
         'Accept-Encoding': "identity",
         'referer': "https://huggingface.co/join",
-        'priority': "u=1, i"
     }
 
     async with httpx.AsyncClient(http2=True) as client:
         try:
-            response = await client.get(url, params=params, headers=headers, timeout=5)
+            response = await client.post(url, json=payload, headers=headers, timeout=5)
             res_text = response.text
             st_code = response.status_code
 
