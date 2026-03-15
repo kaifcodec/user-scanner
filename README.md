@@ -118,11 +118,11 @@ See full usage (eg. category checks, full scan) guide [library usage](docs/USAGE
 
 import asyncio
 from user_scanner.core import engine
-from user_scanner.email_scan.dev import github
+from user_scanner.email_scan.learning import vedantu
 
 async def main():
     # Engine detects 'email_scan' path -> returns "Registered" status
-    result = await engine.check(github, "test@gmail.com")
+    result = await engine.check(vedantu, "test@gmail.com")
     json_data = result.to_json() # returns JSON output
     csv_data = result.to_csv()   # returns CSV output
     print(json_data)             # prints the json data
@@ -136,10 +136,11 @@ Output:
 
 {
         "email": "test@gmail.com",
-        "category": "Dev",
-        "site_name": "Github",
+        "category": "Learning",
+        "site_name": "Vedantu",
         "status": "Registered",
-        "url": "https://github.com",
+        "url": "https://www.vedantu.com",
+        "extra": "Phone: +9121****83",
         "reason": ""
 }
 ```
