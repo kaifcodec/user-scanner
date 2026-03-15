@@ -32,4 +32,11 @@ def validate_riot_id(user: str) -> Result:
 
         return Result.error(f"HTTP {response.status_code}")
 
-    return generic_validate(url, process, show_url=show_url)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip, deflate",
+    }
+
+    return generic_validate(url, process, show_url=show_url, headers=headers)
