@@ -34,6 +34,7 @@ Output:
         "site_name": "Instagram",
         "status": "Registered",
         "url": "https://instagram.com",
+        "extra": "",
         "reason": ""
 }
 ```
@@ -61,6 +62,7 @@ Output:
         "site_name": "Github",
         "status": "Found",
         "url": "https://github.com",
+        "extra": "",
         "reason": ""
 }
 ```
@@ -97,6 +99,7 @@ Output:
     "site_name": "Bluesky",
     "status": "Found",
     "url": "https://bsky.social",
+    "extra": "",
     "reason": ""
   },
   {
@@ -105,6 +108,7 @@ Output:
     "site_name": "Discord",
     "status": "Found",
     "url": "https://discord.com",
+    "extra": "",
     "reason": ""
   },
   {
@@ -113,6 +117,7 @@ Output:
     "site_name": "Instagram",
     "status": "Found",
     "url": "https://instagram.com",
+    "extra": "",
     "reason": ""
   },
   {
@@ -121,6 +126,7 @@ Output:
     "site_name": "Mastodon",
     "status": "Found",
     "url": "https://mastodon.social",
+    "extra": "",
     "reason": ""
   },
   {
@@ -129,6 +135,7 @@ Output:
     "site_name": "Pinterest",
     "status": "Found",
     "url": "https://pinterest.com",
+    "extra": "",
     "reason": ""
   },
   {
@@ -137,6 +144,7 @@ Output:
     "site_name": "Reddit",
     "status": "Found",
     "url": "https://reddit.com",
+    "extra": "",
     "reason": ""
   },
   {
@@ -145,6 +153,7 @@ Output:
     "site_name": "Snapchat",
     "status": "Found",
     "url": "https://snapchat.com",
+    "extra": "",
     "reason": ""
   },
   {
@@ -153,6 +162,7 @@ Output:
     "site_name": "Soundcloud",
     "status": "Error",
     "url": "https://soundcloud.com",
+    "extra": "",
     "reason": "[403] Request forbidden try using proxy or VPN"
   },
   {
@@ -161,6 +171,7 @@ Output:
     "site_name": "Telegram",
     "status": "Found",
     "url": "https://t.me",
+    "extra": "",
     "reason": ""
   },
   {
@@ -169,6 +180,7 @@ Output:
     "site_name": "Threads",
     "status": "Found",
     "url": "https://threads.net",
+    "extra": "",
     "reason": ""
   },
   {
@@ -177,6 +189,7 @@ Output:
     "site_name": "Tiktok",
     "status": "Error",
     "url": "https://tiktok.com",
+    "extra": "",
     "reason": "ConnectTimeout: Timed out"
   },
   {
@@ -185,6 +198,7 @@ Output:
     "site_name": "X (Twitter)",
     "status": "Found",
     "url": "https://x.com",
+    "extra": "",
     "reason": ""
   },
   {
@@ -193,9 +207,11 @@ Output:
     "site_name": "Youtube",
     "status": "Found",
     "url": "https://m.youtube.com",
+    "extra": "",
     "reason": ""
   }
 ]
+
 ```
 
 #### Full OSINT Scan (All Categories)

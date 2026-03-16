@@ -92,12 +92,14 @@ def test_update_and_fields():
     res = Result.available()
     assert res.username is None
     assert res.url == ""
+    assert res.extra == ""
 
     res.update(
         username="alice",
         site_name="GitHub",
         category="Social",
         url="https://github.com/alice",
+        extra="Verified",
         is_email=False,
     )
 
@@ -105,6 +107,7 @@ def test_update_and_fields():
     assert res.site_name == "GitHub"
     assert res.category == "Social"
     assert res.url == "https://github.com/alice"
+    assert res.extra == "Verified"
 
 
 def test_output_formats():
@@ -113,17 +116,20 @@ def test_output_formats():
         site_name="Example",
         category="Tech",
         url="https://example.com/user",
+        extra="Additional info",
     )
 
     d = res.as_dict()
     assert d["url"] == "https://example.com/user"
+    assert d["extra"] == "Additional info"
     assert d["status"] == "Found"
 
-    assert res.to_csv() == "testuser,Tech,Example,Found,https://example.com/user,"
+    assert res.to_csv() == "testuser,Tech,Example,Found,https://example.com/user,Additional info,"
 
     json_std = res.to_json()
     assert '"username": "testuser"' in json_std
     assert '"url": "https://example.com/user"' in json_std
+    assert '"extra": "Additional info"' in json_std
 
     res.update(is_email=True)
     json_email = res.to_json()
@@ -135,15 +141,17 @@ def test_console_output_and_show_url():
     conf = ScanConfig()
     v_conf = ScanConfig(verbose=True)
 
-    res = Result.taken(site_name="MySite", url="https://mysite.com/u")
+    res = Result.taken(site_name="MySite", url="https://mysite.com/u", extra="Info")
 
     out_hidden = res.get_console_output(conf)
     assert "[✔]" in out_hidden
     assert "Found" in out_hidden
+    assert "Info" in out_hidden
     assert "https://mysite.com" not in out_hidden
 
     out_visible = res.get_console_output(v_conf)
     assert "[https://mysite.com/u]" in out_visible
+    assert "Info" in out_visible
 
     res_skip = Result.skipped(site_name="PrivacySite")
     output = res_skip.get_console_output(conf)
@@ -152,7 +160,17 @@ def test_console_output_and_show_url():
 
 
 def test_debug_string():
-    res = Result.available(username="dev", url="http://dev.link")
+    res = Result.available(username="dev", url="http://dev.link", extra="Debug info")
     debug_str = res.debug()
     assert 'url: "http://dev.link"' in debug_str
+    assert 'extra: "Debug info"' in debug_str
     assert "status: Not Found" in debug_str
+
+
+def test_show(capsys):
+    conf = ScanConfig()
+    res = Result.taken(site_name="ShowSite")
+    res.show(conf)
+    captured = capsys.readouterr()
+    assert "ShowSite" in captured.out
+    assert "Found" in captured.out
