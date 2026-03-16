@@ -41,7 +41,7 @@ async def _check(email: str) -> Result:
                 return Result.taken(url=show_url)
 
             if "account has been locked" in error_msg:
-                return Result.taken(url=show_url, extra="Acoount is locked by Vivino")
+                return Result.taken(url=show_url, extra="Account is locked by Vivino")
 
             return Result.error(f"Vivino Error: {error_msg}", url=show_url)
 
