@@ -1,4 +1,4 @@
-from user_scanner.core.orchestrator import status_validate, Result
+from user_scanner.core.orchestrator import status_validate
 
 def validate_zomato(user):
     url = f"https://www.zomato.com/{user}/reviews"
