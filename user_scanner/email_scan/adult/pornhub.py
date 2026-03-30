@@ -49,13 +49,20 @@ async def _check(email: str) -> Result:
             data = response.json()
             status = data.get("email")
             error_msg = data.get("error_message", "")
+            email_dom = email.split("@")[-1]
+
+            if status == "create_account_failed":
+                if "Email extension" in error_msg:
+                    return Result.available(url=show_url, reason=f"Domain '{email_dom}' is not allowed by PornHub")
+                if "delivery issues" in error_msg:
+                    return Result.error(url=show_url, reason="The email is experiencing email delivery issues")
 
             if status == "create_account_passed":
                 return Result.available(url=show_url)
-            elif "already in use" in error_msg.lower() or status != "create_account_passed":
+            elif "already in use" in error_msg.lower() or "already registered" in error_msg:
                 return Result.taken(url=show_url)
             else:
-                return Result.error(f"Unexpected API response: {status}")
+                return Result.error(f"Unexpected API response: {status}: {error_msg}")
 
         except Exception as e:
             return Result.error(e)
