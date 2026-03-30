@@ -11,12 +11,12 @@
 </p>
 
 ---
+A powerful **2-in-1 OSINT suite** combining deep **Email OSINT** with comprehensive **Username Scanning**. 
 
-A powerful *Email OSINT tool* that checks if a specific email is registered on various sites, combined with *username scanning* for OSINT or branding — 2-in-1 tool.  
+With **195+ total scan vectors**—including **95+ email-integrated sites** and **100+ username platforms**—you can identify digital footprints or verify account registrations in seconds.
 
-Perfect for fast, accurate username and email OSINT
+The ultimate tool for finding a **unique username** across GitHub, X, Reddit, Instagram, and more in a single command.
 
-Also perfect for finding a **unique username** across GitHub, X (formerly Twitter), Reddit, Instagram, and more, all in a single command.  
 
 ## Features
 
