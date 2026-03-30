@@ -7,7 +7,7 @@ async def _check(email: str) -> Result:
     show_url = "https://fapfolder.club"
 
     payload = {
-        'username': "johnt5yt",
+        'username': "l0v3_d0n0t_3xist",
         'email': email,
         'email2': email,
         'password': "1",
