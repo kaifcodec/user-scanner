@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -384,24 +385,27 @@ def main():
             else formatter.into_json(results)
         )
 
+    if args.output:
         if args.format == "json":
+            # Get the new data as a LIST of DICTS, not a string
+            new_items = formatter.get_json_data(results)
             data = []
-            try:
-                with open(args.output, "r", encoding="utf-8") as f:
-                    old = json.load(f)
-                    if isinstance(old, list) and all(isinstance(x, dict) for x in old):
-                        data = old
-            except Exception:
-                pass
 
-            new_items = json.loads(content)
-            if isinstance(new_items, list) and all(
-                isinstance(x, dict) for x in new_items
-            ):
-                data.extend(new_items)
+            # Try to load existing data
+            if os.path.exists(args.output):
+                try:
+                    with open(args.output, "r", encoding="utf-8") as f:
+                        old = json.load(f)
+                        if isinstance(old, list):
+                            data = old
+                except (json.JSONDecodeError, Exception):
+                    pass
 
+            # Merge and save
+            data.extend(new_items)
             with open(args.output, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
+
 
         if args.format == "csv":
             try:

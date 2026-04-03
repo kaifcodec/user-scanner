@@ -1,3 +1,4 @@
+import json
 from user_scanner.core.result import Result
 from typing import List
 
@@ -14,14 +15,11 @@ def indentate(msg: str, indent: int):
 
 
 def into_json(results: List[Result]) -> str:
-    res = "[\n"
+    return json.dumps([r.to_dict() for r in results], indent=4)
 
-    for i, result in enumerate(results):
-        is_last = i == len(results) - 1
-        end = "" if is_last else ","
-        res += indentate(result.to_json().replace("\t", INDENT), 1) + end + "\n"
-
-    return res + "]"
+def get_json_data(results: List[Result]) -> list:
+    """Returns a list of dictionaries ready for JSON serialization."""
+    return [r.to_dict() for r in results]
 
 
 def into_csv(results: List[Result]) -> str:
