@@ -7,7 +7,7 @@ async def _check(email: str) -> Result:
     show_url = "https://lovescape.com"
 
     payload = {
-        "username": "W3ak3n3dCut3n3ss3674",
+        "username": "_W3ak3n3d_Cut3n3ss86541",
         "email": email,
         "password": "igy8868yiyy",
         "recaptcha": "",
