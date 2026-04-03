@@ -141,6 +141,15 @@ class Result:
             "is_email": self.is_email,
         }
 
+    def to_dict(self) -> dict:
+        """Prepares the clean dictionary for JSON/Exporting."""
+        data = self.as_dict()
+
+        if self.is_email:
+            data["email"] = data.pop("username")
+        data.pop("is_email", None)
+        return data
+
     def debug(self) -> str:
         return DEBUG_MSG.format(**self.as_dict())
 

@@ -15,8 +15,11 @@ def indentate(msg: str, indent: int):
 
 
 def into_json(results: List[Result]) -> str:
-    list_of_dicts = [result.to_json() for result in results]
-    return json.dumps(list_of_dicts, indent=2)
+    return json.dumps([r.to_dict() for r in results], indent=4)
+
+def get_json_data(results: List[Result]) -> list:
+    """Returns a list of dictionaries ready for JSON serialization."""
+    return [r.to_dict() for r in results]
 
 
 def into_csv(results: List[Result]) -> str:
