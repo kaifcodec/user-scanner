@@ -15,7 +15,7 @@ async def _check(email):
         "origin": "https://mastodon.social"
     }
 
-    async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=True) as client:
+    async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=True, timeout=15.0) as client:
         try:
             initial_resp = await client.get(signup_url)
             if initial_resp.status_code not in [200, 302]:
@@ -30,12 +30,8 @@ async def _check(email):
 
             payload = {
                 "authenticity_token": csrf_token,
-                "user[account_attributes][username]": "no3motions_robot_020102",
                 "user[email]": email,
-                "user[password]": "Theleftalone@me",
-                "user[password_confirmation]": "Theleftalone@me",
                 "user[agreement]": "1",
-                "button": ""
             }
 
             response = await client.post(post_url, data=payload)
@@ -52,6 +48,8 @@ async def _check(email):
                 return Result.error("Rate limited, use '-d' flag to avoid bot detection", url=base_url)
             else:
                 return Result.error("Unexpected error, report it via GitHub issues", url=base_url)
+        except httpx.TimeoutException:
+            return Result.error("Request timed out", url=base_url)
         except Exception as e:
             return Result.error(e, url=base_url)
 
