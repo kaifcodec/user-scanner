@@ -1,34 +1,46 @@
+import httpx
+
 from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import status_validate
+from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
 
 def validate_instagram(user):
-    url = "https://www.instagram.com/api/v1/users/web_profile_info/"
     show_url = f"https://www.instagram.com/{user}/"
-
-    params = {"username": user}
+    url = "https://www.instagram.com/api/v1/web/accounts/web_create_ajax/attempt/"
 
     headers = {
         "User-Agent": get_random_user_agent(),
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "sec-ch-ua-full-version-list": '"Not(A:Brand";v="8.0.0.0", "Chromium";v="144.0.7559.132", "Google Chrome";v="144.0.7559.132"',
-        "sec-ch-ua-platform": '"Linux"',
-        "sec-ch-ua": '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
-        "sec-ch-ua-model": '""',
-        "sec-ch-ua-mobile": "?0",
+        "Accept": "*/*",
         "x-ig-app-id": "936619743392459",
+        "x-csrftoken": "0",
         "x-requested-with": "XMLHttpRequest",
-        "sec-ch-prefers-color-scheme": "dark",
-        "x-ig-www-claim": "0",
-        "sec-ch-ua-platform-version": '""',
-        "sec-fetch-site": "same-origin",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-dest": "empty",
-        "referer": f"https://www.instagram.com/{user}",
-        "accept-language": "en-US,en;q=0.9",
-        "priority": "u=1, i",
+        "referer": "https://www.instagram.com/accounts/emailsignup/",
+        "content-type": "application/x-www-form-urlencoded",
+        "cookie": "csrftoken=0",
     }
 
-    return status_validate(
-        url, 404, 200, show_url=show_url, params=params, headers=headers, http2=True
+    def check_response(response: httpx.Response) -> Result:
+        try:
+            data = response.json()
+        except Exception:
+            return Result.error(f"[{response.status_code}] Unexpected response from Instagram.")
+
+        errors = data.get("errors", {})
+        username_errors = errors.get("username", [])
+
+        for err in username_errors:
+            if err.get("code") in ("username_invalid", "username_is_taken"):
+                return Result.taken()
+
+        return Result.available()
+
+    return generic_validate(
+        url,
+        check_response,
+        show_url=show_url,
+        headers=headers,
+        data={"username": user, "email": "", "first_name": "", "opt_into_one_tap": "false"},
+        method="POST",
+        http2=True,
     )
