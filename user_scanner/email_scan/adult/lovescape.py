@@ -77,7 +77,7 @@ async def _check(email: str) -> Result:
             if "Email is already used" in error_msg:
                 return Result.taken(url=show_url)
 
-            if "recaptcha is required" in error_msg:
+            if "Username is already used" in error_msg:
                 return Result.available(url=show_url)
 
             return Result.error(f"Unexpected: {error_msg}")
