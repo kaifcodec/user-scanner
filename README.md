@@ -170,7 +170,15 @@ This will:
 ---
 <img width="1080" height="730" alt="1000175084" src="https://github.com/user-attachments/assets/b399b924-6c4a-4b5b-af0d-67f7c0b39436" />
 
+---
 
+- Use the `--hudson` flag to check if a **username** or **email** has been exposed in **infostealer malware logs**.
+
+```bash
+user-scanner -e johndoe@gmail.com --hudson   # for email check
+user-scanner -u johndoe --hudson             # for username check
+```
+<img width="1080" height="844" alt="1000183041" src="https://github.com/user-attachments/assets/366d4697-b94b-40b2-9844-f936b6fcea7f" />
 
 ---
 ## ❤️ Support the project
@@ -183,36 +191,7 @@ If this project helps you, consider supporting its development:
 ---
 ## Contributing
 
-Modules are organized under `user_scanner/`:
-
-```
-user_scanner/
-├── email_scan/       # Currently in development
-│   ├── social/       # Social email scan modules (Instagram, Mastodon, X, etc.)
-|   ├── adult/        # Adult sites 
-|    ...
-├── user_scan/
-│   ├── dev/          # Developer platforms (GitHub, GitLab, npm, etc.)
-│   ├── social/       # Social platforms (Twitter/X, Reddit, Instagram, Discord, etc.)
-│   ├── creator/      # Creator platforms (Hashnode, Dev.to, Medium, Patreon, etc.)
-│   ├── community/    # Community platforms (forums, StackOverflow, HackerNews, etc.)
-│   ├── gaming/       # Gaming sites (chess.com, Lichess, Roblox, Minecraft, etc.)
-    ...
-```
-
 See detailed [Contributing guidelines](CONTRIBUTING.md)
-
----
-
-## Dependencies: 
-- [httpx](https://pypi.org/project/httpx/)
-- [colorama](https://pypi.org/project/colorama/)
-
----
-
-## License
-
-This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 ---
 
