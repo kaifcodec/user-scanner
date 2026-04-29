@@ -1,61 +1,44 @@
 import httpx
-import json
 from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
+    url = "https://www.polarsteps.com/validation/unique"
     show_url = "https://polarsteps.com"
-    # Switching to the login endpoint to leverage 401 vs 404 status codes
-    url = "https://www.polarsteps.com/api/login"
 
     payload = {
-        "username": email,
-        "password": "nic3_guys_finish_last"  # Dummy password for existence check
+        'field': "users.email",
+        'value': email
     }
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36",
-        'Accept': "application/json, text/plain, */*",
+        'User-Agent': "Polarsteps/8.0.0 (com.polarsteps; build:2000006379; Android 10)",
         'Accept-Encoding': "identity",
-        'Content-Type': "application/json",
-        'sec-ch-ua-platform': '"Android"',
-        'polarsteps-api-version': "69",
-        'sec-ch-ua': '"Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"',
-        'sec-ch-ua-mobile': "?1",
-        'Origin': "https://www.polarsteps.com",
-        'Referer': "https://www.polarsteps.com/login",
-        'Accept-Language': "en-US,en;q=0.9,ru;q=0.8",
-        'Priority': "u=1, i"
+        'polarsteps-api-version': "55",
+        'polarsteps-user-language': "en-US",
+        'polarsteps-device-id': "a1b2c3d4e5f6g7h8",
+        'polarsteps-device-name': "Samsung%20SM-G973F",
+        'polarsteps-device-platform': "1",
+        'Accept-Language': "en-US"
     }
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(
-                url,
-                content=json.dumps(payload),
-                headers=headers
-            )
+            response = await client.post(url, data=payload, headers=headers)
 
-            status = response.status_code
+            if response.status_code == 403:
+                return Result.error("403")
 
-            # 401 means the account exists but the password (dummy) was wrong
-            if status == 401:
-                return Result.taken(url=show_url)
+            res_text = response.text.strip().upper()
 
-            # 404 means the username/email is not registered in their system
-            if status == 404:
+            if res_text == "OK":
                 return Result.available(url=show_url)
 
-            if status == 403:
-                return Result.error("Caught by WAF or IP Block (403)")
+            if res_text == "INVALID":
+                return Result.taken(url=show_url)
 
-            if status == 429:
-                return Result.error("Rate limited by Polarsteps (429)")
+            return Result.error(f"Unexpected: {res_text[:10]}")
 
-            return Result.error(f"Unexpected status code: {status}")
-
-    except httpx.ConnectTimeout:
-        return Result.error("Connection timed out! maybe region blocks")
     except Exception as e:
         return Result.error(e)
 
