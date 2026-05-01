@@ -28,4 +28,4 @@ def validate_beatstars(user):
 
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
-    return generic_validate(url, process, show_url=show_url, headers=headers, json=payload)
+    return generic_validate(url, process, show_url=show_url, method="POST", headers=headers, json=payload)
