@@ -26,10 +26,10 @@ def validate_beatstars(user):
                 raw_err = res_json["errors"][0].get("message", "")
 
                 if "ITEM_NOT_FOUND" in raw_err:
-                    return Result.error("Username too short or invalid length")
+                    return Result.available("Username too short or invalid length")
 
                 if "valid email or username" in raw_err:
-                    return Result.error("Invalid username format.")
+                    return Result.available("Invalid username format")
 
                 return Result.error(f"API Error: {raw_err}")
 
