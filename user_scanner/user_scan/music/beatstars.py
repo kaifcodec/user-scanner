@@ -26,7 +26,7 @@ def validate_beatstars(user):
                 raw_err = res_json["errors"][0].get("message", "")
 
                 if "ITEM_NOT_FOUND" in raw_err:
-                    return Result.error("Username too short or invalid length.")
+                    return Result.error("Username too short or invalid length")
 
                 if "valid email or username" in raw_err:
                     return Result.error("Invalid username format.")
@@ -37,7 +37,7 @@ def validate_beatstars(user):
             identifier_data = data.get("identifierAvailable")
 
             if not identifier_data:
-                return Result.error("Could not parse identifier data.")
+                return Result.error("Could not parse identifier data")
 
             if identifier_data.get("available") is True:
                 return Result.available()
@@ -45,6 +45,6 @@ def validate_beatstars(user):
             return Result.taken()
 
         except (AttributeError, ValueError, KeyError):
-            return Result.error("Failed to decode server response.")
+            return Result.error("Failed to decode server response, report it via GitHub issues")
 
     return generic_validate(url, process, show_url=show_url, method="POST", headers=headers, json=payload)
