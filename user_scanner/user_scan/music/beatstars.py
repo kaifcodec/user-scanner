@@ -19,13 +19,32 @@ def validate_beatstars(user):
     }
 
     def process(response):
-        if response.status_code == 200:
-            data = response.json()
-            available = data.get('data').get('identifierAvailable').get('available')
-            if available is True:
+        try:
+            res_json = response.json()
+
+            if "errors" in res_json and res_json["errors"]:
+                raw_err = res_json["errors"][0].get("message", "")
+
+                if "ITEM_NOT_FOUND" in raw_err:
+                    return Result.error("Username too short or invalid length.")
+
+                if "valid email or username" in raw_err:
+                    return Result.error("Invalid username format.")
+
+                return Result.error(f"API Error: {raw_err}")
+
+            data = res_json.get("data", {})
+            identifier_data = data.get("identifierAvailable")
+
+            if not identifier_data:
+                return Result.error("Could not parse identifier data.")
+
+            if identifier_data.get("available") is True:
                 return Result.available()
+
             return Result.taken()
 
-        return Result.error("Unexpected response body, report it via GitHub issues.")
+        except (AttributeError, ValueError, KeyError):
+            return Result.error("Failed to decode server response.")
 
     return generic_validate(url, process, show_url=show_url, method="POST", headers=headers, json=payload)
