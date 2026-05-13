@@ -61,7 +61,7 @@ async def _check(email: str) -> Result:
                     pfp = data.get("avatar_url")
                     avatar_dict = data.get("avatar")
                     if isinstance(avatar_dict, dict) and avatar_dict.get("url"):
-                        pfp = avatar_dict.get("url")
+                        pfp = str(avatar_dict.get("url"))
 
                 # date formatting
                 created = data.get("create_date")
