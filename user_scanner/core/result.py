@@ -154,13 +154,33 @@ class Result:
         return DEBUG_MSG.format(**self.as_dict())
 
     def to_json(self) -> str:
-        msg = JSON_TEMPLATE.format(**self.as_dict())
+        data = self.as_dict()
+
+        if data.get("extra"):
+            # use json.dumps to get a perfectly escaped string, then strip the surrounding quotes
+            data["extra"] = json.dumps(str(data["extra"]))[1:-1]
+        else:
+            data["extra"] = ""
+
+        msg = JSON_TEMPLATE.format(**data)
         if self.is_email:
             msg = msg.replace('\t"username":', '\t"email":')
         return msg
 
+
     def to_csv(self) -> str:
-        return CSV_TEMPLATE.format(**self.as_dict())
+        data = self.as_dict()
+
+        # flatten multiline extra string parameters so it doesn't break row alignments
+        if data.get("extra"):
+            # swap real newlines out for a clean inline separator
+            clean_extra = str(data["extra"]).replace("\n", "; ")
+            # normalize whitespace sequences
+            data["extra"] = " ".join(clean_extra.split())
+        else:
+            data["extra"] = ""
+
+        return CSV_TEMPLATE.format(**data)
 
     def __str__(self):
         return self.get_reason()
@@ -207,7 +227,21 @@ class Result:
             else ""
         )
 
-        extra_display = f"\n{' ' * 6}{Fore.CYAN}└── {self.extra}" if self.extra else ""
+        # dynamic extra layout handling logic
+        extra_display = ""
+        if self.extra:
+            # cast to string just in case, and split by newline or custom delimiter
+            extra_str = str(self.extra)
+
+            # clean up empty lines and split by newline
+            extra_lines = [line.strip() for line in extra_str.split("\n") if line.strip()]
+
+            # draw a tree link for each line
+            formatted_lines = []
+            for line in extra_lines:
+                formatted_lines.append(f"\n{' ' * 6}{Fore.CYAN}└── {line}")
+
+            extra_display = "".join(formatted_lines)
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
 
         return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{extra_display}{Style.RESET_ALL}"
