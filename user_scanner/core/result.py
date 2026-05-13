@@ -1,7 +1,6 @@
+import json
 from enum import Enum
-
 from colorama import Fore, Style
-
 from user_scanner.core.helpers import ScanConfig
 
 # Added {url} to the debug message
