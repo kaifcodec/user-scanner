@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/pypi/dm/user-scanner?style=for-the-badge" />
 </p>
 
+
 ---
 A powerful **2-in-1 OSINT suite** combining deep **Email OSINT** with comprehensive **Username Scanning**. 
 
@@ -115,20 +116,18 @@ See full usage (eg. category checks, full scan) guide [library usage](docs/USAGE
 - Email scan example (single module):
 
 ```python
-
 import asyncio
 from user_scanner.core import engine
-from user_scanner.email_scan.learning import vedantu
+from user_scanner.email_scan.shopping import etsy
 
 async def main():
     # Engine detects 'email_scan' path -> returns "Registered" status
-    result = await engine.check(vedantu, "test@gmail.com")
+    result = await engine.check(etsy, "test@gmail.com")
     json_data = result.to_json() # returns JSON output
     csv_data = result.to_csv()   # returns CSV output
     print(json_data)             # prints the json data
 
 asyncio.run(main())
-
 ```
 Output:
 
@@ -136,11 +135,11 @@ Output:
 
 {
         "email": "test@gmail.com",
-        "category": "Learning",
-        "site_name": "Vedantu",
+        "category": "Shopping",
+        "site_name": "Etsy",
         "status": "Registered",
-        "url": "https://www.vedantu.com",
-        "extra": "Phone: +9121****83",
+        "url": "https://www.etsy.com",
+        "extra": "ID: 98832\nName: test123\nUsername: test123\nGender: private\nIs Seller: No\nHas Public Page: No\nStats: 0 followers | 0 following | 0 favorites\nPrivacy: Items are Public | Shops are Public\nJoined: 2010-09-19 09:34:06\nLast Profile Update: 2020-07-31 06:10:24\nAvatar: https://i.etsystatic.com/site-assets/images/avatars/default_avatar.png?width=400",
         "reason": ""
 }
 ```
@@ -164,7 +163,7 @@ This will:
 **Note**: Screenshots might be outdated
 
 ---
-<img width="1080" height="1350" alt="1000175086" src="https://github.com/user-attachments/assets/c90396d6-b8d9-4ea3-aac4-d2086f9b5756" />
+<img width="2160" height="3760" alt="1000188339" src="https://github.com/user-attachments/assets/da7d73a5-2a50-4704-b71c-993fe5a17644" />
 
 
 ---
