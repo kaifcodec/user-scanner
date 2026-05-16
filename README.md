@@ -2,7 +2,7 @@
 
 ![User Scanner Logo](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.3.6.2-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.3.6.3-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
@@ -14,7 +14,7 @@
 ---
 A powerful **2-in-1 OSINT suite** combining deep **Email OSINT** with comprehensive **Username Scanning**. 
 
-With **195+ total scan vectors**—including **95+ email-integrated sites** and **100+ username platforms**—you can identify digital footprints or verify account registrations in seconds.
+With **205+ total scan vectors**—including **100+ email-integrated sites** and **105+ username platforms**—you can identify digital footprints or verify account registrations in seconds.
 
 The ultimate tool for finding a **unique username** across GitHub, X, Reddit, Instagram, and more in a single command.
 
