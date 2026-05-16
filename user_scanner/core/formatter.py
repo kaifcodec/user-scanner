@@ -1,10 +1,10 @@
 import json
-from user_scanner.core.result import Result
 from typing import List
 
-INDENT = "  "
-CSV_HEADER = "username,category,site_name,status,url,reason"
+from user_scanner.core.result import CSV_TEMPLATE, Result
 
+INDENT = "  "
+CSV_HEADER = CSV_TEMPLATE.replace("{", "").replace("}", "")
 
 
 def indentate(msg: str, indent: int):
@@ -16,6 +16,7 @@ def indentate(msg: str, indent: int):
 
 def into_json(results: List[Result]) -> str:
     return json.dumps([r.to_dict() for r in results], indent=4)
+
 
 def get_json_data(results: List[Result]) -> list:
     """Returns a list of dictionaries ready for JSON serialization."""
