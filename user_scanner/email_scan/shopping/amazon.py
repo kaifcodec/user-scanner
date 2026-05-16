@@ -115,9 +115,7 @@ async def _check(email: str) -> Result:
                 )
 
             if _is_captcha(resp.text):
-                return Result.error(
-                    "CAPTCHA triggered (IP may be flagged)", url=show_url
-                )
+                return Result.taken(url=show_url)
 
             # 3. If Amazon asks for a password, the email is registered
             if 'id="auth-password-missing-alert"' in resp.text:
