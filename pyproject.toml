@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 requires-python = ">=3.10"
-keywords = ["username", "checker", "availability", "social", "tech", "python", "user-scanner"]
+keywords = ["osint", "email-osint", "username-osint", "python", "cli-tool", "cybersecurity", "threat-intelligence", "security"]
 
 [project.urls]
 Homepage = "https://github.com/kaifcodec/user-scanner"
