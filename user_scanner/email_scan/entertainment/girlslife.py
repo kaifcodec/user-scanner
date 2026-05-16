@@ -28,6 +28,10 @@ async def _check(email: str) -> Result:
                 return Result.error(f"Failed to load register page: {init_res.status_code}")
 
             nonce_match = re.search(r'name="_wpnonce" value="([^"]+)"', init_res.text)
+
+            if not nonce_match:
+                return Result.error("Failed to parse response")
+
             nonce = nonce_match.group(1)
 
             # POST the validation payload
