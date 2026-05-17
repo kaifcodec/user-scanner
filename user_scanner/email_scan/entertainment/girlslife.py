@@ -9,7 +9,7 @@ async def _check(email: str) -> Result:
     headers = {
         'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36",
         'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        'Accept-Encoding': "gzip, deflate, br, zstd",
+        'Accept-Encoding': "identity",
         'sec-ch-ua': '"Brave";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
         'sec-ch-ua-mobile': "?1",
         'sec-ch-ua-platform': '"Android"',
