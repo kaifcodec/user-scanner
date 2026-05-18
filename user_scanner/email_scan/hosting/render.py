@@ -7,23 +7,16 @@ async def _check(email: str) -> Result:
     show_url = "https://render.com"
 
     payload = {
-        "operationName": "signUp",
-        "variables": {
-            "signup": {
-                "email": email,
-                "githubId": "",
-                "name": "",
-                "githubToken": "",
-                "googleId": "",
-                "gitlabId": "",
-                "bitbucketId": "",
-                "inviteCode": "",
-                "password": "StandardPassword123!",
-                "newsletterOptIn": False,
-                "next": ""
+        "operationName": "validateEmail",
+        "variables": {"email": email},
+        "query": """
+        mutation validateEmail($email: String!) {
+            validateEmail(email: $email) {
+                valid
+                exists
             }
-        },
-        "query": "mutation signUp($signup: SignupInput!) {\n  signUp(signup: $signup) {\n    idToken\n    __typename\n  }\n}\n"
+        }
+        """
     }
 
     headers = {
@@ -42,18 +35,26 @@ async def _check(email: str) -> Result:
                 return Result.error("Rate limited, use '-d' flag to avoid bot detection")
 
             data = response.json()
-            errors = data.get("errors", [])
 
-            if errors:
-                msg = errors[0].get("message", "")
-                if '"email":"exists"' in msg:
-                    return Result.taken(url=show_url)
-                elif '"hcaptcha_token":"invalid"' in msg:
-                    return Result.available(url=show_url)
-                else:
-                    return Result.error(f"Render Error: {msg}")
+            if "errors" in data:
+                msg = data["errors"][0].get("message", "")
+                return Result.error(f"Render Error: {msg}")
 
-            return Result.error("Unexpected error, report it via GitHub issues")
+            result = data.get("data", {}).get("validateEmail")
+
+            if not result:
+                return Result.error("Unexpected response format from Render")
+
+            
+            if result.get("exists"):
+                return Result.taken(url=show_url)
+
+           
+            if result.get("valid"):
+                return Result.available(url=show_url)
+
+            
+            return Result.error("Invalid email format")
 
         except Exception as e:
             return Result.error(e)
