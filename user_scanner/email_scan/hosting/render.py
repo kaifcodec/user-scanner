@@ -51,7 +51,7 @@ async def _check(email: str) -> Result:
                 # Le message est un JSON encodé dans une string
                 try:
                     msg = json.loads(raw)
-                except:
+                except Exception:
                     return Result.error(f"Render Error: {raw}")
 
                 # 1) Compte Render classique
@@ -59,7 +59,6 @@ async def _check(email: str) -> Result:
                     return Result.taken(url=show_url)
 
                 # 2) Compte OAuth (GitHub / Google)
-                # Render renvoie "invalid" car l'email n'est pas dans la base "password users"
                 if msg.get("email") == "invalid":
                     return Result.taken(url=show_url)
 
