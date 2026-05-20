@@ -19,7 +19,6 @@ LOUD_MODULES: Dict[str, List[str]] = {
     "user": [],
     "email": [
         "leetcode",
-        "instagram",
         "netflix",
         "sexvid",
         "made.porn",

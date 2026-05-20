@@ -5,16 +5,19 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     show_url = "https://instagram.com"
-    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+    user_agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
 
     try:
-        async with httpx.AsyncClient(headers={"user-agent": user_agent}, http2=True, timeout=7.0) as client:
-            res = await client.get("https://www.instagram.com/accounts/password/reset/", follow_redirects=True)
+        async with httpx.AsyncClient(
+            headers={"user-agent": user_agent}, http2=True, timeout=10.0
+        ) as client:
+            res = await client.get("https://www.instagram.com/", follow_redirects=True)
 
             csrf = client.cookies.get("csrftoken")
             if not csrf:
                 match = re.search(
-                    r'["\']csrf_token["\']\s*:\s*["\']([^"\']+)["\']', res.text)
+                    r'["\']csrf_token["\']\s*:\s*["\']([^"\']+)["\']', res.text
+                )
                 if match:
                     csrf = match.group(1)
 
@@ -25,29 +28,36 @@ async def _check(email: str) -> Result:
                 "x-csrftoken": csrf,
                 "x-ig-app-id": "936619743392459",
                 "x-requested-with": "XMLHttpRequest",
-                "x-asbd-id": "359341",
                 "origin": "https://www.instagram.com",
-                "referer": "https://www.instagram.com/accounts/password/reset/",
+                "referer": "https://www.instagram.com/",
                 "accept": "*/*",
-                "content-type": "application/x-www-form-urlencoded"
+                "content-type": "application/x-www-form-urlencoded",
             }
 
             response = await client.post(
-                "https://www.instagram.com/api/v1/web/accounts/account_recovery_send_ajax/",
-                data={"email_or_username": email},
-                headers=headers
+                "https://www.instagram.com/api/v1/users/check_email/",
+                data={"email": email, "sign_up_code": ""},
+                headers=headers,
             )
 
-            if response.status_code in [200, 400]:
+            if response.status_code == 200:
                 data = response.json()
-                status_val = data.get("status")
-
-                if status_val == "ok":
+                if data.get("error_type") == "email_is_taken":
                     return Result.taken(url=show_url)
-                elif status_val == "fail":
+                elif data.get("available") is True:
                     return Result.available(url=show_url)
 
-                return Result.error("Unexpected response body, report it via GitHub issues")
+                return Result.error(
+                    "Unexpected 200 response body, report it via GitHub issues"
+                )
+
+            if response.status_code == 400:
+                data = response.json()
+                if data.get("spam") is True:
+                    # Instagram often blocks enumeration of non-existing emails with 'spam': true
+                    return Result.available(url=show_url)
+
+                return Result.error("Unexpected 400 response body")
 
             if response.status_code == 429:
                 return Result.error("Rate limited (429)")
