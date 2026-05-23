@@ -185,6 +185,23 @@ user-scanner -u johndoe --hudson             # for username check
 If this project helps you, consider supporting its development:
 
 **BTC (SegWit):** `bc1q0dzkuav8lq9lwu7gc457vwlda4utfcr5hpv7ka`
+---
+
+## 💖 Sponsors
+
+Huge thanks to our amazing sponsors who support the development of `user-scanner`!
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/soxoj">
+        <img src="https://github.com/soxoj.png?size=100" width="50px;" alt="soxoj"/>
+        <br />
+        <sub><b>@soxoj</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 
 ---
