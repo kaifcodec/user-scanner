@@ -158,7 +158,29 @@ This will:
 1. Filter out non-working proxies
 2. Save working proxies to `validated_proxies.txt`
 3. Use only validated proxies for scanning
+---
+## Support the project
 
+If this project helps you, consider supporting its development:
+[GitHub Sponsor](https://github.com/sponsors/kaifcodec)
+
+## Sponsors
+
+Huge thanks to our amazing sponsors who support the development of `user-scanner`!
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/soxoj">
+        <img src="https://github.com/soxoj.png?size=100" width="50px;" alt="soxoj"/>
+        <br />
+        <sub><b>@soxoj</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
+
+---
 ### Screenshots:
 **Note**: Screenshots might be outdated
 
@@ -178,31 +200,6 @@ user-scanner -e johndoe@gmail.com --hudson   # for email check
 user-scanner -u johndoe --hudson             # for username check
 ```
 <img width="1080" height="844" alt="1000183041" src="https://github.com/user-attachments/assets/366d4697-b94b-40b2-9844-f936b6fcea7f" />
-
----
-## ❤️ Support the project
-
-If this project helps you, consider supporting its development:
-
-**BTC (SegWit):** `bc1q0dzkuav8lq9lwu7gc457vwlda4utfcr5hpv7ka`
----
-
-## 💖 Sponsors
-
-Huge thanks to our amazing sponsors who support the development of `user-scanner`!
-
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/soxoj">
-        <img src="https://github.com/soxoj.png?size=100" width="50px;" alt="soxoj"/>
-        <br />
-        <sub><b>@soxoj</b></sub>
-      </a>
-    </td>
-  </tr>
-</table>
-
 
 ---
 ## Contributing
