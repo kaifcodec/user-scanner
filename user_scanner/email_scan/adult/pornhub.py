@@ -57,9 +57,9 @@ async def _check(email: str) -> Result:
                 if "delivery issues" in error_msg:
                     return Result.error(url=show_url, reason="The email is experiencing email delivery issues")
 
-            if status == "create_account_passed":
+            if status == "create_account_passed" and error_msg == "":
                 return Result.available(url=show_url)
-            elif "already in use" in error_msg.lower() or "already registered" in error_msg:
+            elif status == "create_account_failed" and "already registered" in error_msg:
                 return Result.taken(url=show_url)
             else:
                 return Result.error(f"Unexpected API response: {status}: {error_msg}")
