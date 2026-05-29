@@ -1,4 +1,3 @@
-import json
 from enum import Enum
 from colorama import Fore, Style
 from user_scanner.core.helpers import ScanConfig
@@ -169,12 +168,6 @@ class Result:
 
     def to_json(self) -> str:
         data = self.as_dict()
-
-        if data.get("extra"):
-            # use json.dumps to get a perfectly escaped string, then strip the surrounding quotes
-            data["extra"] = json.dumps(data["extra"])
-        else:
-            data["extra"] = ""
 
         msg = JSON_TEMPLATE.format(**data)
         if self.is_email:
