@@ -74,15 +74,30 @@ class Result:
         self.site_name = None
         self.category = None
         self.url = ""  # Initialized url field
-        self.extra = ""
+        self.extra: dict[str, str | bool | int] = {}
         self.is_email = False
         self.update(**kwargs)
 
     def update(self, **kwargs):
         # Added "url" to the list of fields allowed for dynamic updates
-        for field in ("username", "site_name", "category", "is_email", "url", "extra"):
+        for field in ("username", "site_name", "category", "is_email", "url"):
             if field in kwargs and kwargs[field] is not None:
                 setattr(self, field, kwargs[field])
+
+        if "extra" in kwargs and isinstance(kwargs["extra"], dict):
+            for key, value in kwargs["extra"].items():
+                if value is None or (isinstance(value, str) and not value.strip()):
+                    continue
+
+                clean_key = key.strip().rstrip(":").strip().replace(" ", "_").lower()
+                if not clean_key:
+                    continue
+
+                if not isinstance(value, (bool, int)):
+                    value = str(value)
+
+                self.extra[clean_key] = value
+
         return self
 
     @classmethod
@@ -157,7 +172,7 @@ class Result:
 
         if data.get("extra"):
             # use json.dumps to get a perfectly escaped string, then strip the surrounding quotes
-            data["extra"] = json.dumps(str(data["extra"]))[1:-1]
+            data["extra"] = json.dumps(data["extra"])
         else:
             data["extra"] = ""
 
@@ -172,10 +187,11 @@ class Result:
 
         # flatten multiline extra string parameters so it doesn't break row alignments
         if data.get("extra"):
-            # swap real newlines out for a clean inline separator
-            clean_extra = str(data["extra"]).replace("\n", "; ")
-            # normalize whitespace sequences
-            data["extra"] = " ".join(clean_extra.split())
+            clean_extra = ""
+            for key, value in data["extra"].items():
+                clean_extra += f"{key}: {value}; "
+
+            data["extra"] = clean_extra.rstrip("; ").replace(",", "")
         else:
             data["extra"] = ""
 
@@ -228,19 +244,14 @@ class Result:
 
         # dynamic extra layout handling logic
         extra_display = ""
-        if self.extra:
-            # cast to string just in case, and split by newline or custom delimiter
-            extra_str = str(self.extra)
+        extras = list(self.extra.items())
+        for i, (key, value) in enumerate(extras):
+            connector = "├──"
+            if i == len(extras) - 1:
+                connector = "└──"
 
-            # clean up empty lines and split by newline
-            extra_lines = [line.strip() for line in extra_str.split("\n") if line.strip()]
+            extra_display += f"\n{' ' * 6}{Fore.CYAN}{connector} {key}: {value}"
 
-            # draw a tree link for each line
-            formatted_lines = []
-            for line in extra_lines:
-                formatted_lines.append(f"\n{' ' * 6}{Fore.CYAN}└── {line}")
-
-            extra_display = "".join(formatted_lines)
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
 
         return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{extra_display}{Style.RESET_ALL}"
