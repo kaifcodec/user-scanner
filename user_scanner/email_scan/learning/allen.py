@@ -43,7 +43,9 @@ async def _check(email: str) -> Result:
                         break
 
                 if masked_phone:
-                    return Result.taken(url=show_url, extra=f"Phone: +91{masked_phone}")
+                    return Result.taken(
+                        url=show_url, extra={"phone": f"+91{masked_phone}"}
+                    )
                 return Result.taken(url=show_url)
 
             # status 200 + "Invalid email" means not registered

@@ -27,7 +27,14 @@ def validate_roblox(user: str) -> Result:
         for entry in search_results["data"]:
             # .lower() so casing from the API doesn't matter
             if entry["name"].lower() == user.lower():  # if a username matches the user
-                return Result.taken()
+                return Result.taken(
+                    extra={
+                        "display name": entry.get("displayName"),
+                        "uid": entry.get("id"),
+                        "is verified": entry.get("hasVerifiedBadge"),
+                    }
+                )
+
         return Result.available()
 
     # First try: Using roblox's API
