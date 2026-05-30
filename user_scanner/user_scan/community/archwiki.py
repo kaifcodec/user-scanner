@@ -6,10 +6,19 @@ def validate_archwiki(user):
     show_url = f"https://wiki.archlinux.org/title/User:{user}"
 
     def process(response):
-        if '"userid":' in response.text:
-            return Result.taken()
-        if '"missing":true' in response.text:
-            return Result.available()
-        return Result.error(f"Unexpected status: {response.status_code}")
-
+        try:
+            data = response.json()
+            users = data.get("query", {}).get("users", [])
+            if not users:
+                return Result.available()
+            
+            user_data = users[0]
+            if user_data.get("missing") is True:
+                return Result.available()
+            if "userid" in user_data:
+                return Result.taken()
+            
+            return Result.error("Unexpected user structure")
+        except Exception as e:
+            return Result.error(e)
     return generic_validate(url, process, show_url=show_url)
