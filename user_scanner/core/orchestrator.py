@@ -142,7 +142,7 @@ def get_client(use_http2: bool, proxy_val: Optional[str]) -> httpx.Client:
     if key not in _clients:
         with _clients_lock:
             if key not in _clients:
-                _clients[key] = httpx.Client(http2=use_http2, proxy=proxy_val, verify=False)
+                _clients[key] = httpx.Client(http2=use_http2, proxy=proxy_val, verify=True)
     return _clients[key]
 
 
