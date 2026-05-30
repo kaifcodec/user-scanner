@@ -30,9 +30,13 @@ def validate_vinted(user: str):
             return Result.available()
         elif user not in search:
             closest = difflib.get_close_matches(user, search, n=1)
-            msg = f"closest: {closest[0]}" if closest else None
-            return Result.available(msg)
+            return Result.available(extra={"closest": closest[0] if closest else None})
         else:
-            return Result.taken()
+            id_search = re.findall(
+                rf"www.vinted.pt\/member\/(\d+)-{user}\\", response.text
+            )
+            return Result.taken(
+                extra={"id": id_search[0] if len(id_search) > 0 else None}
+            )
 
     return generic_validate(url, process, show_url=show_url)

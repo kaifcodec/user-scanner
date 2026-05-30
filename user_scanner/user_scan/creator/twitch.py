@@ -57,7 +57,16 @@ def validate_twitch(user: str) -> Result:
         typename = user_data.get("__typename")
 
         if typename == "User":
-            return Result.taken()
+            extra = {
+                "id": user_data.get("id"),
+                "description": user_data.get("description"),
+                "followers": user_data.get("followers", {}).get("totalCount"),
+            }
+
+            for social_media in user_data.get("channel", {}).get("socialMedias"):
+                extra[social_media.get("name")] = social_media.get("url")
+
+            return Result.taken(extra=extra)
         elif typename == "UserDoesNotExist":
             return Result.available()
         else:
