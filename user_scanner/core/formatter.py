@@ -1,10 +1,10 @@
 import json
 from typing import List
 
-from user_scanner.core.result import CSV_TEMPLATE, Result
+from user_scanner.core.result import CSV_FIELDS, Result
 
 INDENT = "  "
-CSV_HEADER = CSV_TEMPLATE.replace("{", "").replace("}", "")
+CSV_HEADER = ",".join(CSV_FIELDS)
 
 
 def indentate(msg: str, indent: int):

@@ -1,3 +1,5 @@
+import csv
+import io
 from enum import Enum
 from colorama import Fore, Style
 from user_scanner.core.helpers import ScanConfig
@@ -26,7 +28,7 @@ JSON_TEMPLATE = """{{
 }}"""
 
 # Added {url} to the CSV template
-CSV_TEMPLATE = "{username},{category},{site_name},{status},{url},{extra},{reason}"
+CSV_FIELDS = ["username", "category", "site_name", "status", "url", "extra", "reason"]
 
 
 def humanize_exception(e: Exception) -> str:
@@ -184,11 +186,16 @@ class Result:
             for key, value in data["extra"].items():
                 clean_extra += f"{key}: {value}; "
 
-            data["extra"] = clean_extra.rstrip("; ").replace(",", "")
+            data["extra"] = clean_extra.rstrip("; ")
         else:
             data["extra"] = ""
 
-        return CSV_TEMPLATE.format(**data)
+        del data["is_email"]
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=CSV_FIELDS, lineterminator="")
+        writer.writerow(data)
+
+        return output.getvalue()
 
     def __str__(self):
         return self.get_reason()
@@ -237,12 +244,8 @@ class Result:
 
         # dynamic extra layout handling logic
         extra_display = ""
-        extras = list(self.extra.items())
-        for i, (key, value) in enumerate(extras):
-            connector = "├──"
-            if i == len(extras) - 1:
-                connector = "└──"
-
+        for i, (key, value) in enumerate(self.extra.items()):
+            connector = "└──" if i == len(self.extra) - 1 else "├──"
             extra_display += f"\n{' ' * 6}{Fore.CYAN}{connector} {key}: {value}"
 
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
