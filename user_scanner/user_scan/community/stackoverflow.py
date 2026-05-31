@@ -17,7 +17,6 @@ def validate_stackoverflow(user: str) -> Result:
             # Split HTML by card indicator to parse each user card block
             cards = re.split(r'<div class="grid--item user-info', text)
             found_card = None
-            found_path = None
 
             for card in cards[1:]:
                 link_match = re.search(r'<a href="(/users/(\d+)/([^"/]+))"[^>]*>([^<]+)</a>', card)
@@ -25,7 +24,6 @@ def validate_stackoverflow(user: str) -> Result:
                     full_path, uid, slug, name = link_match.groups()
                     if slug.lower() == user.lower() or name.strip().lower() == user.lower():
                         found_card = card
-                        found_path = full_path
                         break
 
             if found_card:
