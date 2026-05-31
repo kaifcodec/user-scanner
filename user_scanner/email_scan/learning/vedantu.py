@@ -50,11 +50,7 @@ async def _check(email: str) -> Result:
 
             # Primary check using the emailExists key
             if data.get("emailExists") is True:
-                masked_phone = data.get("phone")
-                if masked_phone:
-                    # Passing the masked phone number to the result
-                    return Result.taken(url=show_url, extra=f"Phone: {masked_phone}")
-                return Result.taken(url=show_url)
+                return Result.taken(url=show_url, extra={"phone": data.get("phone")})
 
             elif data.get("emailExists") is False:
                 return Result.available(url=show_url)

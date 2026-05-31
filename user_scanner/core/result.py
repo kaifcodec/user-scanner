@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 from enum import Enum
 from colorama import Fore, Style
@@ -15,19 +17,9 @@ DEBUG_MSG = """Result {{
   is_email: "{is_email}"
 }}"""
 
-# Added "url": "{url}" to the JSON template
-JSON_TEMPLATE = """{{
-\t"username": "{username}",
-\t"category": "{category}",
-\t"site_name": "{site_name}",
-\t"status": "{status}",
-\t"url": "{url}",
-\t"extra": "{extra}",
-\t"reason": "{reason}"
-}}"""
 
 # Added {url} to the CSV template
-CSV_TEMPLATE = "{username},{category},{site_name},{status},{url},{extra},{reason}"
+CSV_FIELDS = ["username", "category", "site_name", "status", "url", "extra", "reason"]
 
 
 def humanize_exception(e: Exception) -> str:
@@ -74,15 +66,30 @@ class Result:
         self.site_name = None
         self.category = None
         self.url = ""  # Initialized url field
-        self.extra = ""
+        self.extra: dict[str, str | bool | int] = {}
         self.is_email = False
         self.update(**kwargs)
 
     def update(self, **kwargs):
         # Added "url" to the list of fields allowed for dynamic updates
-        for field in ("username", "site_name", "category", "is_email", "url", "extra"):
+        for field in ("username", "site_name", "category", "is_email", "url"):
             if field in kwargs and kwargs[field] is not None:
                 setattr(self, field, kwargs[field])
+
+        if "extra" in kwargs and isinstance(kwargs["extra"], dict):
+            for key, value in kwargs["extra"].items():
+                if value is None or (isinstance(value, str) and not value.strip()):
+                    continue
+
+                clean_key = key.strip().rstrip(":").strip().replace(" ", "_").lower()
+                if not clean_key:
+                    continue
+
+                if not isinstance(value, (bool, int)):
+                    value = str(value)
+
+                self.extra[clean_key] = value
+
         return self
 
     @classmethod
@@ -153,33 +160,29 @@ class Result:
         return DEBUG_MSG.format(**self.as_dict())
 
     def to_json(self) -> str:
-        data = self.as_dict()
-
-        if data.get("extra"):
-            # use json.dumps to get a perfectly escaped string, then strip the surrounding quotes
-            data["extra"] = json.dumps(str(data["extra"]))[1:-1]
-        else:
-            data["extra"] = ""
-
-        msg = JSON_TEMPLATE.format(**data)
-        if self.is_email:
-            msg = msg.replace('\t"username":', '\t"email":')
-        return msg
-
+        data = self.to_dict()
+        return json.dumps(data, indent=4)
 
     def to_csv(self) -> str:
+        # uses .as_dict() since header has "username"
         data = self.as_dict()
 
         # flatten multiline extra string parameters so it doesn't break row alignments
         if data.get("extra"):
-            # swap real newlines out for a clean inline separator
-            clean_extra = str(data["extra"]).replace("\n", "; ")
-            # normalize whitespace sequences
-            data["extra"] = " ".join(clean_extra.split())
+            clean_extra = ""
+            for key, value in data["extra"].items():
+                clean_extra += f"{key}: {value}; "
+
+            data["extra"] = clean_extra.rstrip("; ")
         else:
             data["extra"] = ""
 
-        return CSV_TEMPLATE.format(**data)
+        del data["is_email"]
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=CSV_FIELDS, lineterminator="")
+        writer.writerow(data)
+
+        return output.getvalue()
 
     def __str__(self):
         return self.get_reason()
@@ -228,19 +231,10 @@ class Result:
 
         # dynamic extra layout handling logic
         extra_display = ""
-        if self.extra:
-            # cast to string just in case, and split by newline or custom delimiter
-            extra_str = str(self.extra)
+        for i, (key, value) in enumerate(self.extra.items()):
+            connector = "└──" if i == len(self.extra) - 1 else "├──"
+            extra_display += f"\n{' ' * 6}{Fore.CYAN}{connector} {key}: {value}"
 
-            # clean up empty lines and split by newline
-            extra_lines = [line.strip() for line in extra_str.split("\n") if line.strip()]
-
-            # draw a tree link for each line
-            formatted_lines = []
-            for line in extra_lines:
-                formatted_lines.append(f"\n{' ' * 6}{Fore.CYAN}└── {line}")
-
-            extra_display = "".join(formatted_lines)
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
 
         return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{extra_display}{Style.RESET_ALL}"

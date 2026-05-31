@@ -132,15 +132,26 @@ asyncio.run(main())
 Output:
 
 ```json
-
 {
-        "email": "test@gmail.com",
-        "category": "Shopping",
-        "site_name": "Etsy",
-        "status": "Registered",
-        "url": "https://www.etsy.com",
-        "extra": "ID: 98832\nName: test123\nUsername: test123\nGender: private\nIs Seller: No\nHas Public Page: No\nStats: 0 followers | 0 following | 0 favorites\nPrivacy: Items are Public | Shops are Public\nJoined: 2010-09-19 09:34:06\nLast Profile Update: 2020-07-31 06:10:24\nAvatar: https://i.etsystatic.com/site-assets/images/avatars/default_avatar.png?width=400",
-        "reason": ""
+  "email": "test@gmail.com",
+  "category": "Shopping",
+  "site_name": "Etsy",
+  "status": "Registered",
+  "url": "https://www.etsy.com",
+  "extra": {
+    "id": 98832,
+    "name": "test123",
+    "username": "test123",
+    "gender": "private",
+    "is_seller": "No",
+    "has_public_page": "No",
+    "stats": "0 followers | 0 following | 0 favorites",
+    "privacy": "Items are Public | Shops are Public",
+    "joined": "2010-09-19 05:04:06",
+    "last_profile_update": "2020-07-31 01:40:24",
+    "avatar": "https://i.etsystatic.com/site-assets/images/avatars/default_avatar.png?width=400"
+  },
+  "reason": ""
 }
 ```
 ---

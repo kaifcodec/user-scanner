@@ -67,31 +67,34 @@ async def _check(email: str) -> Result:
                 created = data.get("create_date")
                 updated = data.get("update_date")
 
-                date_created = datetime.fromtimestamp(created).strftime('%Y-%m-%d %H:%M:%S') if created else "Unknown"
-                date_updated = datetime.fromtimestamp(updated).strftime('%Y-%m-%d %H:%M:%S') if updated else None
+                date_created = (
+                    datetime.fromtimestamp(created).strftime("%Y-%m-%d %H:%M:%S")
+                    if created
+                    else "Unknown"
+                )
+                date_updated = (
+                    datetime.fromtimestamp(updated).strftime("%Y-%m-%d %H:%M:%S")
+                    if updated
+                    else None
+                )
 
-                # Build the full structured list
-                info_parts = [
-                    f"ID: {user_id}",
-                    f"Name: {real_name}" if real_name else "Name: N/A",
-                    f"Username: {login_name}" if login_name else "Username: N/A",
-                    f"Gender: {gender}" if gender else None,
-                    f"Location: {location}" if location else None,
-                    f"Bio: {bio}" if bio else None,
-                    f"Is Seller: {is_seller}",
-                    f"Has Public Page: {has_page}",
-                    f"Stats: {followers} followers | {following} following | {favs} favorites",
-                    f"Privacy: Items are {fav_items} | Shops are {fav_shops}",
-                    f"Joined: {date_created}",
-                ]
+                extras = {
+                    "id": user_id,
+                    "name": real_name or "N/A",
+                    "username": login_name or "N/A",
+                    "gender": gender,
+                    "location": location,
+                    "bio": bio,
+                    "is seller": is_seller,
+                    "has public page": has_page,
+                    "stats": f"{followers} followers | {following} following | {favs} favorites",
+                    "privacy": f"Items are {fav_items} | Shops are {fav_shops}",
+                    "joined": date_created,
+                    "last profile update": date_updated,
+                    "avatar": pfp,
+                }
 
-                if date_updated:
-                    info_parts.append(f"Last Profile Update: {date_updated}")
-
-                info_parts.append(f"Avatar: {pfp}")
-
-                extra_str = "\n".join(filter(None, info_parts))
-                return Result.taken(url=show_url, extra=extra_str)
+                return Result.taken(url=show_url, extra=extras)
 
             return Result.error("Unexpected response body structure")
 
