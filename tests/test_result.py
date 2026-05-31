@@ -132,7 +132,7 @@ def test_output_formats():
     json_std = res.to_json()
     assert '"username": "testuser"' in json_std
     assert '"url": "https://example.com/user"' in json_std
-    assert "\"extra\": \"{'additional_info': 'smth'}\"" in json_std
+    assert '"extra":{\n"additional_info":"smth"\n}' in json_std.replace(" ", "")
 
     res.update(is_email=True)
     json_email = res.to_json()

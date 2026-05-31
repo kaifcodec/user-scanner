@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 from enum import Enum
 from colorama import Fore, Style
 from user_scanner.core.helpers import ScanConfig
@@ -16,16 +17,6 @@ DEBUG_MSG = """Result {{
   is_email: "{is_email}"
 }}"""
 
-# Added "url": "{url}" to the JSON template
-JSON_TEMPLATE = """{{
-\t"username": "{username}",
-\t"category": "{category}",
-\t"site_name": "{site_name}",
-\t"status": "{status}",
-\t"url": "{url}",
-\t"extra": "{extra}",
-\t"reason": "{reason}"
-}}"""
 
 # Added {url} to the CSV template
 CSV_FIELDS = ["username", "category", "site_name", "status", "url", "extra", "reason"]
@@ -169,15 +160,11 @@ class Result:
         return DEBUG_MSG.format(**self.as_dict())
 
     def to_json(self) -> str:
-        data = self.as_dict()
-
-        msg = JSON_TEMPLATE.format(**data)
-        if self.is_email:
-            msg = msg.replace('\t"username":', '\t"email":')
-        return msg
-
+        data = self.to_dict()
+        return json.dumps(data, indent=4)
 
     def to_csv(self) -> str:
+        # uses .as_dict() since header has "username"
         data = self.as_dict()
 
         # flatten multiline extra string parameters so it doesn't break row alignments
