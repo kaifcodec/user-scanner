@@ -41,7 +41,32 @@ def validate_bluesky(user):
                 result_type
                 == "com.atproto.temp.checkHandleAvailability#resultUnavailable"
             ):
-                return Result.taken()
+                extra = {}
+                try:
+                    import httpx
+                    profile_res = httpx.get(
+                        "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
+                        params={"actor": handle},
+                        headers={"User-Agent": headers["User-Agent"]},
+                        timeout=5.0
+                    )
+                    if profile_res.status_code == 200:
+                        p_data = profile_res.json()
+                        if p_data.get("displayName"):
+                            extra["display_name"] = p_data.get("displayName")
+                        if p_data.get("description"):
+                            extra["bio"] = p_data.get("description").strip()
+                        if p_data.get("followersCount") is not None:
+                            extra["followers"] = p_data.get("followersCount")
+                        if p_data.get("followsCount") is not None:
+                            extra["following"] = p_data.get("followsCount")
+                        if p_data.get("postsCount") is not None:
+                            extra["posts"] = p_data.get("postsCount")
+                        if p_data.get("avatar"):
+                            extra["avatar"] = p_data.get("avatar")
+                except Exception:
+                    pass
+                return Result.taken(extra=extra)
         elif response.status_code == 400:
             return Result.error(
                 "Username can only contain letters, numbers, hyphens (no leading/trailing)"

@@ -1,5 +1,5 @@
 from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import status_validate
+from user_scanner.core.orchestrator import generic_validate, Result
 
 
 def validate_snapchat(user):
@@ -22,6 +22,31 @@ def validate_snapchat(user):
         "priority": "u=0, i",
     }
 
-    return status_validate(
-        url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True
+    def process(response):
+        if response.status_code == 404:
+            return Result.available()
+        elif response.status_code == 200:
+            extra = {}
+            try:
+                import re as local_re
+                import json as local_json
+                m = local_re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', response.text)
+                if m:
+                    next_data = local_json.loads(m.group(1))
+                    user_profile = next_data.get("props", {}).get("pageProps", {}).get("userProfile", {})
+                    u_info = user_profile.get("userInfo", {})
+                    if u_info:
+                        if u_info.get("displayName"):
+                            extra["display_name"] = u_info.get("displayName")
+                        if u_info.get("snapcodeImageUrl"):
+                            extra["snapcode"] = u_info.get("snapcodeImageUrl")
+            except Exception:
+                pass
+            return Result.taken(extra=extra)
+        else:
+            return Result.error(f"HTTP {response.status_code}")
+
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers, follow_redirects=True
     )
+
