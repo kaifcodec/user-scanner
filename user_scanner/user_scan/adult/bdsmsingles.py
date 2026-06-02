@@ -27,7 +27,7 @@ def validate_bdsmsingles(user):
 
             # Avatar (if not default nophoto svg)
             avatar_match = re.search(
-                r'src="(https://media.bdsmsingles.com/images/user_photo/[^"]+)"', response.text)
+                r'src="(https://media\.bdsmsingles\.com/images/user_photo/[^"]+)"', response.text)
             if avatar_match and "nophoto" not in avatar_match.group(1):
                 extra["image"] = avatar_match.group(1)
 
