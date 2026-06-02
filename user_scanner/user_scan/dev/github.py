@@ -1,81 +1,93 @@
 from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.orchestrator import Result, make_request
+import re as local_re
 
 
 def validate_github(user):
-    url = f"https://github.com/{user}"
+    api_url = f"https://api.github.com/users/{user}"
     show_url = f"https://github.com/{user}"
 
     headers = {
         "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "application/vnd.github.v3+json",
     }
 
-    def process(response):
+    try:
+        api_response = make_request(api_url, headers=headers, follow_redirects=True)
+        if api_response.status_code == 200:
+            data = api_response.json()
+            extra = {}
+            if name := data.get("name"): extra["name"] = name
+            if bio := data.get("bio"): extra["bio"] = bio
+            if company := data.get("company"): extra["company"] = company
+            if location := data.get("location"): extra["location"] = location
+            if blog := data.get("blog"): extra["website"] = blog
+            if email := data.get("email"): extra["email"] = email
+            if followers := data.get("followers"): extra["followers"] = str(followers)
+            if following := data.get("following"): extra["following"] = str(following)
+            if avatar_url := data.get("avatar_url"): extra["avatar"] = avatar_url
+            if twitter := data.get("twitter_username"): extra["twitter"] = twitter
+            if repos := data.get("public_repos"): extra["public_repos"] = str(repos)
+            if created_at := data.get("created_at"): extra["created_at"] = created_at
+            
+            return Result.taken(extra=extra, url=show_url)
+            
+        elif api_response.status_code == 404:
+            return Result.available(url=show_url)
+            
+        # Fallback to HTML if API is rate-limited (403) or unavailable
+        html_headers = {
+            "User-Agent": get_random_user_agent(),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        response = make_request(show_url, headers=html_headers, follow_redirects=True)
+        
         if response.status_code == 404:
-            return Result.available()
+            return Result.available(url=show_url)
         elif response.status_code == 200:
             extra = {}
             try:
-                import re as local_re
-                # 1. Name
                 name_match = local_re.search(r'itemprop="name">\s*([^<\n\r]+)\s*</span>', response.text)
-                if name_match:
-                    extra["name"] = name_match.group(1).strip()
-                # 2. Bio
+                if name_match: extra["name"] = name_match.group(1).strip()
+                
                 bio_match = local_re.search(r'class="p-note user-profile-bio[^"]*"[^>]*><div>([^<]+)</div>', response.text)
-                if bio_match:
-                    extra["bio"] = bio_match.group(1).strip()
-                # 3. Company
+                if bio_match: extra["bio"] = bio_match.group(1).strip()
+                
                 company_match = local_re.search(r'itemprop="worksFor"[^>]*aria-label="Organization:\s*([^"]+)"', response.text)
-                if company_match:
-                    extra["company"] = company_match.group(1).strip()
-                # 4. Location
+                if company_match: extra["company"] = company_match.group(1).strip()
+                
                 loc_match = local_re.search(r'itemprop="homeLocation"[^>]*aria-label="Home location:\s*([^"]+)"', response.text)
-                if loc_match:
-                    extra["location"] = loc_match.group(1).strip()
-                # 5. Website
+                if loc_match: extra["location"] = loc_match.group(1).strip()
+                
                 web_match = local_re.search(r'itemprop="url"[^>]*>.*?href="([^"]+)"', response.text, local_re.DOTALL)
-                if web_match:
-                    extra["website"] = web_match.group(1).strip()
-                # 6. Email
+                if web_match: extra["website"] = web_match.group(1).strip()
+                
                 email_match = local_re.search(r'itemprop="email"[^>]*>.*?href="mailto:([^"]+)"', response.text, local_re.DOTALL)
-                if email_match:
-                    extra["email"] = email_match.group(1).strip()
-                # 7. Followers
+                if email_match: extra["email"] = email_match.group(1).strip()
+                
                 followers_match = local_re.search(r'class="text-bold color-fg-default">([0-9.]+[kM]?)</span>\s*followers', response.text)
-                if followers_match:
-                    extra["followers"] = followers_match.group(1)
-                # 8. Following
+                if followers_match: extra["followers"] = followers_match.group(1)
+                
                 following_match = local_re.search(r'class="text-bold color-fg-default">([0-9.]+[kM]?)</span>\s*following', response.text)
-                if following_match:
-                    extra["following"] = following_match.group(1)
-                # 9. Avatar
-                avatar_match = local_re.search(r'itemprop="image"\s+href="([^"]+)"', response.text)
-                if avatar_match:
-                    extra["avatar"] = avatar_match.group(1).replace("&amp;", "&")
-                # 10. Organizations
+                if following_match: extra["following"] = following_match.group(1)
+                
+                # Fixed avatar extraction (using meta tag instead of random images on page)
+                avatar_match = local_re.search(r'<meta property=\"og:image\" content=\"([^\"]+)\"', response.text)
+                if avatar_match: extra["avatar"] = avatar_match.group(1).replace("&amp;", "&")
+                
                 orgs = local_re.findall(r'data-hovercard-type="organization"[^>]*href="/([^/"]+)"', response.text)
                 if orgs:
                     unique_orgs = list(dict.fromkeys(orgs))
                     extra["organizations"] = ", ".join(unique_orgs)
-                # 11. Social Media Links
-                socials = local_re.findall(r'itemprop="social".*?href="([^"]+)"', response.text, local_re.DOTALL)
-                if socials:
-                    for s in socials:
-                        domain_match = local_re.search(r'https?://(?:www\.)?([^/]+)', s)
-                        if domain_match:
-                            domain = domain_match.group(1).split(".")[0].capitalize()
-                            extra[domain] = s
-                        else:
-                            extra["social_profile"] = s
+                    
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, url=show_url)
         else:
-            return Result.error(f"Unexpected status: {response.status_code}")
-
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+            return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
+            
+    except Exception as e:
+        return Result.error(e, url=show_url)
 
 
