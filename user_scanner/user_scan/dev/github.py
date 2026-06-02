@@ -30,6 +30,22 @@ def validate_github(user):
             if repos := data.get("public_repos"): extra["public_repos"] = str(repos)
             if created_at := data.get("created_at"): extra["created_at"] = created_at
             
+            links = []
+            if blog := data.get("blog"):
+                links.append(blog)
+            try:
+                social_url = f"https://api.github.com/users/{user}/social_accounts"
+                social_response = make_request(social_url, headers=headers, follow_redirects=True)
+                if social_response.status_code == 200:
+                    for item in social_response.json():
+                        if u := item.get("url"):
+                            links.append(u)
+            except Exception:
+                pass
+            if links:
+                unique_links = list(dict.fromkeys(links))
+                extra["links"] = ", ".join(unique_links)
+            
             return Result.taken(extra=extra, url=show_url)
             
         elif api_response.status_code == 404:
@@ -60,8 +76,18 @@ def validate_github(user):
                 loc_match = local_re.search(r'itemprop="homeLocation"[^>]*aria-label="Home location:\s*([^"]+)"', response.text)
                 if loc_match: extra["location"] = loc_match.group(1).strip()
                 
-                web_match = local_re.search(r'itemprop="url"[^>]*>.*?href="([^"]+)"', response.text, local_re.DOTALL)
-                if web_match: extra["website"] = web_match.group(1).strip()
+                li_matches = local_re.findall(r'<li\s+[^>]*itemprop="(url|social)"[^>]*>([\s\S]*?)</li>', response.text)
+                links = []
+                for item_type, li in li_matches:
+                    href_match = local_re.search(r'href="([^"]+)"', li)
+                    if href_match:
+                        url_val = href_match.group(1).strip().replace("&amp;", "&")
+                        links.append(url_val)
+                        if item_type == "url":
+                            extra["website"] = url_val
+                if links:
+                    unique_links = list(dict.fromkeys(links))
+                    extra["links"] = ", ".join(unique_links)
                 
                 email_match = local_re.search(r'itemprop="email"[^>]*>.*?href="mailto:([^"]+)"', response.text, local_re.DOTALL)
                 if email_match: extra["email"] = email_match.group(1).strip()
