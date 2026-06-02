@@ -49,3 +49,6 @@ exclude = [
 [tool.pytest.ini_options]
 pythonpath = "."
 testpaths = ["tests"]
+
+[tool.ruff.lint]
+ignore = ["E701", "E401"]

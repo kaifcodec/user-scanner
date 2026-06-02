@@ -19,7 +19,7 @@ def validate_patreon(user):
                     if isinstance(data, list): data = data[0]
                     if name := data.get("name"): extra["name"] = name
                     if curl := data.get("url"): extra["url"] = curl
-                except:
+                except Exception:
                     pass
             return Result.taken(extra=extra, url=show_url)
         elif response.status_code == 404:

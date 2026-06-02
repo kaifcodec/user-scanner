@@ -35,7 +35,7 @@ def validate_producthunt(user: str) -> Result:
                     if isinstance(data, list): data = data[0]
                     if name := data.get("name"): extra["name"] = name
                     if curl := data.get("url"): extra["url"] = curl
-                except:
+                except Exception:
                     pass
                     
             if "name" not in extra:

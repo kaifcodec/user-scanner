@@ -35,7 +35,7 @@ def validate_substack(user: str) -> Result:
                     data = json.loads(ld.group(1))
                     if isinstance(data, list): data = data[0]
                     if name := data.get("name"): extra["name"] = name
-                except:
+                except Exception:
                     pass
             if "name" not in extra:
                 title = re.search(r'<title>([^<]+)</title>', html)
