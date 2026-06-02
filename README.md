@@ -10,6 +10,11 @@
   <img src="https://img.shields.io/pypi/dm/user-scanner?style=for-the-badge" />
 </p>
 
+<p align="center">
+  <a href="https://trendshift.io/repositories/16556" target="_blank">
+    <img src="https://trendshift.io/api/badge/repositories/16556" alt="kaifcodec%2Fuser-scanner | Trendshift" width="250" height="55"/>
+  </a>
+</p>
 
 ---
 A powerful **2-in-1 OSINT suite** combining deep **Email OSINT** with comprehensive **Username Scanning**. 
