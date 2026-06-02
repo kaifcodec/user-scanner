@@ -22,6 +22,18 @@ DEBUG_MSG = """Result {{
 CSV_FIELDS = ["username", "category", "site_name", "status", "url", "extra", "reason"]
 
 
+def indent_text(msg: str, level: int, ignore_first: bool = False) -> str:
+    if level <= 0 or not msg:
+        return msg
+
+    prefix = " " * level
+    lines = msg.splitlines()
+
+    if ignore_first and lines:
+        return lines[0] + "\n" + "\n".join(f"{prefix}{line}" for line in lines[1:])
+    return "\n".join(f"{prefix}{line}" for line in lines)
+
+
 def humanize_exception(e: Exception) -> str:
     msg = str(e).lower()
 
@@ -233,9 +245,14 @@ class Result:
         extra_display = ""
         for i, (key, value) in enumerate(self.extra.items()):
             connector = "└──" if i == len(self.extra) - 1 else "├──"
+
+            if isinstance(value, str) and len(value.splitlines()) > 1:
+                value = "\n" + indent_text(value, 12, False)
+
             extra_display += f"\n{' ' * 6}{Fore.CYAN}{connector} {key}: {value}"
 
         reason = f" ({self.get_reason()})" if self.has_reason() else ""
+        reason = indent_text(reason, 12, True)
 
         return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{extra_display}{Style.RESET_ALL}"
 

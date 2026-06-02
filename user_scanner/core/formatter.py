@@ -3,15 +3,7 @@ from typing import List
 
 from user_scanner.core.result import CSV_FIELDS, Result
 
-INDENT = "  "
 CSV_HEADER = ",".join(CSV_FIELDS)
-
-
-def indentate(msg: str, indent: int):
-    if indent <= 0:
-        return msg
-    tabs = INDENT * indent
-    return "\n".join([f"{tabs}{line}" for line in msg.split("\n")])
 
 
 def into_json(results: List[Result]) -> str:
