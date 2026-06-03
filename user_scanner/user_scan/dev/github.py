@@ -22,7 +22,21 @@ def validate_github(user):
             if company := data.get("company"): extra["company"] = company
             if location := data.get("location"): extra["location"] = location
             if blog := data.get("blog"): extra["website"] = blog
-            if email := data.get("email"): extra["email"] = email
+            if email := data.get("email"):
+                extra["email"] = email
+            else:
+                try:
+                    html_headers = {
+                        "User-Agent": get_random_user_agent(),
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9",
+                    }
+                    response = make_request(show_url, headers=html_headers, follow_redirects=True)
+                    if response.status_code == 200:
+                        email_match = local_re.search(r'href="mailto:([^"]+)"', response.text)
+                        if email_match:
+                            extra["email"] = email_match.group(1).strip()
+                except Exception:
+                    pass
             if followers := data.get("followers"): extra["followers"] = str(followers)
             if following := data.get("following"): extra["following"] = str(following)
             if avatar_url := data.get("avatar_url"): extra["avatar"] = avatar_url
@@ -89,7 +103,7 @@ def validate_github(user):
                     unique_links = list(dict.fromkeys(links))
                     extra["links"] = ", ".join(unique_links)
                 
-                email_match = local_re.search(r'itemprop="email"[^>]*>.*?href="mailto:([^"]+)"', response.text, local_re.DOTALL)
+                email_match = local_re.search(r'href="mailto:([^"]+)"', response.text)
                 if email_match: extra["email"] = email_match.group(1).strip()
                 
                 followers_match = local_re.search(r'class="text-bold color-fg-default">([0-9.]+[kM]?)</span>\s*followers', response.text)
