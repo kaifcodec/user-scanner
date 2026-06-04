@@ -1,5 +1,5 @@
-from user_scanner.core.orchestrator import status_validate
-
+from user_scanner.core.orchestrator import generic_validate, Result
+import re
 
 def validate_liberapay(user):
     url = f"https://en.liberapay.com/{user}"
@@ -22,6 +22,17 @@ def validate_liberapay(user):
         "upgrade-insecure-requests": "1",
     }
 
-    return status_validate(
-        url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True
-    )
+    def process(response):
+        if response.status_code == 200:
+            extra = {}
+            title_match = re.search(r'<title>([^<]+)</title>', response.text)
+            if title_match:
+                name = title_match.group(1).split("&#39;s profile")[0].split("'s profile")[0].strip()
+                if name.lower() != user.lower():
+                    extra["name"] = name
+            return Result.taken(extra=extra)
+        elif response.status_code in (404, 410):
+            return Result.available()
+        return Result.error(f"Unexpected status {response.status_code}")
+
+    return generic_validate(url, process, show_url=show_url, headers=headers, follow_redirects=True)
