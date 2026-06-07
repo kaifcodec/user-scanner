@@ -200,7 +200,8 @@ Huge thanks to our amazing sponsors who support the development of `user-scanner
 
 
 ---
-<img width="1080" height="730" alt="1000175084" src="https://github.com/user-attachments/assets/b399b924-6c4a-4b5b-af0d-67f7c0b39436" />
+
+[user-scanner_u_usage.webm](https://github.com/user-attachments/assets/d901510c-880e-4395-8274-3494d984f2de)
 
 ---
 
