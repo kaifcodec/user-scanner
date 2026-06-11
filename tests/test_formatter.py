@@ -1,22 +1,5 @@
-from user_scanner.core.formatter import INDENT, indentate, into_csv, into_json
+from user_scanner.core.formatter import into_csv, into_json
 from user_scanner.core.result import Result
-
-
-def test_indentate():
-    assert indentate("", -1) == ""
-    assert indentate("", 0) == ""
-    assert indentate("", 2) == 2 * INDENT
-
-    msg = (
-        "This is a test message\n"
-        "made to test the indentation\n"
-        "and shouldn't be changed."
-    )
-
-    for i in range(0, 4):
-        new = indentate(msg, i)
-        for line in new.split("\n"):
-            assert line.find(INDENT * i) == 0
 
 
 def test_get_result_output_formats():

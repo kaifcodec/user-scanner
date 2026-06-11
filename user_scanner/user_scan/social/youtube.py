@@ -1,39 +1,46 @@
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, status_validate
+from user_scanner.core.orchestrator import Result, make_request
+import re
+import json
 
 
 def validate_youtube(user) -> Result:
-    url = f"https://m.youtube.com/@{user}"
+    url = f"https://www.youtube.com/@{user}"
     show_url = f"https://youtube.com/@{user}"
     headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-Encoding": "identity",
-        "sec-ch-dpr": "2.75",
-        "sec-ch-viewport-width": "980",
-        "sec-ch-ua": '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
-        "sec-ch-ua-mobile": "?1",
-        "sec-ch-ua-full-version": '"143.0.7499.52"',
-        "sec-ch-ua-arch": '""',
-        "sec-ch-ua-platform": '"Android"',
-        "sec-ch-ua-platform-version": '"15.0.0"',
-        "sec-ch-ua-model": '"I2404"',
-        "sec-ch-ua-bitness": '""',
-        "sec-ch-ua-wow64": "?0",
-        "sec-ch-ua-full-version-list": '"Google Chrome";v="143.0.7499.52", "Chromium";v="143.0.7499.52", "Not A(Brand";v="24.0.0.0"',
-        "sec-ch-ua-form-factors": '"Mobile"',
-        "upgrade-insecure-requests": "1",
-        "x-browser-channel": "stable",
-        "x-browser-year": "2025",
-        "x-browser-copyright": "Copyright 2025 Google LLC. All Rights reserved.",
-        "sec-fetch-site": "none",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-user": "?1",
-        "sec-fetch-dest": "document",
-        "accept-language": "en-US,en;q=0.9",
-        "priority": "u=0, i",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
     }
 
-    return status_validate(
-        url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True
-    )
+    try:
+        response = make_request(url, headers=headers, follow_redirects=True)
+        if response.status_code == 200:
+            if "This channel does not exist" in response.text or "404 Not Found" in response.text:
+                return Result.available(url=show_url)
+            
+            extra = {}
+            m = re.search(r'var ytInitialData = (\{.*?\});', response.text)
+            if m:
+                try:
+                    data = json.loads(m.group(1))
+                    meta = data.get('metadata', {}).get('channelMetadataRenderer', {})
+                    if title := meta.get('title'): extra['fullname'] = title
+                    if desc := meta.get('description'): extra['bio'] = desc
+                    if cid := meta.get('externalId'): extra['youtube_channel_id'] = cid
+                    if purl := meta.get('vanityChannelUrl'): extra['channel_url'] = purl
+                    if safe := meta.get('isFamilySafe'): extra['is_family_safe'] = str(safe)
+                    if kw := meta.get('keywords'): extra['keywords'] = kw
+                    if thumbs := meta.get('avatar', {}).get('thumbnails'):
+                        if len(thumbs) > 0: extra['image'] = thumbs[0].get('url')
+                except Exception:
+                    pass
+                    
+            subs = re.search(r'\"content\":\"([0-9.]+[A-Z]? subscribers)\"', response.text)
+            if subs: extra['subscribers'] = subs.group(1)
+            
+            return Result.taken(extra=extra, url=show_url)
+        elif response.status_code == 404:
+            return Result.available(url=show_url)
+        else:
+            return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
+    except Exception as e:
+        return Result.error(e, url=show_url)

@@ -12,7 +12,34 @@ def validate_etoro(user):
 
     def process(response):
         if '"gcid":' in response.text:
-            return Result.taken()
+            extra = {}
+            try:
+                data = response.json()
+                first = data.get("firstName")
+                last = data.get("lastName")
+                if first or last:
+                    name_parts = []
+                    if first: name_parts.append(first.strip())
+                    if last: name_parts.append(last.strip())
+                    extra["name"] = " ".join(name_parts)
+
+                bio = data.get("aboutMe")
+                if bio:
+                    extra["bio"] = bio.strip()
+                else:
+                    bio_short = data.get("aboutMeShort")
+                    if bio_short:
+                        extra["bio"] = bio_short.strip()
+
+                avatars = data.get("avatars")
+                if avatars and isinstance(avatars, list) and len(avatars) > 0:
+                    extra["avatar"] = avatars[0]["url"]
+
+                if data.get("isVerified"):
+                    extra["is_verified"] = True
+            except Exception:
+                pass
+            return Result.taken(extra=extra)
 
         if '"ErrorCode":"NotFound"' in response.text:
             return Result.available()
@@ -23,3 +50,4 @@ def validate_etoro(user):
         return Result.error("Unexpected API response format.")
 
     return generic_validate(url, process, headers=headers, show_url=show_url)
+

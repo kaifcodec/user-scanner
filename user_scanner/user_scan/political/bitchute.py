@@ -9,7 +9,20 @@ def validate_bitchute(user):
 
     def process(response):
         if '"channel_id":' in response.text:
-            return Result.taken()
+            extra = {}
+            try:
+                data = response.json()
+                if "channel_name" in data:
+                    extra["name"] = data["channel_name"]
+                if "description" in data and data["description"]:
+                    extra["description"] = data["description"].strip()
+                if "subscriber_count" in data:
+                    extra["subscribers"] = data["subscriber_count"]
+                if "video_count" in data:
+                    extra["videos"] = data["video_count"]
+            except Exception:
+                pass
+            return Result.taken(extra=extra)
 
         if '"errors":' in response.text:
             return Result.available()

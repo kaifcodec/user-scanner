@@ -42,7 +42,19 @@ def validate_beatstars(user):
             if identifier_data.get("available") is True:
                 return Result.available()
 
-            return Result.taken()
+            extra = {}
+            try:
+                profile = identifier_data.get("profileDetails", {})
+                if profile:
+                    artwork = profile.get("artwork", {})
+                    if artwork:
+                        avatar = artwork.get("fitInUrl") or artwork.get("url")
+                        if avatar:
+                            extra["avatar"] = avatar
+            except Exception:
+                pass
+
+            return Result.taken(extra=extra)
 
         except (AttributeError, ValueError, KeyError):
             return Result.error("Failed to decode server response, report it via GitHub issues")

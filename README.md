@@ -17,24 +17,25 @@
 </p>
 
 ---
-A powerful **2-in-1 OSINT suite** combining deep **Email OSINT** with comprehensive **Username Scanning**. 
+A powerful **2-in-1 OSINT suite** engineered for deep **Email and Username Intelligence**.
 
-With **205+ total scan vectors**—including **100+ email-integrated sites** and **105+ username platforms**—you can identify digital footprints or verify account registrations in seconds.
+With **205+ total scan vectors**—including **100+ email-integrated sites** and **105+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, and verify account registrations in seconds.
 
-The ultimate tool for finding a **unique username** across GitHub, X, Reddit, Instagram, and more in a single command.
+The ultimate reconnaissance tool for hunting down targets using just an email or username—now fully integrated with **Hudson Rock** for instant data breach intelligence.
 
 
 ## Features
 
-- ✅ Email & username OSINT: check email registrations and username availability across social, developer, creator, and other platforms  
-- ✅ Dual-mode usage: works as an email scanner, username scanner, or username-only tool  
-- ✅ Clear results: `Registered` / `Not Registered` for emails and `Not Found` / `Found` / `Error` for usernames with precise failure reasons  
-- ✅ Fully modular architecture for easy addition of new platform modules  
-- ✅ Bulk scanning support for usernames and emails via input files  
-- ✅ Wildcard-based username permutations with automatic variation generation  
-- ✅ Multiple output formats: console, **JSON**, and **CSV**, with file export support  
-- ✅ Proxy support with rotation and pre-scan proxy validation  
-- ✅ Smart auto-update system with interactive upgrade prompts via PyPI  
+- ✅ **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 205+ platforms.
+- ✅ **Profile Data Extraction:** Goes beyond basic availability checks to scrape and extract rich metadata, account details, and digital footprints from target profiles.
+- ✅ **Dual-Mode Engine:** Run targeted email campaigns, massive username sweeps, or simultaneous dual-identifier scans.
+- ✅ **Granular Status Reporting:** Get crystal-clear results (`Registered`/`Available` for emails; `Found`/`Not Found`/`Error` for usernames) backed by precise exception handling.
+- ✅ **Modular & Extensible:** Built on a highly decoupled, modular architecture, adding new platform modules takes just a few lines of code.
+- ✅ **Mass Bulk Scanning:** High-throughput processing for bulk lists of usernames and emails via structured input files.
+- ✅ **Permutation Generator:** Wildcard-based username variation generation to catch typosquatting or alternative aliases.
+- ✅ **Multi-Format Export:** Clean console output paired with structured, automated exports to **JSON** and **CSV** for easy pipeline integration.
+- ✅ **Advanced Proxy Rotation:** Built-in proxy pivoting with automated rotation and pre-scan health checks to bypass strict rate-limiting.
+- ✅ **Smart Auto-Update System:** Keeps your signatures and modules fresh with interactive, seamless PyPI update prompts.
 
 ## Virtual Environment (optional but recommended)
 
@@ -205,7 +206,8 @@ Huge thanks to our amazing sponsors who support the development of `user-scanner
 
 
 ---
-<img width="1080" height="730" alt="1000175084" src="https://github.com/user-attachments/assets/b399b924-6c4a-4b5b-af0d-67f7c0b39436" />
+
+[user-scanner_u_usage.webm](https://github.com/user-attachments/assets/d901510c-880e-4395-8274-3494d984f2de)
 
 ---
 
@@ -226,13 +228,12 @@ See detailed [Contributing guidelines](CONTRIBUTING.md)
 
 ## ⚠️ Disclaimer
 
-This tool is provided for **educational purposes** and **authorized security research** only.
+This tool is provided strictly for **educational purposes**, **authorized security research**, and **defensive OSINT investigations**. 
 
-- **User Responsibility:** Users are solely responsible for ensuring their usage complies with all applicable laws and the Terms of Service (ToS) of any third-party providers.
-- **Methodology:** The tool interacts only with **publicly accessible, unauthenticated web endpoints**. It does not bypass authentication, security controls, or access private user data.
-- **No Profiling:** This software performs only basic **yes/no availability checks**. It does not collect, store, aggregate, or analyze user data, behavior, or identities.
-- **Limitation of Liability:** The software is provided **“as is”**, without warranty of any kind. The developers assume no liability for misuse or any resulting damage or legal consequences.
-
+- **User Responsibility:** The user assumes all responsibility for ensuring that their deployment and use of this software complies with all applicable local, national, and international laws, as well as the Terms of Service (ToS) of any scanned platforms.
+- **Data Source & Methodology:** This tool acts exclusively as an aggregator of **publicly accessible information** and legitimate third-party threat intelligence APIs. It does not bypass authentication mechanisms, exploit security vulnerabilities, or access non-public private data.
+- **Information Aggregation:** While this software extracts public metadata and references external breach intelligence feeds (e.g., Hudson Rock), the developers do not host, store, or maintain any underlying personal data. All data is processed locally on the user's machine in real-time.
+- **Limitation of Liability:** This software is provided **"as is"**, without warranty of any kind, express or implied. The developers accept no liability and are not responsible for any misuse, unintended consequences, damage, or legal actions resulting from the use of this tool.
 ---
 
 ## 🛠️ Troubleshooting

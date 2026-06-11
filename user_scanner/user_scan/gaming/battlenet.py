@@ -24,10 +24,10 @@ def validate_battlenet(user: str) -> Result:
     username = user.split("#")[0]
 
     if not (3 <= len(username) <= 12):
-        return Result.error("Length must be 3-12 characters")
+        return Result.available("Username must be between 3 and 12 characters")
 
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9]*$", username):
-        return Result.error("Must start with letter, only letters and numbers allowed")
+        return Result.available("Username must start with a letter and contain only letters and numbers")
 
     url = f"https://overwatch.blizzard.com/en-us/search/account-by-name/{username}"
     show_url = f"https://overwatch.blizzard.com/en-us/search/account-by-name/{username}/"
@@ -50,8 +50,18 @@ def validate_battlenet(user: str) -> Result:
                     "Battle.net allows duplicate usernames and distinguishes accounts with a numeric tag"
                 )
             elif isinstance(data, list) and len(data) > 0:
-                end = "es" if len(data) > 1 else ""
-                return Result.taken(f"{len(data)} match{end}")
+                extra = {}
+                match_list = []
+                for item in data[:5]:
+                    name = item.get("name")
+                    is_public = "Public" if item.get("isPublic") else "Private"
+                    title = item.get("title", {})
+                    title_en = title.get("en_US") if isinstance(title, dict) else ""
+                    title_str = f" ({title_en})" if title_en else ""
+                    match_list.append(f"{name}{title_str} [{is_public}]")
+                if match_list:
+                    extra["matches"] = ", ".join(match_list)
+                return Result.taken(extra=extra)
             else:
                 return Result.error("Unexpected response format")
         except Exception:

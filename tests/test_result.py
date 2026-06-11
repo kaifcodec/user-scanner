@@ -1,5 +1,5 @@
 from user_scanner.core.helpers import ScanConfig
-from user_scanner.core.result import Result, Status
+from user_scanner.core.result import Result, Status, indent_text
 
 
 def test_status_labels():
@@ -181,3 +181,27 @@ def test_show(capsys):
     captured = capsys.readouterr()
     assert "ShowSite" in captured.out
     assert "Found" in captured.out
+
+
+def test_indentate():
+    assert indent_text(".", -1) == "."
+    assert indent_text(".", 0) == "."
+    assert indent_text(".", 2) == 2 * " " + "."
+
+    msg = (
+        "This is a test message\n"
+        "made to test the indentation\n"
+        "and shouldn't be changed."
+    )
+
+    for i in range(0, 6):
+        new = indent_text(msg, i, False)
+        for line in new.splitlines():
+            assert line.startswith(" " * i)
+
+        new = indent_text(msg, i, True)
+        for j, line in enumerate(new.splitlines()):
+            if j == 0:
+                assert not line.startswith(" ")
+            else:
+                assert line.startswith(" " * i)
