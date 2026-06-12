@@ -80,7 +80,10 @@ def validate_pypi(user: str) -> Result:
     package_names = sorted({package_name for _, package_name in packages})
 
     extra["packages_count"] = len(package_names)
-    extra["packages"] = package_names
+    if len(package_names) > 5:
+        extra["packages"] = package_names[:5]
+    else:
+        extra["packages"] = package_names
 
     #
     # Query package JSON API to extract author name & email as fallback
