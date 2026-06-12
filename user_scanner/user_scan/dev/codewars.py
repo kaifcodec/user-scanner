@@ -1,8 +1,8 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
-def validate_codeberg(user):
-    url = f"https://codeberg.org/api/v1/users/{user}"
-    show_url = f"https://codeberg.org/{user}"
+def validate_codewars(user):
+    url = f"https://www.codewars.com/api/v1/users/{user}"
+    show_url = f"https://www.codewars.com/users/{user}"
 
     def process(response):
         if response.status_code == 200:
@@ -11,12 +11,13 @@ def validate_codeberg(user):
                 if data and data.get('id'):
                     extra = {}
                     if data.get('id'): extra['id'] = data.get('id')
-                    if data.get('login'): extra['login'] = data.get('login')
-                    if data.get('full_name'): extra['full_name'] = data.get('full_name')
-                    if data.get('email'): extra['email'] = data.get('email')
-                    if data.get('created'): extra['created'] = data.get('created')
-                    if data.get('location'): extra['location'] = data.get('location')
-                    if data.get('website'): extra['website'] = data.get('website')
+                    if data.get('name'): extra['name'] = data.get('name')
+                    if data.get('honor') is not None: extra['honor'] = data.get('honor')
+                    if data.get('clan'): extra['clan'] = data.get('clan')
+                    if data.get('leaderboardPosition') is not None: extra['leaderboard_position'] = data.get('leaderboardPosition')
+                    ranks = data.get('ranks', {}).get('overall', {})
+                    if ranks.get('name'): extra['rank_name'] = ranks.get('name')
+                    if ranks.get('score') is not None: extra['score'] = ranks.get('score')
                     return Result.taken(extra=extra)
             except Exception:
                 pass

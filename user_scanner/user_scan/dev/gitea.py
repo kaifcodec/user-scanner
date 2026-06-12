@@ -1,8 +1,8 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
-def validate_codeberg(user):
-    url = f"https://codeberg.org/api/v1/users/{user}"
-    show_url = f"https://codeberg.org/{user}"
+def validate_gitea(user):
+    url = f"https://gitea.com/api/v1/users/{user}"
+    show_url = f"https://gitea.com/{user}"
 
     def process(response):
         if response.status_code == 200:

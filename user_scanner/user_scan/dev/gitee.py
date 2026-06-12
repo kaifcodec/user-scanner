@@ -1,8 +1,8 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
-def validate_codeberg(user):
-    url = f"https://codeberg.org/api/v1/users/{user}"
-    show_url = f"https://codeberg.org/{user}"
+def validate_gitee(user):
+    url = f"https://gitee.com/api/v5/users/{user}"
+    show_url = f"https://gitee.com/{user}"
 
     def process(response):
         if response.status_code == 200:
@@ -12,11 +12,12 @@ def validate_codeberg(user):
                     extra = {}
                     if data.get('id'): extra['id'] = data.get('id')
                     if data.get('login'): extra['login'] = data.get('login')
-                    if data.get('full_name'): extra['full_name'] = data.get('full_name')
-                    if data.get('email'): extra['email'] = data.get('email')
-                    if data.get('created'): extra['created'] = data.get('created')
-                    if data.get('location'): extra['location'] = data.get('location')
-                    if data.get('website'): extra['website'] = data.get('website')
+                    if data.get('name'): extra['name'] = data.get('name')
+                    if data.get('bio'): extra['bio'] = data.get('bio')
+                    if data.get('blog'): extra['blog'] = data.get('blog')
+                    if data.get('public_repos') is not None: extra['public_repos'] = data.get('public_repos')
+                    if data.get('followers') is not None: extra['followers'] = data.get('followers')
+                    if data.get('following') is not None: extra['following'] = data.get('following')
                     return Result.taken(extra=extra)
             except Exception:
                 pass
