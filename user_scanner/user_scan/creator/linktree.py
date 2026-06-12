@@ -18,9 +18,22 @@ def validate_linktree(user):
         if response.status_code == 200:
             html = response.text
             extra = {}
-            title = re.search(r'<title>([^\|]+)\|', html)
+            title = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE)
             if title:
-                extra["name"] = title.group(1).strip()
+                title_text = title.group(1).strip()
+                if " | Linktree" in title_text:
+                    title_text = title_text.split(" | Linktree")[0]
+                elif "| Linktree" in title_text:
+                    title_text = title_text.split("| Linktree")[0]
+                extra["name"] = title_text.strip()
+            
+            desc = re.search(r'<meta[^>]*property="og:description"[^>]*content="([^"]+)"', html, re.IGNORECASE)
+            if desc:
+                extra["description"] = desc.group(1).strip()
+                
+            img = re.search(r'<meta[^>]*property="og:image"[^>]*content="([^"]+)"', html, re.IGNORECASE)
+            if img:
+                extra["image"] = img.group(1).strip()
             return Result.taken(extra=extra, url=show_url)
         elif response.status_code == 404:
             return Result.available(url=show_url)
