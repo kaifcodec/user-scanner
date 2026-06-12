@@ -25,6 +25,6 @@ def validate_paragraph(user):
                 if "userId" in data:
                     extra["user_id"] = data["userId"]
                 return Result.taken(extra=extra, url=show_url)
-        except:
+        except Exception:
             pass
     return Result.available(url=show_url)

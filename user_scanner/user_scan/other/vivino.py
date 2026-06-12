@@ -31,6 +31,6 @@ def validate_vivino(user):
                 if "language" in data:
                     extra["language"] = data["language"]
                 return Result.taken(extra=extra, url=show_url)
-        except:
+        except Exception:
             pass
     return Result.available(url=show_url)

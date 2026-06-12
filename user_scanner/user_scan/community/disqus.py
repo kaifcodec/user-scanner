@@ -21,6 +21,6 @@ def validate_disqus(user):
                     if key in user_data and user_data[key]:
                         extra[key] = user_data[key]
                 return Result.taken(extra=extra, url=show_url)
-        except:
+        except Exception:
             pass
     return Result.available(url=show_url)
