@@ -9,9 +9,10 @@ def validate_goodreads(user):
         "User-Agent": get_random_user_agent(),
     }
     
-    resp = make_request(url, headers=headers, http2=True)
+    resp = make_request(url, headers=headers, http2=True, follow_redirects=True)
+    final_url = str(resp.url)
     if resp.status_code == 404:
-        return Result.available(url=url)
+        return Result.available(url=final_url)
     elif resp.status_code == 200:
         extra = {}
         title_match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE)
@@ -20,6 +21,6 @@ def validate_goodreads(user):
         name_match = re.search(r'<meta[^>]*property=["\']og:title["\'][^>]*content=["\']([^"\']+)["\']', resp.text, re.IGNORECASE)
         if name_match:
             extra["name"] = name_match.group(1).replace(' (', '').strip()
-        return Result.taken(extra=extra, url=url)
+        return Result.taken(extra=extra, url=final_url)
         
     raise Exception(f"Unexpected status code {resp.status_code}")

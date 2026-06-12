@@ -3,13 +3,13 @@ from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import Result, make_request
 
 def validate_weebly(user):
-    url = f"http://{user}.weebly.com/"
+    url = f"https://{user}.weebly.com/"
     
     headers = {
         "User-Agent": get_random_user_agent(),
     }
     
-    resp = make_request(url, headers=headers, http2=True)
+    resp = make_request(url, headers=headers, http2=True, follow_redirects=True)
     if resp.status_code == 404:
         return Result.available(url=url)
     elif resp.status_code == 200:
