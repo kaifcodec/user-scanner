@@ -1,5 +1,6 @@
 import re
 import xmlrpc.client
+from typing import Any
 import httpx
 
 from user_scanner.core.helpers import get_random_user_agent
@@ -25,7 +26,7 @@ def validate_pypi(user: str) -> Result:
     xmlrpc_url = "https://pypi.org/pypi"
     user_agent = get_random_user_agent()
 
-    extra = {
+    extra: dict[str, Any] = {
         "display_name": None,
         "email": None,
         "packages_count": 0,
