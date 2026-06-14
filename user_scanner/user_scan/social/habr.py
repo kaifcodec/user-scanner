@@ -33,7 +33,7 @@ def validate_habr(user):
                 except Exception:
                     pass
             return Result.available()
-        raise Exception(f"Unexpected status code {response.status_code}")
+        return Result.error(f"Unexpected response status: {response.status_code}")
 
     headers = {"User-Agent": "Mozilla/5.0"}
     return generic_validate(url, process, show_url=show_url, headers=headers)

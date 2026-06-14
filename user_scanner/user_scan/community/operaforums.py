@@ -26,4 +26,4 @@ def validate_operaforums(user):
             extra["location"] = data["location"]
         return Result.taken(extra=extra, url=show_url)
         
-    raise Exception(f"Unexpected status code {resp.status_code}")
+    return Result.error(f"Unexpected response status: {resp.status_code}")

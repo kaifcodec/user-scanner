@@ -92,6 +92,6 @@ def validate_linktree(user):
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:
-            return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
+            return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
     except Exception as e:
         return Result.error(e, url=show_url)

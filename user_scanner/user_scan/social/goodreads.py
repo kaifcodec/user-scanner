@@ -23,4 +23,4 @@ def validate_goodreads(user):
             extra["name"] = name_match.group(1).replace(' (', '').strip()
         return Result.taken(extra=extra, url=final_url)
         
-    raise Exception(f"Unexpected status code {resp.status_code}")
+    return Result.error(f"Unexpected response status: {resp.status_code}")

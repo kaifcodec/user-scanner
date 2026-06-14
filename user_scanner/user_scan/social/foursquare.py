@@ -22,4 +22,4 @@ def validate_foursquare(user):
             extra["description"] = desc_match.group(1).strip()
         return Result.taken(extra=extra, url=url)
         
-    raise Exception(f"Unexpected status code {resp.status_code}")
+    return Result.error(f"Unexpected response status: {resp.status_code}")
