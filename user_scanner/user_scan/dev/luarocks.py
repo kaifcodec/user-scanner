@@ -21,7 +21,7 @@ def validate_luarocks(user: str) -> Result:
     """
 
     if not re.match(r"^[A-Za-z0-9._-]+$", user):
-        return Result.error(
+        return Result.available(
             "Username may only contain letters, numbers, periods, underscores, and hyphens"
         )
 
