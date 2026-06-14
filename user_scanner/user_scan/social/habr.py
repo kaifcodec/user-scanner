@@ -32,7 +32,6 @@ def validate_habr(user):
                         return Result.taken(extra=extra)
                 except Exception:
                     pass
-            return Result.available()
         return Result.error(f"Unexpected response status: {response.status_code}")
 
     headers = {"User-Agent": "Mozilla/5.0"}

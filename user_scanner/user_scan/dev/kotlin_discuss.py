@@ -30,7 +30,6 @@ def validate_kotlin_discuss(user):
                     extra["avatar"] = avatar
                     
                 return Result.taken(extra=extra)
-            return Result.available()
             
         return Result.error(f"Unexpected response status: {response.status_code}")
 
