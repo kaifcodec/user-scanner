@@ -157,7 +157,12 @@ def validate_luarocks(user: str) -> Result:
         re.IGNORECASE | re.DOTALL,
     )
 
-    extra["modules_list"] = [name.strip() for _, name, _ in modules[:3]] + ["..."]
+    if not modules:
+        extra["modules_list"] = None
+    else:
+        extra["modules_list"] = [name.strip() for _, name, _ in modules[:3]]
+        if len(modules) > 3:
+            extra["modules_list"].append("...")
 
     return Result.taken(
         url=url,
