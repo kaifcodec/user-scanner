@@ -59,6 +59,35 @@ python -m pip install --upgrade pip
 # install
 pip install user-scanner
 ```
+
+## NixOS
+```bash
+# creating a dev shell
+nix nix develop .
+
+# running user-scanner without install
+nix run github:kaifcodec/user-scanner
+```
+
+## Installation on NixOS
+
+```nix
+# flake.nix
+  inputs = {
+    ...
+    user-scanner.url = "github:kaifcodec/user-scanner";
+    ...
+  };
+
+# package module
+{ pkgs, inputs, ... }: {
+  home.packages = with pkgs; [
+    ...
+    inputs.user-scanner.url.packages.${pkgs.system}.default
+    ...
+  ];
+}
+```
 ---
 ### Important Flags
 
