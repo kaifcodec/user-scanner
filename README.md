@@ -63,7 +63,7 @@ pip install user-scanner
 ## NixOS
 ```bash
 # creating a dev shell
-nix nix develop .
+nix develop .
 
 # running user-scanner without install
 nix run github:kaifcodec/user-scanner
@@ -83,7 +83,7 @@ nix run github:kaifcodec/user-scanner
 { pkgs, inputs, ... }: {
   home.packages = with pkgs; [
     ...
-    inputs.user-scanner.url.packages.${pkgs.system}.default
+    inputs.user-scanner.packages.${pkgs.system}.default
     ...
   ];
 }
