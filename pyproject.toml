@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "user-scanner"
-version = "1.4.0.1"
+version = "1.4.0.2"
 description = "Check username availability across multiple popular platforms"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -20,6 +20,9 @@ dependencies = [
 
 requires-python = ">=3.10"
 keywords = ["osint", "email-osint", "username-osint", "python", "cli-tool", "cybersecurity", "threat-intelligence", "security"]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "pytest-anyio", "anyio[trio]"]
 
 [project.urls]
 Homepage = "https://github.com/kaifcodec/user-scanner"
