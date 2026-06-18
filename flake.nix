@@ -7,34 +7,41 @@
     self,
     nixpkgs,
   }: let
-    systems = ["x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin"];
+    systems = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "x86_64-darwin"
+      "aarch64-darwin"
+    ];
     forAllSystems = nixpkgs.lib.genAttrs systems;
   in {
-    packages = forAllSystems (system: let
-      pkgs = import nixpkgs {inherit system;};
-    in {
-      default = pkgs.python312Packages.buildPythonApplication {
-        pname = "user-scanner";
-        version = "1.4.0.1";
+    packages = forAllSystems (
+      system: let
+        pkgs = import nixpkgs {inherit system;};
+      in {
+        default = pkgs.python312Packages.buildPythonApplication {
+          pname = "user-scanner";
+          version = "1.4.0.2";
 
-        src = self;
+          src = self;
 
-        pyproject = true;
+          pyproject = true;
 
-        build-system = with pkgs.python312Packages; [
-          flit-core
-        ];
+          build-system = with pkgs.python312Packages; [
+            flit-core
+          ];
 
-        dependencies = with pkgs.python312Packages; [
-          httpx
-          socksio
-          colorama
-          h2
-        ];
+          dependencies = with pkgs.python312Packages; [
+            httpx
+            socksio
+            colorama
+            h2
+          ];
 
-        pythonImportsCheck = ["user_scanner"];
-      };
-    });
+          pythonImportsCheck = ["user_scanner"];
+        };
+      }
+    );
 
     apps = forAllSystems (system: {
       default = {
