@@ -26,7 +26,7 @@ def validate_niftygateway(user):
                         return Result.available()
             except Exception:
                 pass
-        elif response.status_code == 404:
+        elif response.status_code in (404, 400) or 'not_found' in response.text:
             return Result.available()
             
         return Result.error("Unexpected response body, report it via GitHub issues.")

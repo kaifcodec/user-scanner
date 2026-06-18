@@ -23,7 +23,6 @@ LOUD_MODULES: Dict[str, List[str]] = {
         "sexvid",
         "made.porn",
         "flirtbate",
-        "polarsteps",
         "babestation",
         "flipkart",
         "ama",

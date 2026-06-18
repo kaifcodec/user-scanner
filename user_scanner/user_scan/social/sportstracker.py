@@ -5,6 +5,9 @@ def validate_sportstracker(user):
     show_url = f"https://www.sports-tracker.com/view_profile/{user}"
 
     def process(response):
+        if response.status_code == 404 or "Not found" in response.text or "Not Found" in response.text:
+            return Result.available()
+
         if response.status_code == 200:
             try:
                 data = response.json()
@@ -31,8 +34,7 @@ def validate_sportstracker(user):
                     return Result.taken(extra=extra)
             except Exception:
                 pass
-        elif response.status_code == 404 or "Not Found" in response.text:
-            return Result.available()
+
             
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
