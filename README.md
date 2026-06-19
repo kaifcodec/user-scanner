@@ -41,7 +41,7 @@ The ultimate reconnaissance tool for hunting down targets using just an email or
 
 ```bash
 # create venv
-python -m venv .venv
+python3 -m venv .venv
 ````
 ## Activate venv
 ```bash
@@ -52,42 +52,29 @@ source .venv/bin/activate
 .venv\Scripts\Activate.ps1
 ```
 ## Installation
-```bash
-# upgrade pip
-python -m pip install --upgrade pip
 
-# install
+#### 🐍 Via PyPI (Standard Python Setup)
+```bash
+# Upgrade pip to the latest version
+python3 -m pip install --upgrade pip
+
+# Install the package globally or in your virtual environment
 pip install user-scanner
 ```
 
-## NixOS
+#### ❄️ Via Nix (Linux & macOS)
+
 ```bash
-# creating a dev shell
+# Run the scanner instantly without installing anything permanently
+nix run github:kaifcodec/user-scanner/main -- --help
+
+# Drop into a temporary shell where the 'user-scanner' command is active
+nix shell github:kaifcodec/user-scanner/main
+
+# (For Developers) Clone the repo and drop into an isolated workspace
 nix develop .
-
-# running user-scanner without install
-nix run github:kaifcodec/user-scanner
 ```
 
-## Installation on NixOS
-
-```nix
-# flake.nix
-  inputs = {
-    ...
-    user-scanner.url = "github:kaifcodec/user-scanner";
-    ...
-  };
-
-# package module
-{ pkgs, inputs, ... }: {
-  home.packages = with pkgs; [
-    ...
-    inputs.user-scanner.packages.${pkgs.system}.default
-    ...
-  ];
-}
-```
 ---
 ### Important Flags
 
