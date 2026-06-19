@@ -49,5 +49,13 @@
         program = "${self.packages.${system}.default}/bin/user-scanner";
       };
     });
+
+    devShells = forAllSystems (system: let
+      pkgs = import nixpkgs {inherit system;};
+    in {
+      default = pkgs.mkShell {
+        inputsFrom = [self.packages.${system}.default];
+      };
+    });
   };
 }
