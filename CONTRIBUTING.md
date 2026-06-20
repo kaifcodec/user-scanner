@@ -130,143 +130,75 @@ def validate_<sitename>(user: str) -> Result:
     ...
 ```
 
-Rules:
+**CRITICAL Rules for `user_scan` Modules:**
 
-- Single parameter: the username (str).
-- Return a Result object (use Result.available(), Result.taken(), or Result.error(msg)).
-- Keep the function synchronous unless you are implementing an optional async variant; prefer sync for consistency.
-- Prefer using the orchestrator helpers (see below) so validators stay small and consistent.
+1. **Explicit Verification (No False Positives):** Never rely solely on a generic HTTP 200 to assume availability. Many WAFs and CDNs intercept requests and return 200 OK. You MUST explicitly verify a unique string or JSON key for BOTH the `taken` and `available` states. **Never use a bare `else: return Result.available()` block.**
+2. **Deep Data Extraction:** If the user is found, attempt to extract rich metadata (fullname, location, bio, stats) and return it via `Result.taken(extra={"fullname": "John Doe", ...})`.
+3. **Strict Error Handling:** NEVER use `raise Exception()`. All unhandled states or unexpected status codes must return `Result.error(f"Unexpected status code {resp.status_code}")`.
+4. **Use Orchestrator Helpers:** Use `generic_validate` to standardize `httpx` logic, but write robust `process` callbacks.
 
 ---
 
 ## Orchestrator helpers (user_scan)
 
-To keep validators DRY, the repository provides helper functions in `core/orchestrator.py`. Use these where appropriate.
+To keep validators DRY, the repository provides helper functions in `core/orchestrator.py`.
 
-1. generic_validate
+### 1. generic_validate (Preferred)
 
-- Purpose: Run a request for a given URL and let a small callback (processor) inspect the httpx.Response and return a Result.
-- Typical signature (example — consult the actual orchestrator implementation for exact parameter names):
-  - `generic_validate(url: str, processor: Callable[[httpx.Response], Result], headers: Optional[dict] = None, show_url=None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
-- Processor function signature:
-  - def process(response) -> Result
-  - Must return Result.available(), Result.taken(), or Result.error("message")
-- Use case: Sites that return 200 for both found and not-found states and require checking the HTML body for a unique "not found" string (or other content inspection).
+- **Purpose:** Run a request for a given URL and let a callback (`process`) inspect the `httpx.Response` and return a `Result`.
+- **Use case:** Highly recommended for all modern modules to inspect response content, prevent false positives, and parse out deep data.
 
-### Example `github.py` module:
-
-- This example shows how to use `generic_validate()` and how to return Result values with optional error messages.
+### Example robust module with deep data extraction:
 
 ```python
-from user_scanner.core.orchestrator import generic_validate, Result
+from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
+import re
+import json
 
-def validate_github(user: str) -> Result:
-    """
-    Example of a 'generic_validate' module.
-    Use this when the site requires complex logic or response body parsing.
-    """
-    url = f"https://github.com/signup_check/username?value={user}"
-
-    # Define show_url for clean output display
-    show_url = "https://github.com"
-
-    headers = {
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-        'referer': "https://github.com/signup",
-        'accept-language': "en-US,en;q=0.9",
-    }
-
-    # Specific error message from GitHub for validation rules
-    GITHUB_INVALID_MSG = (
-        "Username may only contain alphanumeric characters or single hyphens, "
-        "and cannot begin or end with a hyphen."
-    )
+def validate_example(user: str) -> Result:
+    url = f"https://www.example.com/{user}/profile"
+    show_url = "https://www.example.com"
+    headers = {"User-Agent": "Mozilla/5.0"}
 
     def process(response):
-        """
-        Internal processing function.
-        Note: You don't need to pass 'url' here;
-        generic_validate will attach it automatically from the kwargs.
-        """
-        if response.status_code == 200:
+        # 1. Explicitly check for the "not found" state
+        if response.status_code == 404 or "User does not exist" in response.text:
             return Result.available()
+            
+        # 2. Explicitly verify the "taken" state and extract deep data
+        if response.status_code == 200 and "profile-data" in response.text:
+            extra = {}
+            match = re.search(r'<script id="profile-data">({.+?})</script>', response.text)
+            if match:
+                data = json.loads(match.group(1))
+                if "name" in data:
+                    extra["fullname"] = data["name"]
+                if "location" in data:
+                    extra["location"] = data["location"]
+            return Result.taken(extra=extra)
 
-        if response.status_code == 422:
-            if GITHUB_INVALID_MSG in response.text:
-                return Result.error("Invalid format: alphanumeric and single hyphens only")
+        # 3. Graceful error handling for unexpected states (No bare else!)
+        return Result.error(f"Unexpected response status: {response.status_code}")
 
-            return Result.taken()
-
-        return Result.error(f"GitHub returned unexpected status: {response.status_code}")
-
-    # Pass show_url into generic_validate so the Orchestrator
-    # can attach it to the final Result object.
-    return generic_validate(url, process, headers=headers, show_url=show_url)
+    return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
 ```
 
-2. status_validate
+### 2. status_validate (Discouraged)
 
-- Purpose: Simple helper for sites where availability can be determined purely from HTTP status codes (e.g., 404 = available, 200 = taken).
-- Typical signature (example):
-  - `status_validate(url: str, available_status: int, taken_status: int, show_url=None, headers: Optional[dict] = None, timeout: float = 5.0, follow_redirects: bool = False) -> Result`
-- Use case: Sites that reliably return 404 for missing profiles and 200 for existing ones.
-
-### Example `launchpad.py` module:
-
-```python
-from user_scanner.core.orchestrator import status_validate
-
-
-def validate_launchpad(user):
-    url = f"https://launchpad.net/~{user}"
-    show_url = "https://launchpad.net"
-
-    headers = {
-        'User-Agent': "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9",
-        'Accept-Encoding': "gzip, deflate, br, zstd",
-        'Upgrade-Insecure-Requests': "1",
-    }
-
-    return status_validate(url, 404, 200, show_url=show_url, headers=headers, follow_redirects=True)
-```
-
-Note: The exact parameter names and behavior of the orchestrator functions are defined in `core/orchestrator.py`. Use this CONTRIBUTING guide as a reference for when to use each helper; inspect the implementation for exact types and helper methods on Result.
-
----
-
-## HTTP requests & headers
-
-- The orchestrator centralizes httpx usage and exception handling. Validators should avoid making raw httpx requests themselves unless there's a specific reason.
-- When providing headers, include a User-Agent and reasonable Accept headers.
-- Timeouts should be reasonable (3–10 seconds). The orchestrator will usually expose a timeout parameter.
-
----
-
-## When to implement custom logic (user_scan)
-
-- Use `status_validate` when availability is determined by HTTP status codes (e.g., 404 vs 200).
-- Use `generic_validate` when you need to inspect response content or headers and decide availability via a short callback that returns a Result.
-- If a platform requires API keys, OAuth, or heavy JS rendering, document it in the PR and consider an "advanced" module that can be enabled separately.
+- **Purpose:** Simple helper for sites where availability can be determined purely from HTTP status codes (e.g., 404 = available, 200 = taken).
+- **Warning:** Use this *only* as a last resort if the site has absolutely no WAF and reliably returns strict HTTP codes without custom redirect/error pages. Modern sites heavily punish this approach.
 
 ---
 
 ## Return values and error handling
 
 - Always return a Result object:
-  - Result.available()
-  - Result.taken()
-  - Result.error("short diagnostic message")
-- The orchestrator will capture network errors (httpx.ConnectError, httpx.TimeoutException, etc.) and should return Result.error(...) for those cases. If you implement direct requests inside a validator, follow the same pattern:
-
-```python
-except (httpx.ConnectError, httpx.TimeoutException):
-    return Result.error("network error")
-except Exception:
-    return Result.error("unexpected error")
-```
-
-- Prefer returning meaningful error messages with Result.error to help debugging and triage in issues.
+  - `Result.available()`
+  - `Result.taken(extra={"fullname": "..."})`
+  - `Result.error("short diagnostic message")`
+- The orchestrator captures network errors (`httpx.ConnectError`, `httpx.TimeoutException`, etc.) and returns `Result.error(...)` automatically.
+- **NEVER** use `raise Exception("...")`. If you encounter an anomaly in your `process` function, always return `Result.error("...")` so the scanner can gracefully continue to the next module.
 
 ---
 
