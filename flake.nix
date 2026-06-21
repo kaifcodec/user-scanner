@@ -7,6 +7,7 @@
     self,
     nixpkgs,
   }: let
+    pyproject = fromTOML (builtins.readFile ./pyproject.toml);
     systems = [
       "x86_64-linux"
       "aarch64-linux"
@@ -21,7 +22,7 @@
       in {
         default = pkgs.python312Packages.buildPythonApplication {
           pname = "user-scanner";
-          version = "1.4.0.2";
+          version = pyproject.project.version;
 
           src = self;
 
