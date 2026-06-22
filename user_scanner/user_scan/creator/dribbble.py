@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import Result, make_request
 
 
 def validate_dribbble(user):
-    url = f"https://dribbble.com/{user}"
+    url = f"https://dribbble.com/{user}/about"
     show_url = f"https://dribbble.com/{user}"
 
     headers = {
@@ -30,21 +30,26 @@ def validate_dribbble(user):
                 found_url = og_match.group(1)
                 
             if found_url.lower().rstrip('/') == show_url.lower().rstrip('/'):
-                extra = {}
                 
-                meta_match = re.search(r'<meta name="description" content="([^"]+)"', html)
-                if meta_match:
-                    meta_content = meta_match.group(1).strip()
-                    if "Find Top Designers" not in meta_content:
-                        parts = [p.strip() for p in meta_content.split('|')]
-                        if len(parts) > 0 and parts[0]:
-                            extra['name'] = parts[0]
-                        if len(parts) > 1 and parts[1]:
-                            extra['bio'] = parts[1]
+                name_match = re.search(r'<h1 class="masthead-profile-name">([^<]+)</h1>', html)
+                bio_match = re.search(r'<p class="bio-text">([^<]+)</p>', html)
+                
+                loc_match = re.search(r'<p class="masthead-profile-locality"><a[^>]*>([^<]+)</a>', html)
+                if not loc_match:
+                    loc_match = re.search(r'class="location[^"]*">([^<]+)</span>', html, re.I)
                     
-                loc_match = re.search(r'class="location[^"]*">([^<]+)</span>', html, re.I)
-                if loc_match:
-                    extra['location'] = loc_match.group(1).strip()
+                followers_match = re.search(r'([0-9,kKmM]+)\s*</span>\s*<span class="meta">followers', html, re.I | re.DOTALL)
+                following_match = re.search(r'([0-9,kKmM]+)\s*</span>\s*<span class="meta">following', html, re.I | re.DOTALL)
+                member_since_match = re.search(r'Member since ([^<]+)</span>', html, re.I)
+
+                extra = {
+                    'name': name_match.group(1).strip() if name_match else None,
+                    'bio': bio_match.group(1).strip() if bio_match else None,
+                    'location': loc_match.group(1).strip() if loc_match else None,
+                    'followers': followers_match.group(1).strip() if followers_match else None,
+                    'following': following_match.group(1).strip() if following_match else None,
+                    'registered': member_since_match.group(1).strip() if member_since_match else None
+                }
                     
                 return Result.taken(extra=extra, url=show_url)
             else:
