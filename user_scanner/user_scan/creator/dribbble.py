@@ -17,20 +17,40 @@ def validate_dribbble(user):
         response = make_request(url, headers=headers, follow_redirects=True)
         if response.status_code == 200:
             html = response.text
-            extra = {}
-            name_match = re.search(r'<meta name=\"description\" content=\"([^\|]+?)\s*\|', html)
-            if name_match:
-                extra['name'] = name_match.group(1).strip()
+            
+            # Explicit verification: Dribbble normalizes casing and strips trailing slashes in its tags
+            # We extract canonical or og:url and compare case-insensitively
+            canonical_match = re.search(r'<link rel="canonical" href="([^"]+)"', html, re.I)
+            og_match = re.search(r'<meta property="og:url" content="([^"]+)"', html, re.I)
+            
+            found_url = ""
+            if canonical_match:
+                found_url = canonical_match.group(1)
+            elif og_match:
+                found_url = og_match.group(1)
                 
-            bio_match = re.search(r'<meta name=\"description\" content=\"[^\|]+\|\s*([^\|]+?)\s*\|', html)
-            if bio_match:
-                extra['bio'] = bio_match.group(1).strip()
+            if found_url.lower().rstrip('/') == show_url.lower().rstrip('/'):
+                extra = {}
                 
-            loc_match = re.search(r'class=\"location[^\"]*\">([^<]+)</span>', html, re.I)
-            if loc_match:
-                extra['location'] = loc_match.group(1).strip()
+                meta_match = re.search(r'<meta name="description" content="([^"]+)"', html)
+                if meta_match:
+                    meta_content = meta_match.group(1).strip()
+                    if "Find Top Designers" not in meta_content:
+                        parts = [p.strip() for p in meta_content.split('|')]
+                        if len(parts) > 0 and parts[0]:
+                            extra['name'] = parts[0]
+                        if len(parts) > 1 and parts[1]:
+                            extra['bio'] = parts[1]
+                    
+                loc_match = re.search(r'class="location[^"]*">([^<]+)</span>', html, re.I)
+                if loc_match:
+                    extra['location'] = loc_match.group(1).strip()
+                    
+                return Result.taken(extra=extra, url=show_url)
+            else:
+                # Soft 404 (redirect to homepage or missing profile metadata)
+                return Result.available(url=show_url)
                 
-            return Result.taken(extra=extra, url=show_url)
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:
