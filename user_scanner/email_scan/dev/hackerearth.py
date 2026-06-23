@@ -2,7 +2,7 @@ import httpx
 import secrets
 from user_scanner.core.result import Result
 
-def _generate_random_name() -> str:
+def _generate_random_name() -> tuple[str, str]:
     """Generates short random names to keep individual payloads unique."""
     first_names = ["Hunan", "Hedge", "Zack", "Dex", "Jace", "Kira", "Cole", "Finn", "Nuter"]
     last_names = ["Fish", "Code", "Byte", "Web", "Null", "Dev", "Node", "Flux", "Jones"]
