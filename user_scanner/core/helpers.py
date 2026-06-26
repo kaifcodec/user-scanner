@@ -9,7 +9,7 @@ import os
 import random
 import threading
 import functools
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import asyncio
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -122,28 +122,35 @@ def find_category(module: ModuleType) -> str | None:
     return None
 
 
-def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int = 50) -> List[str]:
-    """Validate proxies by testing them against google.com. Returns list of working proxies."""
+async def _validate_proxy_async(proxy: str, timeout: int) -> Optional[str]:
+    try:
+        async with httpx.AsyncClient(proxy=proxy, timeout=timeout) as client:
+            response = await client.get("https://www.google.com")
+            if response.status_code == 200:
+                return proxy
+    except Exception:
+        pass
+    return None
+
+async def _validate_proxies_batch(proxy_list: List[str], timeout: int, max_workers: int) -> List[str]:
     working_proxies = []
+    sem = asyncio.Semaphore(max_workers)
 
-    def test_proxy(proxy: str) -> Optional[str]:
-        try:
-            with httpx.Client(proxy=proxy, timeout=timeout) as client:
-                response = client.get("https://www.google.com")
-                if response.status_code == 200:
-                    return proxy
-        except Exception:
-            pass
-        return None
+    async def _worker(proxy: str):
+        async with sem:
+            res = await _validate_proxy_async(proxy, timeout)
+            if res:
+                working_proxies.append(res)
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {executor.submit(test_proxy, proxy): proxy for proxy in proxy_list}
-        for future in as_completed(futures):
-            result = future.result()
-            if result:
-                working_proxies.append(result)
+    tasks = [_worker(proxy) for proxy in proxy_list]
+    if tasks:
+        await asyncio.gather(*tasks)
 
     return working_proxies
+
+def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int = 50) -> List[str]:
+    """Validate proxies by testing them against google.com. Returns list of working proxies."""
+    return asyncio.run(_validate_proxies_batch(proxy_list, timeout, max_workers))
 
 
 class ProxyManager:

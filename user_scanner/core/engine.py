@@ -27,7 +27,7 @@ async def check(module: ModuleType, target: str) -> Result:
         if inspect.iscoroutinefunction(func):
             result = await func(target)
         else:
-            result = func(target)
+            result = await asyncio.to_thread(func, target)
     except Exception as e:
         result = Result.error(e)
 

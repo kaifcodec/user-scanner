@@ -48,7 +48,11 @@ async def _async_worker(
             return Result.skipped().update(**params).show(configs)
 
         try:
-            res = func(email)
+            import inspect
+            if inspect.iscoroutinefunction(func):
+                res = await func(email)
+            else:
+                res = await asyncio.to_thread(func, email)
             result = await res if asyncio.iscoroutine(res) else res
         except Exception as e:
             result = Result.error(e)
