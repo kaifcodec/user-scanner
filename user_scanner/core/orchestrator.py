@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import concurrent.futures
 from pathlib import Path
 from types import ModuleType
 from typing import Callable, List, Dict, Optional, Set
@@ -22,6 +23,7 @@ from user_scanner.core.result import Result
 
 
 MAX_CONCURRENT_REQUESTS = 60
+_shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_REQUESTS)
 
 async def _async_worker(
     module: ModuleType,
@@ -50,23 +52,14 @@ async def _async_worker(
 
         try:
             if inspect.iscoroutinefunction(func):
-                res = await func(username)
+                result = await func(username)
             else:
-                res = await asyncio.to_thread(func, username)
-            result = await res if asyncio.iscoroutine(res) else res
+                loop = asyncio.get_running_loop()
+                result = await loop.run_in_executor(_shared_executor, func, username)
         except Exception as e:
             result = Result.error(e)
 
-        result.update(**params)
-
-        if configs.only_found and result.is_found():
-            if printed_cats is not None and actual_cat not in printed_cats:
-                print(
-                    f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}"
-                )
-                printed_cats.add(actual_cat)
-
-        return result.show(configs)
+        return result.update(**params)
 
 
 async def _run_batch(
@@ -74,27 +67,34 @@ async def _run_batch(
     username: str,
     configs: ScanConfig,
     printed_cats: Optional[Set] = None,
-    module_to_cat: Optional[Dict[str, str]] = None
+    cat_override: Optional[str] = None,
+    sem: Optional[asyncio.Semaphore] = None
 ) -> List[Result]:
-    sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+    if sem is None:
+        sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+        
     tasks = []
     for module in modules:
-        site_key = get_site_name(module).capitalize()
-        cat_override = module_to_cat.get(site_key) if module_to_cat else None
         tasks.append(
-            _async_worker(
-                module,
-                username,
-                sem,
-                configs,
-                printed_cats=printed_cats,
-                cat_override=cat_override
+            asyncio.create_task(
+                _async_worker(module, username, sem, configs, cat_override=cat_override)
             )
         )
 
-    if not tasks:
-        return []
-    return list(await asyncio.gather(*tasks))
+    results = []
+    for coro in asyncio.as_completed(tasks):
+        result = await coro
+        
+        actual_cat = result.category
+        if configs.only_found and result.is_found():
+            if printed_cats is not None and actual_cat not in printed_cats:
+                print(f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}")
+                printed_cats.add(actual_cat)
+                
+        result.show(configs)
+        results.append(result)
+        
+    return results
 
 
 def run_user_module(
@@ -124,30 +124,52 @@ def run_user_category(
     )
 
 
-def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
+async def _run_user_full_async(username: str, configs: ScanConfig) -> List[Result]:
     categories = list(load_categories(no_nsfw=configs.no_nsfw).items())
     all_results = []
     printed_cats = set()
 
+    sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+    
+    # 1. Pre-spawn all tasks for all categories (global concurrency)
+    category_tasks = []
     for cat_name, cat_path in categories:
-        modules = load_modules(cat_path)
         display_name = cat_name.capitalize()
+        modules = load_modules(cat_path)
+        tasks = []
+        for module in modules:
+            tasks.append(
+                asyncio.create_task(
+                    _async_worker(module, username, sem, configs, cat_override=display_name)
+                )
+            )
+        category_tasks.append((display_name, tasks))
 
+    # 2. Await tasks category by category to stream grouped output
+    for display_name, tasks in category_tasks:
+        if not tasks:
+            continue
+            
         if not configs.only_found:
             print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
             printed_cats.add(display_name)
-
-        cat_results = asyncio.run(
-            _run_batch(
-                modules,
-                username,
-                configs,
-                printed_cats=printed_cats,
-            )
-        )
-        all_results.extend(cat_results)
+            
+        for coro in asyncio.as_completed(tasks):
+            result = await coro
+            
+            if configs.only_found and result.is_found():
+                if display_name not in printed_cats:
+                    print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
+                    printed_cats.add(display_name)
+                    
+            result.show(configs)
+            all_results.append(result)
 
     return all_results
+
+
+def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
+    return asyncio.run(_run_user_full_async(username, configs))
 
 
 
@@ -192,7 +214,7 @@ def make_request(url: str, **kwargs) -> httpx.Response:
 
     client = get_client(use_http2, proxy_val)
 
-    max_retries = 2
+    max_retries = 0
     for attempt in range(max_retries + 1):
         try:
             return client.request(method.upper(), url, **kwargs)

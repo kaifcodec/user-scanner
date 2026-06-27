@@ -19,7 +19,6 @@ from user_scanner.core.result import Result, Status
 # Concurrency control
 MAX_CONCURRENT_REQUESTS = 25
 
-
 async def _async_worker(
     module: ModuleType,
     email: str,
@@ -50,10 +49,9 @@ async def _async_worker(
         try:
             import inspect
             if inspect.iscoroutinefunction(func):
-                res = await func(email)
+                result = await func(email)
             else:
-                res = await asyncio.to_thread(func, email)
-            result = await res if asyncio.iscoroutine(res) else res
+                result = await asyncio.to_thread(func, email)
         except Exception as e:
             result = Result.error(e)
 
@@ -94,13 +92,18 @@ async def _run_batch(
     return list(await asyncio.gather(*tasks))
 
 
+async def _run_email_module_batch_async(
+    module: ModuleType, email: str, configs: ScanConfig
+) -> List[Result]:
+    return await _run_batch([module], email, configs)
+
 def run_email_module_batch(
     module: ModuleType, email: str, configs: ScanConfig
 ) -> List[Result]:
-    return asyncio.run(_run_batch([module], email, configs))
+    return asyncio.run(_run_email_module_batch_async(module, email, configs))
 
 
-def run_email_category_batch(
+async def _run_email_category_batch_async(
     category_path: Path, email: str, configs: ScanConfig
 ) -> List[Result]:
     cat_name = category_path.stem.capitalize()
@@ -111,17 +114,20 @@ def run_email_category_batch(
         print(f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}")
         printed_cats.add(cat_name)
 
-    return asyncio.run(
-        _run_batch(
-            modules,
-            email,
-            configs,
-            printed_cats=printed_cats,
-        )
+    return await _run_batch(
+        modules,
+        email,
+        configs,
+        printed_cats=printed_cats,
     )
 
+def run_email_category_batch(
+    category_path: Path, email: str, configs: ScanConfig
+) -> List[Result]:
+    return asyncio.run(_run_email_category_batch_async(category_path, email, configs))
 
-def run_email_full_batch(email: str, configs: ScanConfig) -> List[Result]:
+
+async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[Result]:
     categories = load_categories(True, configs.no_nsfw)
     all_results = []
     printed_cats = set()
@@ -133,14 +139,15 @@ def run_email_full_batch(email: str, configs: ScanConfig) -> List[Result]:
             print(f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}")
             printed_cats.add(cat_name)
 
-        cat_results = asyncio.run(
-            _run_batch(
-                modules,
-                email,
-                configs,
-                printed_cats=printed_cats,
-            )
+        cat_results = await _run_batch(
+            modules,
+            email,
+            configs,
+            printed_cats=printed_cats,
         )
         all_results.extend(cat_results)
 
     return all_results
+
+def run_email_full_batch(email: str, configs: ScanConfig) -> List[Result]:
+    return asyncio.run(_run_email_full_batch_async(email, configs))
