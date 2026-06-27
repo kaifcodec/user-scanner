@@ -2,8 +2,7 @@ import sys
 import threading
 import json
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
-
+from unittest.mock import MagicMock, AsyncMock, patch
 import pytest
 
 from user_scanner.__main__ import main
@@ -196,32 +195,35 @@ def test_username_file_unreadable(tmp_path, run_main):
     assert code == 1
 
 
-@patch("httpx.Client")
+@patch("httpx.AsyncClient")
 def test_validate_proxy_all_invalid(mock_client):
-    instance = mock_client.return_value.__enter__.return_value
+    instance = MagicMock()
+    mock_client.return_value.__aenter__.return_value = instance
     response = MagicMock()
     response.status_code = 302
-    instance.get.return_value = response
+    instance.get = AsyncMock(return_value=response)
 
     proxies = ["http://proxy1.example.com:8080", "http://proxy2.example.com:3128"]
     result = helpers.validate_proxies(proxies)
     assert result == []
 
 
-@patch("httpx.Client")
+@patch("httpx.AsyncClient")
 def test_validate_proxy_partially_invalid(mock_client):
     def side_effect(*args, **kwargs):
         proxy = kwargs.get("proxy")
         instance = MagicMock()
         if proxy and "invalid" in proxy:
-            instance.get.side_effect = Exception("connection failed")
+            instance.get = AsyncMock(side_effect=Exception("connection failed"))
         else:
             response = MagicMock()
             response.status_code = 200
-            instance.get.return_value = response
-        instance.__enter__.return_value = instance
-        instance.__exit__.return_value = None
-        return instance
+            instance.get = AsyncMock(return_value=response)
+        
+        cm = MagicMock()
+        cm.__aenter__.return_value = instance
+        cm.__aexit__.return_value = None
+        return cm
 
     mock_client.side_effect = side_effect
     proxies = ["http://invalid", "socks5://socks-proxy.example.com:1080"]
@@ -234,22 +236,24 @@ def test_validate_proxy_empty_list():
     assert result == []
 
 
-@patch("httpx.Client")
+@patch("httpx.AsyncClient")
 def test_validate_proxy_timeout(mock_client):
-    instance = mock_client.return_value.__enter__.return_value
-    instance.get.side_effect = helpers.httpx.TimeoutException("timeout")
+    instance = MagicMock()
+    mock_client.return_value.__aenter__.return_value = instance
+    instance.get = AsyncMock(side_effect=helpers.httpx.TimeoutException("timeout"))
     proxies = ["http://proxy1.example.com:8080"]
 
     result = helpers.validate_proxies(proxies, timeout=1)
     assert result == []
 
 
-@patch("httpx.Client")
+@patch("httpx.AsyncClient")
 def test_validate_proxy_single_worker(mock_client):
-    instance = mock_client.return_value.__enter__.return_value
+    instance = MagicMock()
+    mock_client.return_value.__aenter__.return_value = instance
     response = MagicMock()
     response.status_code = 200
-    instance.get.return_value = response
+    instance.get = AsyncMock(return_value=response)
 
     proxies = ["http://proxy1.example.com:8080", "http://proxy2.example.com:3128"]
     result = helpers.validate_proxies(proxies, max_workers=1)
