@@ -85,7 +85,7 @@ async def _run_batch(
     for coro in asyncio.as_completed(tasks):
         result = await coro
         
-        actual_cat = result.category
+        actual_cat = result.category or "Unknown"
         if configs.only_found and result.is_found():
             if printed_cats is not None and actual_cat not in printed_cats:
                 print(f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}")
