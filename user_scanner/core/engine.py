@@ -1,11 +1,13 @@
 import asyncio
 import inspect
+import concurrent.futures
+
 from typing import List
 from types import ModuleType
-
 from user_scanner.core.result import Result
 from user_scanner.core.helpers import find_category, get_site_name, load_modules, load_categories
 
+_shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=60)
 
 async def check(module: ModuleType, target: str) -> Result:
     module_name = module.__name__.split(".")[-1]
@@ -27,7 +29,8 @@ async def check(module: ModuleType, target: str) -> Result:
         if inspect.iscoroutinefunction(func):
             result = await func(target)
         else:
-            result = await asyncio.to_thread(func, target)
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(_shared_executor, func, target)
     except Exception as e:
         result = Result.error(e)
 
@@ -65,3 +68,4 @@ async def check_all(target: str, is_email: bool = True) -> List[Result]:
         results.extend(sublist)
 
     return results
+
