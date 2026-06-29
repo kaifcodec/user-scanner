@@ -28,24 +28,16 @@ def validate_lemmy(user: str) -> Result:
                 person = person_view.get("person", {})
                 counts = person_view.get("counts", {})
 
-                if "id" in person:
-                    extra["id"] = person["id"]
-                if "name" in person:
-                    extra["name"] = person["name"]
-                if person.get("display_name"):
-                    extra["display_name"] = person["display_name"]
-                if person.get("avatar"):
-                    extra["avatar"] = person["avatar"]
-                if person.get("published"):
-                    extra["joined"] = person["published"]
-                if "bot_account" in person:
-                    extra["bot"] = person["bot_account"]
-                if "is_admin" in person_view:
-                    extra["admin"] = person_view["is_admin"]
-                if "post_count" in counts:
-                    extra["posts"] = counts["post_count"]
-                if "comment_count" in counts:
-                    extra["comments"] = counts["comment_count"]
+                extra["id"] = person.get("id")
+                extra["name"] = person.get("name")
+                extra["display_name"] = person.get("display_name")
+                extra["avatar"] = person.get("avatar")
+                extra["joined"] = person.get("published")
+                extra["bot"] = person.get("bot_account")
+                extra["admin"] = person_view.get("is_admin")
+                extra["posts"] = counts.get("post_count")
+                extra["comments"] = counts.get("comment_count")
+
             except Exception:
                 pass
             return Result.taken(extra=extra)
