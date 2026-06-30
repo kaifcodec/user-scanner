@@ -384,8 +384,6 @@ def main():
             if args.format == "csv"
             else formatter.into_json(results)
         )
-
-    if args.output:
         if args.format == "json":
             # Get the new data as a LIST of DICTS, not a string
             new_items = formatter.get_json_data(results)
