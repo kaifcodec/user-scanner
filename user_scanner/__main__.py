@@ -205,13 +205,7 @@ def main():
                     f"{G}[+] Found {len(working_proxies)} working proxies out of {len(all_proxies)}{X}"
                 )
 
-                # Save working proxies to temp file
-                temp_proxy_file = "validated_proxies.txt"
-                with open(temp_proxy_file, "w", encoding="utf-8") as f:
-                    for proxy in working_proxies:
-                        f.write(proxy + "\n")
-
-                set_proxy_manager(temp_proxy_file)
+                set_proxy_manager(proxies=working_proxies)
                 proxy_count = get_proxy_count()
                 print(f"{G}[+] Using {proxy_count} validated proxies{X}")
             else:

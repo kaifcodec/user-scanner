@@ -157,11 +157,28 @@ def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int =
 class ProxyManager:
     """Thread-safe proxy manager that loads and rotates proxies from a file."""
 
-    def __init__(self, proxy_file: str):
+    def __init__(self, proxy_file: Optional[str] = None, proxies: Optional[list[str]] = None):
         self.proxies: list[str] = []
         self.current_index = 0
         self.lock = threading.Lock()
-        self._load_proxies(proxy_file)
+        if proxies is not None:
+            self._load_proxies_from_list(proxies)
+        elif proxy_file is not None:
+            self._load_proxies(proxy_file)
+        else:
+            raise ValueError("Either proxy_file or proxies must be provided")
+
+    def _load_proxies_from_list(self, proxy_list: list[str]) -> None:
+        """Load proxies from a provided list. Keep explicit schemes, default to http:// when missing."""
+        for line in proxy_list:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                if "://" not in line:
+                    line = "http://" + line
+                self.proxies.append(line)
+
+        if not self.proxies:
+            raise ValueError("No valid proxies found in list")
 
     def _load_proxies(self, proxy_file: str) -> None:
         """Load proxies from a text file. Keep explicit schemes, default to http:// when missing."""
@@ -209,11 +226,11 @@ class ProxyManager:
 _proxy_manager: Optional[ProxyManager] = None
 
 
-def set_proxy_manager(proxy_file: Optional[str]) -> None:
-    """Initialize the global proxy manager with a proxy file."""
+def set_proxy_manager(proxy_file: Optional[str] = None, proxies: Optional[list[str]] = None) -> None:
+    """Initialize the global proxy manager with a proxy file or list."""
     global _proxy_manager
-    if proxy_file:
-        _proxy_manager = ProxyManager(proxy_file)
+    if proxy_file or proxies is not None:
+        _proxy_manager = ProxyManager(proxy_file=proxy_file, proxies=proxies)
     else:
         _proxy_manager = None
 
