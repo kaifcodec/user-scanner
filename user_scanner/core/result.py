@@ -22,6 +22,16 @@ DEBUG_MSG = """Result {{
 CSV_FIELDS = ["username", "category", "site_name", "status", "url", "extra", "reason"]
 
 
+def _neutralize_csv_cell(value):
+    FORMULA_TRIGGER_CHARS = ("=", "+", "-", "@", "\t", "\r", "\n")
+    if value is None:
+        return value
+    s = str(value)
+    if s.lstrip().startswith(FORMULA_TRIGGER_CHARS):
+        return "'" + s
+    return value
+
+
 def indent_text(msg: str, level: int, ignore_first: bool = False) -> str:
     if level <= 0 or not msg:
         return msg
@@ -190,6 +200,9 @@ class Result:
             data["extra"] = ""
 
         del data["is_email"]
+
+        data = {k: _neutralize_csv_cell(v) for k, v in data.items()}
+
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=CSV_FIELDS, lineterminator="")
         writer.writerow(data)

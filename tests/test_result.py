@@ -1,5 +1,7 @@
+import pytest
+
 from user_scanner.core.helpers import ScanConfig
-from user_scanner.core.result import Result, Status, indent_text
+from user_scanner.core.result import Result, Status, _neutralize_csv_cell, indent_text
 
 
 def test_status_labels():
@@ -205,3 +207,28 @@ def test_indentate():
                 assert not line.startswith(" ")
             else:
                 assert line.startswith(" " * i)
+
+
+@pytest.mark.parametrize(
+    "raw", ["=1+1", "+1+1", "-1+1", "@SUM(A1)", "\t=cmd", "\r=cmd"]
+)
+def test_csv_cell_neutralizes_formula_triggers(raw):
+    neutralized = _neutralize_csv_cell(raw)
+    assert neutralized
+    assert neutralized.startswith("'")
+
+
+def test_to_csv_neutralizes_username_field():
+    result = Result.available(username='=HYPERLINK("http://evil")', site_name="smth")
+    csv_text = result.to_csv()
+    assert "'=HYPERLINK" in csv_text
+    assert csv_text.count("=HYPERLINK") == 1
+
+
+def test_to_csv_neutralizes_extra_value_with_dangerous_key():
+    result = Result.taken(
+        username="x", platform="tumblr", extra={"command": "=cmd|/c calc"}
+    )
+    csv_text = result.to_csv()
+    assert not csv_text.startswith("=cmd")
+    assert not csv_text.lstrip('"').startswith("=cmd")
