@@ -4,3 +4,4 @@ __pycache__/
 rm_cache.py
 result.json
 *.csv
+validated_proxies.txt
