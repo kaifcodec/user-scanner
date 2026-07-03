@@ -179,12 +179,12 @@ def run_user_full(username: str, configs: ScanConfig) -> List[Result]:
 _clients: Dict[tuple, httpx.Client] = {}
 _clients_lock = threading.Lock()
 
-def get_client(use_http2: bool, proxy_val: Optional[str]) -> httpx.Client:
-    key = (use_http2, proxy_val)
+def get_client(use_http2: bool, proxy_val: Optional[str], verify: bool = True) -> httpx.Client:
+    key = (use_http2, proxy_val, verify)
     if key not in _clients:
         with _clients_lock:
             if key not in _clients:
-                _clients[key] = httpx.Client(http2=use_http2, proxy=proxy_val, verify=True)
+                _clients[key] = httpx.Client(http2=use_http2, proxy=proxy_val, verify=verify)
     return _clients[key]
 
 
@@ -211,8 +211,9 @@ def make_request(url: str, **kwargs) -> httpx.Response:
 
     method = kwargs.pop("method", "GET")
     use_http2 = kwargs.pop("http2", False)
+    verify = kwargs.pop("verify", True)
 
-    client = get_client(use_http2, proxy_val)
+    client = get_client(use_http2, proxy_val, verify)
 
     max_retries = 0
     for attempt in range(max_retries + 1):

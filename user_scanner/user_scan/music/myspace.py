@@ -11,7 +11,7 @@ def validate_myspace(user: str) -> Result:
     }
     
     try:
-        response = make_request(url, headers=headers, follow_redirects=True)
+        response = make_request(url, headers=headers, follow_redirects=True, verify=False)
         
         if response.status_code == 200:
             return Result.taken(url=url)

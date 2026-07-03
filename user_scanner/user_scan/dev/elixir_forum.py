@@ -1,12 +1,15 @@
 from user_scanner.core.orchestrator import Result, make_request
 
 def validate_elixir_forum(user):
-    url = f"https://elixirforum.com/u/{user}.json"
-    show_url = f"https://elixirforum.com/u/{user}"
-    headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
+    url = f"https://forum.elixirforum.com/u/{user}.json"
+    show_url = f"https://forum.elixirforum.com/u/{user}"
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+    }
 
     try:
-        response = make_request(url, headers=headers)
+        response = make_request(url, headers=headers, follow_redirects=True)
         if response.status_code == 200:
             data = response.json()
             u = data.get("user", {})
@@ -26,7 +29,7 @@ def validate_elixir_forum(user):
                     if "{size}" in avatar:
                         avatar = avatar.format(size=120)
                     if avatar.startswith("/"):
-                        avatar = "https://elixirforum.com" + avatar
+                        avatar = "https://forum.elixirforum.com" + avatar
                     extra["avatar"] = avatar
                     
                 return Result.taken(extra=extra, url=show_url)
