@@ -1,4 +1,5 @@
-from user_scanner.core.orchestrator import generic_validate, Result
+from user_scanner.core.orchestrator import Result, generic_validate
+
 
 def validate_f_droid(user):
     url = f"https://forum.f-droid.org/u/{user}.json"
@@ -11,15 +12,16 @@ def validate_f_droid(user):
             data = response.json()
             u = data.get("user", {})
             if u:
-                extra = {}
-                if u.get("id"): extra["id"] = u.get("id")
-                if u.get("name"): extra["name"] = u.get("name")
-                if u.get("username"): extra["username"] = u.get("username")
-                if u.get("title"): extra["title"] = u.get("title")
-                if u.get("last_posted_at"): extra["last_posted"] = u.get("last_posted_at")
-                if u.get("last_seen_at"): extra["last_seen"] = u.get("last_seen_at")
-                if u.get("created_at"): extra["registered"] = u.get("created_at")
-                
+                extra = {
+                    "id": u.get("id"),
+                    "name": u.get("name"),
+                    "username": u.get("username"),
+                    "title": u.get("title"),
+                    "last_posted": u.get("last_posted_at"),
+                    "last_seen": u.get("last_seen_at"),
+                    "registered": u.get("created_at"),
+                }
+
                 # Resolve avatar
                 avatar = u.get("avatar_template")
                 if avatar:
@@ -28,9 +30,9 @@ def validate_f_droid(user):
                     if avatar.startswith("/"):
                         avatar = "https://forum.f-droid.org" + avatar
                     extra["avatar"] = avatar
-                    
+
                 return Result.taken(extra=extra)
-            
+
         return Result.error(f"Unexpected response status: {response.status_code}")
 
     headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}

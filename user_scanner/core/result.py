@@ -2,7 +2,10 @@ import csv
 import io
 import json
 from enum import Enum
+from typing import Any
+
 from colorama import Fore, Style
+
 from user_scanner.core.helpers import ScanConfig
 
 # Added {url} to the debug message
@@ -99,19 +102,42 @@ class Result:
                 setattr(self, field, kwargs[field])
 
         if "extra" in kwargs and isinstance(kwargs["extra"], dict):
-            for key, value in kwargs["extra"].items():
-                if value is None or (isinstance(value, str) and not value.strip()):
-                    continue
+            self.add_extras(kwargs["extra"])
 
-                clean_key = key.strip().rstrip(":").strip().replace(" ", "_").lower()
-                if not clean_key:
-                    continue
+        if "extras" in kwargs and isinstance(kwargs["extras"], dict):
+            self.add_extras(kwargs["extras"])
 
-                if not isinstance(value, (bool, int)):
-                    value = str(value)
+        return self
 
-                self.extra[clean_key] = value
+    def add_extra_unchecked(self, key: str, value: Any):
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return self
 
+        clean_key = key.strip().rstrip(":").strip().replace(" ", "_").lower()
+        if not clean_key:
+            return self
+
+        if not isinstance(value, (bool, int)):
+            value = str(value)
+
+        self.extra[clean_key] = value
+        return self
+
+    def add_extras_unchecked(self, extras: dict[str, Any]):
+        for key, value in extras.items():
+            self.add_extra_unchecked(key, value)
+        return self
+
+    def add_extra(self, key: str, value: Any):
+        # Intentionally ignores 0, False, and "" in addition to None
+        if value:
+            return self.add_extra_unchecked(key, value)
+        return self
+
+    def add_extras(self, extras: dict[str, Any]):
+        # Intentionally ignores 0, False, and "" in addition to None
+        for key, value in extras.items():
+            self.add_extra(key, value)
         return self
 
     @classmethod
