@@ -23,7 +23,13 @@ def validate_thefirearmsforum(user: str) -> Result:
             char_match = re.search(r"difficulty_char:'([^']+)'", html_text)
             issued_match = re.search(r"issued_at:'([^']+)'", html_text)
             
-            if not all([nonce_match, hmac_match, diff_match, char_match, issued_match]):
+            if (
+                nonce_match is None or
+                hmac_match is None or
+                diff_match is None or
+                char_match is None or
+                issued_match is None
+            ):
                 return Result.error("Failed to parse PoW challenge parameters", url=url)
                 
             nonce = nonce_match.group(1)
