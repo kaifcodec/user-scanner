@@ -23,7 +23,29 @@ async def _check(email: str) -> Result:
                 data = response.json()
                 # Duolingo returns a list of users matching the email
                 if data.get("users") and len(data["users"]) > 0:
-                    return Result.taken(url=show_url)
+                    user = data["users"][0]
+                    extra = {}
+                    
+                    if user.get("name"):
+                        extra["name"] = user["name"]
+                    if user.get("username"):
+                        extra["username"] = user["username"]
+                    if "streak" in user:
+                        extra["streak"] = user["streak"]
+                    if "hasPlus" in user:
+                        extra["has_plus"] = user["hasPlus"]
+                    if "hasGoogleId" in user:
+                        extra["has_google_id"] = user["hasGoogleId"]
+                    if "hasFacebookId" in user:
+                        extra["has_facebook_id"] = user["hasFacebookId"]
+                    
+                    pic = user.get("picture")
+                    if pic:
+                        if pic.startswith("//"):
+                            pic = "https:" + pic
+                        extra["picture"] = pic
+                        
+                    return Result.taken(url=show_url, extra=extra)
                 else:
                     return Result.available(url=show_url)
 
