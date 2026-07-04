@@ -118,7 +118,7 @@ def main():
     parser.add_argument(
         "--validate-proxies",
         action="store_true",
-        help="Validate proxies before scanning (tests against google.com)",
+        help="Validate proxies before scanning (tests against gstatic.com/generate_204)",
     )
 
     parser.add_argument(

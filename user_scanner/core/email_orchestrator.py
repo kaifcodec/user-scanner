@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 from pathlib import Path
 from types import ModuleType
 from typing import List, Optional, Set
@@ -8,6 +9,7 @@ from colorama import Fore, Style
 from user_scanner.core.helpers import (
     ScanConfig,
     find_category,
+    get_proxy,
     get_scan_func,
     get_site_name,
     is_loud,
@@ -15,6 +17,28 @@ from user_scanner.core.helpers import (
     load_modules,
 )
 from user_scanner.core.result import Result, Status
+
+# Monkey-patch httpx clients to automatically use proxies for email scans
+_original_async_client_init = httpx.AsyncClient.__init__
+_original_client_init = httpx.Client.__init__
+
+def _patched_async_client_init(self, *args, **kwargs):
+    if "proxy" not in kwargs and "proxies" not in kwargs:
+        proxy = get_proxy()
+        if proxy:
+            kwargs["proxy"] = proxy
+    _original_async_client_init(self, *args, **kwargs)
+
+def _patched_client_init(self, *args, **kwargs):
+    if "proxy" not in kwargs and "proxies" not in kwargs:
+        proxy = get_proxy()
+        if proxy:
+            kwargs["proxy"] = proxy
+    _original_client_init(self, *args, **kwargs)
+
+httpx.AsyncClient.__init__ = _patched_async_client_init
+httpx.Client.__init__ = _patched_client_init
+
 
 # Concurrency control
 MAX_CONCURRENT_REQUESTS = 25
