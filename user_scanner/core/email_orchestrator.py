@@ -36,8 +36,8 @@ def _patched_client_init(self, *args, **kwargs):
             kwargs["proxy"] = proxy
     _original_client_init(self, *args, **kwargs)
 
-httpx.AsyncClient.__init__ = _patched_async_client_init
-httpx.Client.__init__ = _patched_client_init
+httpx.AsyncClient.__init__ = _patched_async_client_init  # type: ignore[method-assign]
+httpx.Client.__init__ = _patched_client_init  # type: ignore[method-assign]
 
 
 # Concurrency control
