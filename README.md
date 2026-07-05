@@ -210,8 +210,16 @@ Huge thanks to our amazing sponsors who support the development of `user-scanner
         <sub><b>@soxoj</b></sub>
       </a>
     </td>
+    <td align="center">
+      <a href="https://github.com/hienyimba">
+        <img src="https://github.com/hienyimba.png?size=100" width="50px;" alt="heynimba"/>
+        <br />
+        <sub><b>@hienyimba</b></sub>
+      </a>
+    </td>
   </tr>
 </table>
+
 
 ---
 ### Screenshots:
