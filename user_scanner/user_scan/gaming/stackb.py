@@ -68,20 +68,27 @@ def _profile_extra(response_text: str, profile_url: str) -> dict:
         _meta_content(response_text, "property", "og:description")
         or _meta_content(response_text, "name", "description")
     )
-    description = profile.get("description") or meta_description
+    profile_description = profile.get("description")
+    if not isinstance(profile_description, str):
+        profile_description = None
+
+    description = profile_description or meta_description
 
     display_name = profile.get("name")
+    if not isinstance(display_name, str):
+        display_name = None
     if not display_name and " (@" in title:
         display_name = title.split(" (@", 1)[0]
 
     rank = None
     followers = None
-    if meta_description or description:
-        rank_match = re.search(r"Ранг:\s*([^\.]+)", meta_description or description)
+    stats_text = meta_description or description
+    if stats_text:
+        rank_match = re.search(r"Ранг:\s*([^\.]+)", stats_text)
         if rank_match:
             rank = rank_match.group(1).strip()
 
-        followers_match = re.search(r"Подписчики:\s*(\d+)", meta_description or description)
+        followers_match = re.search(r"Подписчики:\s*(\d+)", stats_text)
         if followers_match:
             followers = int(followers_match.group(1))
 
