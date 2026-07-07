@@ -1,4 +1,3 @@
-import re
 from user_scanner.core.orchestrator import Result, make_request
 
 def validate_allthelyrics(user):
