@@ -192,9 +192,14 @@ This will:
 2. Save working proxies to `validated_proxies.txt`
 3. Use only validated proxies for scanning
 ---
-## Support the project
+## 💖 Support the project
 
-If this project helps you, consider supporting its development:
+Web platforms constantly update their authentication flows, meaning keeping over 300 modules running smoothly requires a relentless, around-the-clock commitment to maintaining code. What started as a passion project has evolved into a demanding, highly technical undertaking to ensure the tool remains reliable for the community.
+
+While commercial threat intelligence platforms often charge thousands of dollars for these exact capabilities, `user-scanner` remains completely free and open-source. 
+
+​If this tool just saved you hours of manual pivoting, helped you score a bug bounty, or secured your company's footprint, consider supporting this project. Keep OSINT powerful, open, and free.
+
 [GitHub Sponsor](https://github.com/sponsors/kaifcodec)
 
 ## Sponsors
