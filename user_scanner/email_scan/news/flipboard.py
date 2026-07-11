@@ -39,7 +39,7 @@ async def _check(email: str) -> Result:
                 elif data.get("valid") is True:
                     return Result.available(url=show_url)
 
-            return Result.error(f"Unexpected JSON response from Flipboard, report it via GitHub issues", url=show_url)
+            return Result.error("Unexpected JSON response from Flipboard, report it via GitHub issues", url=show_url)
 
         except Exception as e:
             return Result.error(str(e), url=show_url)
