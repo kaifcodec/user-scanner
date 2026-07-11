@@ -222,6 +222,13 @@ Huge thanks to our amazing sponsors who support the development of `user-scanner
         <sub><b>@hienyimba</b></sub>
       </a>
     </td>
+    <td align="center">
+      <a href="https://github.com/InDieTasten">
+        <img src="https://github.com/InDieTasten.png?size=100" width="50px;" alt="heynimba"/>
+        <br />
+        <sub><b>@InDieTasten</b></sub>
+      </a>
+    </td>
   </tr>
 </table>
 
