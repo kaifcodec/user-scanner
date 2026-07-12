@@ -23,8 +23,21 @@ With **310+ total scan vectors**—including **120+ email-integrated sites** and
 
 The ultimate reconnaissance tool for hunting down targets using just an email or username—now fully integrated with **Hudson Rock** for instant data breach intelligence.
 
+---
+## Sponsored by
+<p align="center">
+  <a href="https://webvetted.com/user-scanner?ref=github&utm_source=github" target="_blank">
+    <img width="850" height="270" alt="WebVetted Sponsor Banner" src="https://github.com/user-attachments/assets/6c441aef-327d-40a5-a20b-370433f4ea28" />
+  </a>
+  <br>
+  <em><strong>Go beyond account enumeration.</strong> Webvetted turns an email or username into a complete identity investigation with deep OSINT enrichment, breach intel,  AI analysis, and an interactive identity graph.</em>
+  <br>
+  <a href="https://webvetted.com/user-scanner?ref=github&utm_source=github" target="_blank"><strong>Start an Investigation →</strong></a>
+</p>
 
-## Features
+---
+
+## User Scanner Features:
 
 - ✅ **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 310+ platforms.
 - ✅ **Profile Data Extraction:** Goes beyond basic availability checks to scrape and extract rich metadata, account details, and digital footprints from target profiles.
