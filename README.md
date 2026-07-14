@@ -8,7 +8,11 @@
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
   <img src="https://img.shields.io/badge/Tested%20on-Linux-black?style=for-the-badge&logo=Linux" />
   <img src="https://img.shields.io/pepy/dt/user-scanner?style=for-the-badge" />
+    <a href="https://discord.gg/96hgbvsuu" target="_blank">
+    <img src="https://img.shields.io/discord/1526434725064081489?color=7289da&label=Discord&logo=discord&logoColor=white&style=for-the-badge" alt="Discord" />
+    </a>
 </p>
+
 
 <p align="center">
   <a href="https://trendshift.io/repositories/16556" target="_blank">
