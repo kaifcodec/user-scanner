@@ -19,6 +19,9 @@ def validate_yaga_ee(user: str) -> Result:
     }
 
     def process(response):
+        if response.status_code == 404:
+            return Result.available()
+
         if response.status_code != 200:
             return Result.error(
                 f"Unexpected response status: {response.status_code}",
