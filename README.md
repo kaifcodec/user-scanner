@@ -8,9 +8,9 @@
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
   <img src="https://img.shields.io/badge/Tested%20on-Linux-black?style=for-the-badge&logo=Linux" />
   <img src="https://img.shields.io/pepy/dt/user-scanner?style=for-the-badge" />
-    <a href="https://discord.gg/96hgbvsuu" target="_blank">
-    <img src="https://img.shields.io/discord/1526434725064081489?color=7289da&label=Discord&logo=discord&logoColor=white&style=for-the-badge" alt="Discord" />
-    </a>
+  <a href="https://discord.gg/96hgbvsuu" target="_blank">
+     <img src="https://img.shields.io/badge/Discord-Join%20Chat-7289da?style=for-the-badge&logo=discord&logoColor=white"   alt="Discord" />
+  </a>
 </p>
 
 
