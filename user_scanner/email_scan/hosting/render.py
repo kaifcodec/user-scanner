@@ -1,4 +1,5 @@
 import httpx
+import json
 from user_scanner.core.result import Result
 
 
@@ -11,49 +12,63 @@ async def _check(email: str) -> Result:
         "variables": {
             "signup": {
                 "email": email,
-                "githubId": "",
-                "name": "",
-                "githubToken": "",
-                "googleId": "",
-                "gitlabId": "",
-                "bitbucketId": "",
-                "inviteCode": "",
-                "password": "StandardPassword123!",
-                "newsletterOptIn": False,
-                "next": ""
+                "password": "Test123!",
+                "inviteCode": ""
             }
         },
-        "query": "mutation signUp($signup: SignupInput!) {\n  signUp(signup: $signup) {\n    idToken\n    __typename\n  }\n}\n"
+        "query": """
+        mutation signUp($signup: SignupInput!) {
+            signUp(signup: $signup) {
+                idToken
+            }
+        }
+        """
     }
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0",
         "Content-Type": "application/json",
         "origin": "https://dashboard.render.com",
         "referer": "https://dashboard.render.com/register",
-        "accept-language": "en-US,en;q=0.9"
+
+        # Headers internes obligatoires
+        "x-render-client-name": "dashboard",
+        "x-render-client-version": "1.0.0",
+        "x-render-client-platform": "web",
+        "x-render-client-build": "production",
+        "x-render-client-release-channel": "stable"
     }
 
-    async with httpx.AsyncClient(http2=True, timeout=4.0) as client:
+    async with httpx.AsyncClient(http2=True, timeout=5) as client:
         try:
             response = await client.post(url, json=payload, headers=headers)
-
-            if response.status_code == 429:
-                return Result.error("Rate limited, use '-d' flag to avoid bot detection")
-
             data = response.json()
-            errors = data.get("errors", [])
 
-            if errors:
-                msg = errors[0].get("message", "")
-                if '"email":"exists"' in msg:
+            # Render renvoie toujours une erreur dans "errors"
+            if "errors" in data:
+                raw = data["errors"][0]["message"]
+
+                # Le message est un JSON encodé dans une string
+                try:
+                    msg = json.loads(raw)
+                except Exception:
+                    return Result.error(f"Render Error: {raw}")
+
+                # 1) Compte Render classique
+                if msg.get("email") == "exists":
                     return Result.taken(url=show_url)
-                elif '"hcaptcha_token":"invalid"' in msg:
-                    return Result.available(url=show_url)
-                else:
-                    return Result.error(f"Render Error: {msg}")
 
-            return Result.error("Unexpected error, report it via GitHub issues")
+                # 2) Compte OAuth (GitHub / Google)
+                if msg.get("email") == "invalid":
+                    return Result.taken(url=show_url)
+
+                # 3) Email valide mais non existant
+                if msg.get("hcaptcha_token") == "invalid":
+                    return Result.available(url=show_url)
+
+                return Result.error(f"Render Error: {msg}")
+
+            return Result.error("Unexpected response format from Render")
 
         except Exception as e:
             return Result.error(e)
