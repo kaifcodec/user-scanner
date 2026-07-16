@@ -2,7 +2,7 @@
 
 ![User Scanner Logo](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.4.1.5-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.4.1.6-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
@@ -23,7 +23,7 @@
 ---
 A powerful **2-in-1 OSINT suite** engineered for deep **Email and Username Intelligence**.
 
-With **310+ total scan vectors**—including **120+ email-integrated sites** and **190+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, and verify account registrations in seconds.
+With **315+ total scan vectors**—including **125+ email-integrated sites** and **190+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, and verify account registrations in seconds.
 
 The ultimate reconnaissance tool for hunting down targets using just an email or username—now fully integrated with **Hudson Rock** for instant data breach intelligence.
 
@@ -43,7 +43,7 @@ The ultimate reconnaissance tool for hunting down targets using just an email or
 
 ## User Scanner Features:
 
-- ✅ **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 310+ platforms.
+- ✅ **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 315+ platforms.
 - ✅ **Profile Data Extraction:** Goes beyond basic availability checks to scrape and extract rich metadata, account details, and digital footprints from target profiles.
 - ✅ **Dual-Mode Engine:** Run targeted email campaigns, massive username sweeps, or simultaneous dual-identifier scans.
 - ✅ **Granular Status Reporting:** Get crystal-clear results (`Registered`/`Available` for emails; `Found`/`Not Found`/`Error` for usernames) backed by precise exception handling.
