@@ -7,6 +7,7 @@ import inspect
 import json
 import os
 import random
+import re
 import threading
 import functools
 import asyncio
@@ -14,6 +15,14 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 import httpx
+
+# Pragmatic RFC 5322 / email-validator-style syntax check: an unquoted
+# dot-atom local part, a dotted host name, and an alphabetic TLD. It does not
+# accept quoted local parts, IP-address literals, or internationalized (IDN)
+# domains — none of which the scanners target.
+_EMAIL_LOCAL = r"[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*"
+_EMAIL_LABEL = r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+EMAIL_RE = re.compile(rf"{_EMAIL_LOCAL}@(?:{_EMAIL_LABEL}\.)+[A-Za-z]{{2,63}}")
 
 LOUD_MODULES: Dict[str, List[str]] = {
     "user": [],
@@ -53,6 +62,15 @@ class ScanConfig:
     no_nsfw: bool = False
     only_found: bool = False
     verbose: bool = False
+
+
+def is_valid_email(email: str) -> bool:
+    if not email or len(email) > 254:
+        return False
+    local, _, domain = email.rpartition("@")
+    if len(local) > 64 or len(domain) > 253:
+        return False
+    return bool(EMAIL_RE.fullmatch(email))
 
 
 def get_site_name(module) -> str:
