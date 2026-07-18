@@ -18,7 +18,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(url, params=params, headers=headers)
             data = response.json()
             exists = data.get("userExists")

@@ -71,7 +71,7 @@ async def _check(email: str) -> Result:
 
     try:
         async with httpx.AsyncClient(
-            timeout=10.0, follow_redirects=True, headers=headers
+            timeout=15.0, follow_redirects=True, headers=headers
         ) as client:
             # 1. Load the sign-in page and extract form fields + action URL
             resp = await client.get(signin_url)

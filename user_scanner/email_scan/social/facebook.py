@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     show_url = "https://facebook.com"
-    async with httpx.AsyncClient(http2=True, follow_redirects=False) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=True, follow_redirects=False) as client:
         try:
             url1 = "https://m.facebook.com/login/"
             headers1 = {

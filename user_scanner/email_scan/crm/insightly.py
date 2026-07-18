@@ -16,7 +16,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             payload = {'emailaddress': email}
 
             response = await client.post(

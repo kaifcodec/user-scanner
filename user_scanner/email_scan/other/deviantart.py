@@ -16,7 +16,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             r_home = await client.get(show_url, headers=headers)
             if r_home.status_code == 403:
                 return Result.error("Caught by WAF or IP Block (403) during Handshake 1")

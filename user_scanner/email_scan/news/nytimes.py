@@ -23,7 +23,7 @@ async def _check(email: str) -> Result:
 
     try:
         # NYT likes HTTP/2, helps avoid getting flagged as a bot
-        async with httpx.AsyncClient(timeout=12.0, follow_redirects=True, http2=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True, http2=True) as client:
 
             init_res = await client.get(login_url, headers=headers)
 

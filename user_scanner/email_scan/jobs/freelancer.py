@@ -21,7 +21,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(url, content=json.dumps(payload), headers=headers)
 
             if response.status_code == 409 and "EMAIL_ALREADY_IN_USE" in response.text:

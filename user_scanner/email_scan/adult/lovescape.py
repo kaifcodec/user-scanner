@@ -65,7 +65,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=7.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(url, content=json.dumps(payload), headers=headers)
 
             if response.status_code == 403:

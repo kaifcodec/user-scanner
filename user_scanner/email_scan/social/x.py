@@ -18,7 +18,7 @@ async def _check(email):
         "priority": "u=1, i"
     }
 
-    async with httpx.AsyncClient(http2=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=True) as client:
         try:
             response = await client.get(url, params=params, headers=headers)
 

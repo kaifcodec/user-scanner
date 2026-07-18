@@ -76,7 +76,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             # Step 1: Request the login page to initialize cookie sessions and bypass 412 errors
             # MUST use the identical User-Agent to avoid session mismatches causing 412 errors.
             await client.get(headers['wm_page_url'], headers={

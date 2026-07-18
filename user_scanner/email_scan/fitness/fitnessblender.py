@@ -20,7 +20,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             # Step 1: Visit homepage to get cookies (XSRF-TOKEN and FB_SESSION)
             # Laravel sets these in the Set-Cookie header
             r_init = await client.get(base_url, headers=headers)

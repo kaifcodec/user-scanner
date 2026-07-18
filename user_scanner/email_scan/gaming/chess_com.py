@@ -3,7 +3,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
-    async with httpx.AsyncClient(http2=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=True) as client:
         try:
             url = "https://www.chess.com/rpc/chesscom.authentication.v1.EmailValidationService/Validate"
             show_url = "https://chess.com"

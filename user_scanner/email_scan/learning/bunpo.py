@@ -28,9 +28,9 @@ async def _check(email: str) -> Result:
         'X-Client-Version': "Android/Fallback/X23000000/FirebaseCore-Android"
     }
 
-    async with httpx.AsyncClient(http2=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=True) as client:
         try:
-            response = await client.post(url, params=params, json=payload, headers=headers, timeout=6.0)
+            response = await client.post(url, params=params, json=payload, headers=headers, timeout=15.0)
 
             if response.status_code == 429:
                 return Result.error("Rate limited", url=show_url)

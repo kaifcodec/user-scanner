@@ -3,7 +3,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
-    async with httpx.AsyncClient(http2=False) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=False) as client:
         try:
             url = "https://www.patreon.com/api/auth"
             show_url = "https://patreon.com"
@@ -39,7 +39,7 @@ async def _check(email: str) -> Result:
                 params=params,
                 content=payload,
                 headers=headers,
-                timeout=6.0
+                timeout=15.0
             )
 
             if response.status_code != 200:

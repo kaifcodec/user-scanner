@@ -43,10 +43,10 @@ async def _check(email: str) -> Result:
         'Env': json.dumps(env_data)
     }
 
-    async with httpx.AsyncClient(http2=False) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=False) as client:
         try:
             # Form-encoded POST request
-            response = await client.post(url, data=payload, headers=headers, timeout=6.0)
+            response = await client.post(url, data=payload, headers=headers, timeout=15.0)
 
             if response.status_code == 429:
                 return Result.error("Rate limited", url=show_url)

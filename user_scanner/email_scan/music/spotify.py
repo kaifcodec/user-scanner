@@ -4,7 +4,7 @@ from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
-    async with httpx.AsyncClient(http2=False, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=False, follow_redirects=True) as client:
         try:
             get_url = "https://www.spotify.com/in-en/signup"
             show_url = "https://spotify.com"

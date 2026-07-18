@@ -36,9 +36,9 @@ async def _check(email: str) -> Result:
         'x-bypass-proxy': "true"
     }
 
-    async with httpx.AsyncClient(http2=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=True) as client:
         try:
-            response = await client.post(url, params=params, json=payload, headers=headers, timeout=6.0)
+            response = await client.post(url, params=params, json=payload, headers=headers, timeout=15.0)
 
             if response.status_code == 429:
                 return Result.error("Rate limited", url=show_url)
