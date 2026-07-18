@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import re
 import sys
 import time
 
@@ -22,6 +21,7 @@ from user_scanner.core.helpers import (
     get_proxy_count,
     get_site_name,
     is_loud,
+    is_valid_email,
     load_categories,
     load_modules,
     set_proxy_manager,
@@ -233,7 +233,7 @@ def main():
             # Validate email formats
             valid_emails = []
             for email in emails:
-                if re.findall(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+                if is_valid_email(email):
                     valid_emails.append(email)
                 else:
                     print(f"{Y}[!] Skipping invalid email format: {email}{X}")
@@ -280,7 +280,7 @@ def main():
             sys.exit(1)
     else:
         is_email = args.email is not None
-        if is_email and not re.findall(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", args.email):
+        if is_email and not is_valid_email(args.email):
             print(R + "[✘] Error: Invalid email format." + X)
             sys.exit(1)
 
