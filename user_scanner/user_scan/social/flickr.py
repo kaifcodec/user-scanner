@@ -1,86 +1,60 @@
-import json
 import re
-
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, make_request
+import json
+import urllib.parse
+from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
 
 def validate_flickr(user: str) -> Result:
-    url = f"https://www.flickr.com/photos/{user}/"
-    headers = {
-        "User-Agent": get_random_user_agent()
-    }
+    url = f"https://www.flickr.com/photos/{user}"
+    show_url = f"https://www.flickr.com/photos/{user}"
 
-    try:
-        response = make_request(url, headers=headers)
-        if response.status_code == 404:
-            return Result.available(url=url)
+    def process(r):
+        if r.status_code == 404:
+            return Result.available()
 
-        if response.status_code == 200:
+        if r.status_code == 200:
             extra = {}
-            # extract modelExport JSON
-            match = re.search(r"modelExport:(.*),[\s\S]*auth", response.text)
+            match = re.search(r"modelExport:\s*(.*?),\s*auth", r.text)
             if match:
                 try:
-                    json_str = match.group(1).replace(
-                        '%20', ' ').replace('%2C', ',')
-                    data = json.loads(json_str)
+                    raw_encoded = match.group(1)
+                    raw_decoded = urllib.parse.unquote(raw_encoded)
+                    data = json.loads(raw_decoded)
+                    main = data.get("main", {})
 
-                    def find_model(d, registry_name):
-                        if isinstance(d, dict):
-                            if d.get('_flickrModelRegistry') == registry_name:
-                                return d
-                            for k, v in d.items():
-                                res = find_model(v, registry_name)
-                                if res:
-                                    return res
-                        elif isinstance(d, list):
-                            for i in d:
-                                res = find_model(i, registry_name)
-                                if res:
-                                    return res
-                        return None
+                    photostream = main.get("photostream-models", [{}])[0].get("data", {})
+                    owner = photostream.get("owner", {}).get("data", {})
+                    profile = main.get("person-profile-models", [{}])[0].get("data", {})
+                    contacts = main.get("person-contacts-count-models", [{}])[0].get("data", {})
 
-                    person_model = find_model(data, 'person-models')
-                    if person_model:
-                        if person_model.get('id'):
-                            extra['flickr_id'] = person_model['id']
-                        if person_model.get('pathAlias'):
-                            extra['flickr_username'] = person_model['pathAlias']
-                        if person_model.get('username'):
-                            extra['flickr_nickname'] = person_model['username']
-                        if person_model.get('realname'):
-                            extra['fullname'] = person_model['realname']
-                        buddyicon = person_model.get('buddyicon', {})
-                        if isinstance(buddyicon, dict) and buddyicon.get('data', {}).get('retina'):
-                            extra['image'] = 'https:' + \
-                                buddyicon['data']['retina']
-                        if 'isPro' in person_model:
-                            extra['is_pro'] = str(person_model['isPro'])
+                    if owner.get("username"):
+                        extra["display_name"] = owner.get("username")
+                    if owner.get("realname"):
+                        extra["fullname"] = owner.get("realname")
+                    if profile.get("location"):
+                        extra["location"] = profile.get("location")
 
-                    profile_model = find_model(data, 'person-profile-models')
-                    if profile_model:
-                        if profile_model.get('location'):
-                            extra['location'] = profile_model['location']
-                        if 'photoCount' in profile_model:
-                            extra['photos_count'] = str(
-                                profile_model['photoCount'])
+                    avatar_retina = owner.get("buddyicon", {}).get("data", {}).get("retina") or owner.get("buddyicon", {}).get("retina")
+                    if avatar_retina:
+                        if avatar_retina.startswith("//"):
+                            avatar_retina = "https:" + avatar_retina
+                        extra["avatar_url"] = avatar_retina
 
-                    contacts_model = find_model(
-                        data, 'person-contacts-count-models')
-                    if contacts_model:
-                        if 'followerCount' in contacts_model:
-                            extra['follower_count'] = str(
-                                contacts_model['followerCount'])
-                        if 'followingCount' in contacts_model:
-                            extra['following_count'] = str(
-                                contacts_model['followingCount'])
+                    if profile.get("photoCount") is not None:
+                        extra["photos"] = int(profile.get("photoCount"))
+                    if contacts.get("followerCount") is not None:
+                        extra["followers"] = int(contacts.get("followerCount"))
+                    if contacts.get("followingCount") is not None:
+                        extra["following"] = int(contacts.get("followingCount"))
+
                 except Exception:
                     pass
 
-            return Result.taken(extra=extra, url=url)
+            return Result.taken(extra=extra)
 
-        return Result.error(f"Unexpected status: {response.status_code}", url=url)
+        return Result.error(f"HTTP {r.status_code}")
 
-    except Exception as e:
-        return Result.error(e, url=url)
+    return generic_validate(
+        url, process, show_url=show_url, follow_redirects=True
+    )
