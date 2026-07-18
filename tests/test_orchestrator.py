@@ -49,3 +49,16 @@ def test_run_checks_category_threaded(monkeypatch, tmp_path):
     assert isinstance(results, list)
     assert len(results) == 1
     assert results[0].to_number() == 0  # TAKEN
+
+
+def test_set_concurrency():
+    from user_scanner.core.orchestrator import set_concurrency
+    import user_scanner.core.orchestrator as orchestrator
+    
+    original_max = orchestrator.MAX_CONCURRENT_REQUESTS
+    set_concurrency(10)
+    assert orchestrator.MAX_CONCURRENT_REQUESTS == 10
+    assert orchestrator._shared_executor._max_workers == 10
+    
+    # restore
+    set_concurrency(original_max)
