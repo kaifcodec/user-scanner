@@ -1,50 +1,57 @@
-import re
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, make_request
+import json
+from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
 
 def validate_substack(user: str) -> Result:
-    if not (4 <= len(user) <= 32):
-        return Result.error("Length must be 4-32 characters")
+    # Substack public profile API endpoint
+    url = f"https://substack.com/api/v1/user/{user}/public_profile"
+    show_url = f"https://substack.com/@{user}"
 
-    if not re.match(r"^[a-z0-9]+$", user):
-        if re.search(r"[A-Z]", user):
-            return Result.error("Use lowercase letters only")
-        return Result.error("Usernames can only contain lowercase letters and numbers")
+    def process(r):
+        if r.status_code == 200:
+            try:
+                data = json.loads(r.text)
+                # Claimed profile has an id and name
+                if "id" in data:
+                    extra = {}
+                    if data.get("name"):
+                        extra["display_name"] = data.get("name")
+                    if data.get("handle"):
+                        extra["handle"] = data.get("handle")
+                    if data.get("bio"):
+                        extra["bio"] = data.get("bio")
+                    if data.get("photo_url"):
+                        extra["avatar_url"] = data.get("photo_url")
 
-    url = f"https://{user}.substack.com"
-    show_url = f"https://{user}.substack.com"
+                    # Extract publication info if they have one
+                    primary_pub = data.get("primaryPublication") or {}
+                    if primary_pub.get("name"):
+                        extra["publication_name"] = primary_pub.get("name")
+                    if primary_pub.get("subdomain"):
+                        extra["publication_url"] = f"https://{primary_pub.get('subdomain')}.substack.com"
 
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-Encoding": "identity",
-        "accept-language": "en-US,en;q=0.9",
-        "priority": "u=0, i",
-    }
+                    # Follower/subscriber counts
+                    if data.get("subscriberCountNumber") is not None:
+                        extra["subscribers"] = int(data.get("subscriberCountNumber"))
+                    if data.get("followerCount") is not None:
+                        extra["followers"] = int(data.get("followerCount"))
 
-    try:
-        response = make_request(url, headers=headers, follow_redirects=True)
-        if response.status_code == 200:
-            html = response.text
-            extra = {}
-            import json
-            ld = re.search(r'<script type=\"application/ld\+json\">(.*?)</script>', html, re.DOTALL)
-            if ld:
-                try:
-                    data = json.loads(ld.group(1))
-                    if isinstance(data, list): data = data[0]
-                    if name := data.get("name"): extra["name"] = name
-                except Exception:
-                    pass
-            if "name" not in extra:
-                title = re.search(r'<title>([^<]+)</title>', html)
-                if title and "|" in title.group(1):
-                    extra["name"] = title.group(1).split("|")[0].strip()
-            return Result.taken(extra=extra, url=show_url)
-        elif response.status_code == 404:
-            return Result.available(url=show_url)
-        else:
-            return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
-    except Exception as e:
-        return Result.error(e, url=show_url)
+                    return Result.taken(extra=extra)
+            except Exception:
+                pass
+
+        if r.status_code == 404:
+            try:
+                data = json.loads(r.text)
+                if data.get("error") == "profile not found":
+                    return Result.available()
+            except Exception:
+                pass
+            return Result.available()
+
+        return Result.error(f"HTTP {r.status_code}")
+
+    return generic_validate(
+        url, process, show_url=show_url, follow_redirects=True
+    )

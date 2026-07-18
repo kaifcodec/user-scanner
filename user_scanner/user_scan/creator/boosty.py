@@ -1,44 +1,58 @@
-from user_scanner.core.orchestrator import generic_validate, Result
+import json
+from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.result import Result
 
-def validate_boosty(user):
+
+def validate_boosty(user: str) -> Result:
+    # Boosty API endpoint for user blog profile
     url = f"https://api.boosty.to/v1/blog/{user}"
     show_url = f"https://boosty.to/{user}"
 
-    def process(response):
-        if response.status_code == 200:
+    def process(r):
+        if r.status_code == 200:
             try:
-                data = response.json()
-                if data.get('owner'):
+                data = json.loads(r.text)
+                # If it's a valid blog, it contains a unique ID or title
+                if "title" in data:
                     extra = {}
-                    
-                    owner = data.get('owner', {})
-                    if owner.get('id'):
-                        extra['id'] = owner.get('id')
-                    if owner.get('name'):
-                        extra['name'] = owner.get('name')
-                        
-                    count = data.get('count', {})
-                    if count.get('subscribers') is not None:
-                        extra['subscribers'] = count.get('subscribers')
-                    if count.get('posts') is not None:
-                        extra['posts'] = count.get('posts')
-                        
-                    if data.get('title'):
-                        extra['title'] = data.get('title')
-                        
-                    apps = owner.get('externalApps', {})
-                    if apps.get('discord', {}).get('hasAccount'):
-                        extra['has_discord'] = True
-                    if apps.get('telegram', {}).get('hasAccount'):
-                        extra['has_telegram'] = True
+                    if data.get("title"):
+                        extra["display_name"] = data.get("title")
+
+                    counts = data.get("count", {})
+                    if counts.get("subscribers") is not None:
+                        extra["subscribers"] = int(counts.get("subscribers"))
+                    if counts.get("posts") is not None:
+                        extra["posts"] = int(counts.get("posts"))
+
+                    owner = data.get("owner", {})
+                    if owner.get("avatarUrl"):
+                        extra["avatar_url"] = owner.get("avatarUrl")
+                    if owner.get("name") and owner.get("name") != data.get("title"):
+                        extra["owner_name"] = owner.get("name")
+
+                    # Extract social links if present
+                    links = []
+                    for link in data.get("socialLinks", []):
+                        if link.get("url"):
+                            links.append(link.get("url"))
+                    if links:
+                        extra["links"] = links
 
                     return Result.taken(extra=extra)
             except Exception:
                 pass
-        elif response.status_code == 404:
-            return Result.available()
-            
-        return Result.error("Unexpected response body, report it via GitHub issues.")
 
-    headers = {"Accept": "application/json"}
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+        if r.status_code == 404:
+            try:
+                data = json.loads(r.text)
+                if data.get("error") == "blog_not_found":
+                    return Result.available()
+            except Exception:
+                pass
+            return Result.available()
+
+        return Result.error(f"HTTP {r.status_code}")
+
+    return generic_validate(
+        url, process, show_url=show_url, follow_redirects=True
+    )
