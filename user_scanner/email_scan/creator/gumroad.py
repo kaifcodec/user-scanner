@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     show_url = "https://gumroad.com"
-    async with httpx.AsyncClient(http2=False, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=False, follow_redirects=True) as client:
         try:
             url1 = "https://gumroad.com/users/forgot_password/new"
             headers1 = {

@@ -17,7 +17,7 @@ async def _check(email: str) -> Result:
         return "".join(random.choice(string.digits) for _ in range(length))
 
     try:
-        async with httpx.AsyncClient(timeout=10.0, follow_redirects=False) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
 
             r = await client.get(
                 f"{base_url}/{email}?Protocol=Autodiscoverv1",

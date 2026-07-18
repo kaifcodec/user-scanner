@@ -15,7 +15,7 @@ async def _check(email):
         "origin": "https://mastodon.social"
     }
 
-    async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=True, headers=headers, follow_redirects=True) as client:
         try:
             initial_resp = await client.get(signup_url)
             if initial_resp.status_code not in [200, 302]:

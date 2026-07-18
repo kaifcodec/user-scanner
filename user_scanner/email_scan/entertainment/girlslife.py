@@ -21,7 +21,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             # GET the page to extract the required _wpnonce
             init_res = await client.get(url, headers=headers)
             if init_res.status_code != 200:

@@ -9,7 +9,7 @@ async def _check(email: str) -> Result:
 
     try:
         async with httpx.AsyncClient(
-            headers={"user-agent": user_agent}, http2=True, timeout=10.0
+            headers={"user-agent": user_agent}, http2=True, timeout=15.0
         ) as client:
             res = await client.get("https://www.instagram.com/", follow_redirects=True)
 

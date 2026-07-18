@@ -18,7 +18,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=6.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             init_res = await client.get(url, headers=headers)
 
             if init_res.status_code == 403:

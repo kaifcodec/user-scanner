@@ -10,14 +10,14 @@ async def _check(email: str) -> Result:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(url, headers=headers)
             if response.status_code == 200:
                 extra = {"avatar_url": f"https://www.gravatar.com/avatar/{email_hash}"}
                 # Optionally attempt to load public profile data for enriched metadata
                 profile_url = f"https://en.gravatar.com/{email_hash}.json"
                 try:
-                    profile_resp = await client.get(profile_url, headers=headers, timeout=3.0)
+                    profile_resp = await client.get(profile_url, headers=headers, timeout=15.0)
                     if profile_resp.status_code == 200:
                         data = profile_resp.json()
                         entry = data.get("entry", [{}])[0]
@@ -40,7 +40,7 @@ async def _check(email: str) -> Result:
                     extra = {"avatar_url": f"https://www.gravatar.com/avatar/{email_md5}"}
                     profile_url_md5 = f"https://en.gravatar.com/{email_md5}.json"
                     try:
-                        profile_resp = await client.get(profile_url_md5, headers=headers, timeout=3.0)
+                        profile_resp = await client.get(profile_url_md5, headers=headers, timeout=15.0)
                         if profile_resp.status_code == 200:
                             data = profile_resp.json()
                             entry = data.get("entry", [{}])[0]

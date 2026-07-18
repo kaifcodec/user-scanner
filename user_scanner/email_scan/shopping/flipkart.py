@@ -29,7 +29,7 @@ async def _check(email: str) -> Result:
         }
     }
 
-    async with httpx.AsyncClient(http2=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=True) as client:
         try:
             response = await client.post(url, json=payload, headers=headers)
 

@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
     show_url = "https://github.com"
-    async with httpx.AsyncClient(http2=True, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=15.0, http2=True, follow_redirects=True) as client:
         try:
             url1 = "https://github.com/signup"
             headers1 = {

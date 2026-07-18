@@ -13,7 +13,7 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             await client.get("https://www.netflix.com/", headers=headers)
 
             flwssn = client.cookies.get("flwssn")
