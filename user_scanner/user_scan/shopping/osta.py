@@ -56,7 +56,7 @@ def _fetch(url: str, extract):
 
 def _extract_profile(html_text: str) -> dict:
     text = _text(html_text)
-    extra = {}
+    extra: dict[str, str | bool | int] = {}
 
     business = re.search(
         r'<div[^>]*class="[^"]*user-business-auth[^"]*"[^>]*>(.*?)</div>',
