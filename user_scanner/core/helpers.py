@@ -83,6 +83,15 @@ def is_valid_email(email: str) -> bool:
     return bool(EMAIL_RE.fullmatch(email))
 
 
+def is_valid_email(email: str) -> bool:
+    if not email or len(email) > 254:
+        return False
+    local, _, domain = email.rpartition("@")
+    if len(local) > 64 or len(domain) > 253:
+        return False
+    return bool(EMAIL_RE.fullmatch(email))
+
+
 def get_site_name(module) -> str:
     name = module.__name__.split(".")[-1].capitalize().replace("_", ".")
     if name == "X":
