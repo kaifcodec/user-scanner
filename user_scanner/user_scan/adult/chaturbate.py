@@ -1,5 +1,6 @@
 import httpx
 import re
+from urllib.parse import unquote
 from user_scanner.core.result import Result
 
 
@@ -40,7 +41,8 @@ async def _check(user: str) -> Result:
             username_error = response.json().get("errors", {}).get("username", "")
 
             if "already taken" in username_error:
-                return Result.taken(url=show_url)
+                extra = await _fetch_biocontext(client, base_url, user, headers["User-Agent"])
+                return Result.taken(extra=extra, url=show_url)
 
             # Other username errors are format rejections (length, characters),
             # not an existence signal.
@@ -55,3 +57,67 @@ async def _check(user: str) -> Result:
 
 async def validate_chaturbate(user: str) -> Result:
     return await _check(user)
+
+
+async def _fetch_biocontext(client: httpx.AsyncClient, base_url: str, user: str, user_agent: str) -> dict:
+    """The register check only reports availability. Broadcaster accounts also
+    expose a public biocontext JSON; non-broadcaster names 404 here, so this is
+    best-effort and yields no extra on failure. A browser User-Agent is required
+    or the endpoint serves an HTML challenge page instead of JSON."""
+    try:
+        api_headers = {"User-Agent": user_agent, "X-Requested-With": "XMLHttpRequest"}
+        response = await client.get(f"{base_url}/api/biocontext/{user}/", headers=api_headers)
+        if response.status_code != 200 or "json" not in response.headers.get("content-type", ""):
+            return {}
+        return _extract_biocontext(response.json())
+    except Exception:
+        return {}
+
+
+def _extract_biocontext(data: dict) -> dict:
+    extra = {}
+
+    if value := data.get("real_name"):
+        extra["fullname"] = value
+    if value := data.get("location"):
+        extra["location"] = value
+    if value := data.get("display_age"):
+        extra["age"] = str(value)
+    if value := data.get("display_birthday"):
+        extra["birthday"] = value
+    if value := data.get("sex"):
+        extra["gender"] = value
+    if value := data.get("subgender"):
+        extra["subgender"] = value
+    if value := data.get("body_type"):
+        extra["body_type"] = value
+    if value := data.get("follower_count"):
+        extra["followers"] = str(value)
+    if value := data.get("time_since_last_broadcast"):
+        extra["last_broadcast"] = value
+
+    interested = [x for x in (data.get("interested_in") or []) if isinstance(x, str)]
+    if interested:
+        extra["interested_in"] = ", ".join(interested)
+
+    languages = data.get("languages")
+    if isinstance(languages, list):
+        languages = ", ".join(x for x in languages if isinstance(x, str))
+    if isinstance(languages, str) and languages.strip():
+        extra["languages"] = languages.strip()
+
+    about = data.get("about_me") or ""
+    if about:
+        bio = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", about)).strip()
+        if bio:
+            extra["bio"] = bio
+
+    links = []
+    for social in data.get("social_medias") or []:
+        match = re.search(r"url=([^&]+)", social.get("link") or "")
+        if match:
+            links.append(unquote(match.group(1)))
+    if links:
+        extra["links"] = ", ".join(dict.fromkeys(links))
+
+    return extra
