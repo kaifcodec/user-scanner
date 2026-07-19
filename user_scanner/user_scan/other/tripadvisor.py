@@ -1,3 +1,4 @@
+import re
 from user_scanner.core.orchestrator import generic_validate, Result
 
 
@@ -11,7 +12,7 @@ def validate_tripadvisor(user):
 
     def process(response):
         if response.status_code == 200:
-            return Result.taken()
+            return Result.taken(extra=_extract_profile(response.text))
         # Handles are case-canonicalized: a non-canonical casing 301-redirects
         # to the real profile, so a redirect back to /Profile/ still means the
         # account exists. Only a genuinely missing handle returns 404.
@@ -24,3 +25,21 @@ def validate_tripadvisor(user):
         return Result.error(f"Unexpected status: {response.status_code}")
 
     return generic_validate(url, process, headers=headers, show_url=show_url)
+
+
+def _extract_profile(html: str) -> dict:
+    extra = {}
+
+    name = re.search(r'<meta[^>]+property="og:title"[^>]+content="([^"]+)"', html, re.IGNORECASE)
+    if name:
+        extra["name"] = re.sub(r"\s*[-|]\s*Tripadvisor.*$", "", name.group(1), flags=re.IGNORECASE).strip()
+
+    about = re.search(r'<meta[^>]+property="og:description"[^>]+content="([^"]+)"', html, re.IGNORECASE)
+    if about:
+        extra["about"] = about.group(1).strip()
+
+    avatar = re.search(r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"', html, re.IGNORECASE)
+    if avatar:
+        extra["avatar"] = avatar.group(1).strip()
+
+    return extra
