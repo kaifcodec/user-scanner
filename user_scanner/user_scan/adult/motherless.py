@@ -1,4 +1,5 @@
-from user_scanner.core.orchestrator import generic_validate, Result
+import re
+from user_scanner.core.orchestrator import generic_validate, make_request, Result
 
 CHECK_URL = "https://motherless.xxx/register/checkusername"
 HEADERS = {
@@ -23,7 +24,7 @@ def validate_motherless(user):
         if 'class="not-available"' in body:
             if "invalid" in body.lower():
                 return Result.error("Username rejected by Motherless", url=show_url)
-            return Result.taken(url=show_url)
+            return Result.taken(extra=_fetch_profile(show_url), url=show_url)
 
         if 'class="available"' in body:
             return Result.available(url=show_url)
@@ -33,3 +34,42 @@ def validate_motherless(user):
     return generic_validate(
         CHECK_URL, process, show_url=show_url, method="POST", data={"username": user}, headers=HEADERS
     )
+
+
+def _fetch_profile(profile_url: str) -> dict:
+    """The checkusername endpoint only reports availability, so pull the public
+    member page for metadata. Best-effort: a failed fetch yields no extra."""
+    try:
+        response = make_request(profile_url)
+        if response.status_code != 200:
+            return {}
+        return _extract_profile(response.text)
+    except Exception:
+        return {}
+
+
+def _extract_profile(html_text: str) -> dict:
+    extra = {}
+
+    # The public member page renders two field blocks: "profile-stats" rows
+    # (<span>Label:</span> value) and "profile-member-info" rows
+    # (<strong>Label</strong> <span>value</span>). Pull every row rather than a
+    # fixed subset so whatever the member fills in is captured. Zero counts are
+    # dropped as noise.
+    for row in re.finditer(r'<div class="profile-stats">\s*<span>([^<]+?):\s*</span>\s*(.*?)\s*</div>', html_text, re.DOTALL):
+        label = re.sub(r"\s+", " ", row.group(1)).strip()
+        value = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", row.group(2))).strip()
+        if value and value != "0":
+            extra[label] = value
+
+    for row in re.finditer(r'<div class="profile-member-info[^"]*">\s*<strong>([^<]+?)</strong>\s*<span>\s*(.*?)\s*</span>', html_text, re.DOTALL):
+        label = re.sub(r"\s+", " ", row.group(1)).strip()
+        value = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", row.group(2))).strip()
+        if value:
+            extra[label] = value
+
+    avatar = re.search(r'og:image"\s+content="([^"]+)"', html_text, re.IGNORECASE)
+    if avatar:
+        extra["avatar"] = avatar.group(1)
+
+    return extra
