@@ -101,6 +101,20 @@ def main():
     )
 
     parser.add_argument(
+        "-t",
+        "--timeout",
+        type=float,
+        help="Override default request timeout in seconds",
+    )
+
+    parser.add_argument(
+        "-C",
+        "--concurrency",
+        type=int,
+        help="Override default concurrency limit (default: 60 for username, 25 for email scan)",
+    )
+
+    parser.add_argument(
         "-d", "--delay", type=float, default=0, help="Delay between requests"
     )
 
@@ -153,6 +167,16 @@ def main():
     parser.add_argument("--version", action="store_true", help="Print version")
 
     args = parser.parse_args()
+
+    if args.timeout is not None:
+        from user_scanner.core.helpers import set_global_timeout
+        set_global_timeout(args.timeout)
+
+    if args.concurrency is not None:
+        from user_scanner.core.email_orchestrator import set_concurrency as set_email_concurrency
+        from user_scanner.core.orchestrator import set_concurrency as set_user_concurrency
+        set_email_concurrency(args.concurrency)
+        set_user_concurrency(args.concurrency)
 
     if args.update:
         update_self()
@@ -311,6 +335,7 @@ def main():
         only_found=args.only_found,
         no_nsfw=args.no_nsfw,
         verbose=args.verbose,
+        timeout=args.timeout,
     )
 
     for i, target in enumerate(targets):

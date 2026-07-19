@@ -15,6 +15,7 @@ from user_scanner.core.helpers import (
     is_loud,
     load_categories,
     load_modules,
+    get_global_timeout,
 )
 from user_scanner.core.result import Result, Status
 
@@ -27,6 +28,11 @@ def _patched_async_client_init(self, *args, **kwargs):
         proxy = get_proxy()
         if proxy:
             kwargs["proxy"] = proxy
+            
+    global_timeout = get_global_timeout()
+    if global_timeout is not None:
+        kwargs["timeout"] = global_timeout
+        
     _original_async_client_init(self, *args, **kwargs)
 
 def _patched_client_init(self, *args, **kwargs):
@@ -34,6 +40,11 @@ def _patched_client_init(self, *args, **kwargs):
         proxy = get_proxy()
         if proxy:
             kwargs["proxy"] = proxy
+            
+    global_timeout = get_global_timeout()
+    if global_timeout is not None:
+        kwargs["timeout"] = global_timeout
+        
     _original_client_init(self, *args, **kwargs)
 
 httpx.AsyncClient.__init__ = _patched_async_client_init  # type: ignore[method-assign]
@@ -42,6 +53,10 @@ httpx.Client.__init__ = _patched_client_init  # type: ignore[method-assign]
 
 # Concurrency control
 MAX_CONCURRENT_REQUESTS = 25
+
+def set_concurrency(val: int):
+    global MAX_CONCURRENT_REQUESTS
+    MAX_CONCURRENT_REQUESTS = val
 
 async def _async_worker(
     module: ModuleType,

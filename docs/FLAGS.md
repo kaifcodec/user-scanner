@@ -20,5 +20,7 @@
 | `--validate-proxies`        | Validate proxies before scanning (tests against google.com) |
 | `-s, --stop STOP`           | Limit the number of permutations generated                  |
 | `-d, --delay DELAY`         | Delay (in seconds) between requests                         |
+| `-t, --timeout TIMEOUT`     | Override default request timeout in seconds                 |
+| `-C, --concurrency CONC`    | Override default concurrency limit                          |
 | `-f, --format {csv,json}`   | Select output format                                        |
 | `-o, --output OUTPUT`       | Save results to a file                                      |
