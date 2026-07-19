@@ -98,5 +98,4 @@ async def _check(email: str) -> Result:
 
 
 async def validate_stackb(email: str) -> Result:
-    """Check StackB's login response without sending email; repeated checks may be rate-limited."""
     return await _check(email)
