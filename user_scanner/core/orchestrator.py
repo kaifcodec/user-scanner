@@ -18,12 +18,18 @@ from user_scanner.core.helpers import (
     is_loud,
     load_categories,
     load_modules,
+    get_global_timeout,
 )
 from user_scanner.core.result import Result
 
 
 MAX_CONCURRENT_REQUESTS = 60
 _shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_REQUESTS)
+
+def set_concurrency(val: int):
+    global MAX_CONCURRENT_REQUESTS, _shared_executor
+    MAX_CONCURRENT_REQUESTS = val
+    _shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=val)
 
 async def _async_worker(
     module: ModuleType,
@@ -201,7 +207,10 @@ def make_request(url: str, **kwargs) -> httpx.Response:
     if "show_url" in kwargs:
         kwargs.pop("show_url", None)
 
-    if "timeout" not in kwargs:
+    global_timeout = get_global_timeout()
+    if global_timeout is not None:
+        kwargs["timeout"] = global_timeout
+    elif "timeout" not in kwargs:
         kwargs["timeout"] = 5.0
 
     if "proxy" not in kwargs:
