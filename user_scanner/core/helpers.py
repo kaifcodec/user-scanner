@@ -62,6 +62,16 @@ class ScanConfig:
     no_nsfw: bool = False
     only_found: bool = False
     verbose: bool = False
+    timeout: Optional[float] = None
+
+_global_timeout: Optional[float] = None
+
+def set_global_timeout(timeout: float) -> None:
+    global _global_timeout
+    _global_timeout = timeout
+
+def get_global_timeout() -> Optional[float]:
+    return _global_timeout
 
 
 def is_valid_email(email: str) -> bool:
@@ -71,8 +81,6 @@ def is_valid_email(email: str) -> bool:
     if len(local) > 64 or len(domain) > 253:
         return False
     return bool(EMAIL_RE.fullmatch(email))
-
-
 def get_site_name(module) -> str:
     name = module.__name__.split(".")[-1].capitalize().replace("_", ".")
     if name == "X":

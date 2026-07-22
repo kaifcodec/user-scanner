@@ -67,9 +67,9 @@ def main():
         "-ef", "--email-file", help="File containing emails (one per line)"
     )
 
-    parser.add_argument("-c", "--category", help="Scan all platforms in a category")
+    parser.add_argument("-c", "--category", nargs="+", help="Scan all platforms in a category (comma-separated for multiple)")
 
-    parser.add_argument("-m", "--module", help="Scan a single specific module")
+    parser.add_argument("-m", "--module", nargs="+", help="Scan a specific module (comma-separated for multiple)")
 
     parser.add_argument(
         "-lu",
@@ -98,6 +98,20 @@ def main():
         type=int,
         default=MAX_PERMUTATIONS_LIMIT,
         help="Limit permutations",
+    )
+
+    parser.add_argument(
+        "-t",
+        "--timeout",
+        type=float,
+        help="Override default request timeout in seconds",
+    )
+
+    parser.add_argument(
+        "-C",
+        "--concurrency",
+        type=int,
+        help="Override default concurrency limit (default: 60 for username, 25 for email scan)",
     )
 
     parser.add_argument(
@@ -153,6 +167,16 @@ def main():
     parser.add_argument("--version", action="store_true", help="Print version")
 
     args = parser.parse_args()
+
+    if args.timeout is not None:
+        from user_scanner.core.helpers import set_global_timeout
+        set_global_timeout(args.timeout)
+
+    if args.concurrency is not None:
+        from user_scanner.core.email_orchestrator import set_concurrency as set_email_concurrency
+        from user_scanner.core.orchestrator import set_concurrency as set_user_concurrency
+        set_email_concurrency(args.concurrency)
+        set_user_concurrency(args.concurrency)
 
     if args.update:
         update_self()
@@ -311,7 +335,55 @@ def main():
         only_found=args.only_found,
         no_nsfw=args.no_nsfw,
         verbose=args.verbose,
+        timeout=args.timeout,
     )
+
+    validated_modules = []
+    validated_categories = []
+
+    if args.hudson_scan:
+        if args.category or args.module:
+            print(f"{R}[✘] Error: --hudson cannot be used with -m or -c {X}")
+            print(f"{Y}[i] Use it independently{X}")
+            sys.exit(1)
+    else:
+        if args.module:
+            raw_module_str = ",".join(args.module) if isinstance(args.module, list) else args.module
+            requested_modules = [m.strip() for m in raw_module_str.split(",") if m.strip()]
+            
+            if not requested_modules:
+                print(R + f"[✘] Error: No valid {'email' if is_email else 'user'} modules specified." + Style.RESET_ALL)
+                sys.exit(1)
+
+            for m in requested_modules:
+                found = find_module(m.replace(".", "_"), is_email, args.no_nsfw)
+                if not found:
+                    print(
+                        R
+                        + f"[✘] Error: {'Email' if is_email else 'User'} module '{m}' not found."
+                        + Style.RESET_ALL
+                    )
+                    sys.exit(1)
+                validated_modules.extend(found)
+        elif args.category:
+            raw_category_str = ",".join(args.category) if isinstance(args.category, list) else args.category
+            requested_categories = [c.strip() for c in raw_category_str.split(",") if c.strip()]
+            
+            if not requested_categories:
+                print(R + f"[✘] Error: No valid {'email' if is_email else 'user'} categories specified." + Style.RESET_ALL)
+                sys.exit(1)
+
+            categories_dict = load_categories(is_email, args.no_nsfw)
+            for c in requested_categories:
+                cat_path = categories_dict.get(c)
+                if not cat_path:
+                    print(
+                        R
+                        + f"[✘] Error: {'Email' if is_email else 'User'} category '{c}' not found."
+                        + Style.RESET_ALL
+                    )
+                    sys.exit(1)
+                validated_categories.append(cat_path)
 
     for i, target in enumerate(targets):
         if i != 0 and args.delay:
@@ -324,45 +396,25 @@ def main():
 
 
         if args.hudson_scan:
-            if args.category or args.module:
-                print(f"{R}[✘] Error: --hudson cannot be used with -m or -c {X}")
-                print(f"{Y}[i] Use it independently{X}")
-                sys.exit(1)
-
             run_hudson_scan(target, is_email)
             continue
 
 
         if args.module:
-            modules = find_module(args.module.replace(".", "_"), is_email, args.no_nsfw)
             fn = run_email_module_batch if is_email else run_user_module
-            if modules:
-                module_config = replace(config, allow_loud=True)
-                for module in modules:
-                    results.extend(fn(module, target, module_config))
-            else:
-                print(
-                    R
-                    + f"[!] {'Email' if is_email else 'User'} module '{args.module}' not found."
-                    + Style.RESET_ALL
-                )
+            module_config = replace(config, allow_loud=True)
+            for module in validated_modules:
+                results.extend(fn(module, target, module_config))
 
         elif args.category:
-            cat_path = load_categories(is_email, args.no_nsfw).get(args.category)
             fn = run_email_category_batch if is_email else run_user_category
-            if cat_path:
+            for cat_path in validated_categories:
                 results.extend(
                     fn(
                         cat_path,
                         target,
                         config,
                     )
-                )
-            else:
-                print(
-                    R
-                    + f"[!] {'Email' if is_email else 'User'} category '{args.category}' not found."
-                    + Style.RESET_ALL
                 )
         else:
             fn = run_email_full_batch if is_email else run_user_full

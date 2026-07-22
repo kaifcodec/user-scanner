@@ -426,3 +426,10 @@ def test_hudson_config_value():
     status = data.get("auto_hudson_prompt")
 
     assert status is True, f"FAIL: Actual config at {actual_path} has auto_hudson_prompt set to {status} (Expected: True)"
+
+def test_global_timeout():
+    from user_scanner.core.helpers import set_global_timeout, get_global_timeout
+    set_global_timeout(10.5)
+    assert get_global_timeout() == 10.5
+    set_global_timeout(None)
+    assert get_global_timeout() is None
