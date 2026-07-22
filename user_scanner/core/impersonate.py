@@ -1,5 +1,5 @@
 import threading
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 
 from curl_cffi import requests as cffi
 
@@ -41,7 +41,7 @@ def impersonate_validate(
 
 def impersonate_request(
     url: str,
-    method: str = "GET",
+    method: Literal["GET", "POST"] = "GET",
     warmup_url: Optional[str] = None,
     impersonate: str = DEFAULT_IMPERSONATE,
     **kwargs,
@@ -65,7 +65,9 @@ def _get_warm_session(
         session = _sessions.get(key)
         if session is None:
             session = cffi.Session(
-                impersonate=impersonate,
+                # curl_cffi types this as a browser-name Literal; the value is a
+                # validated runtime string, so widen it here only.
+                impersonate=impersonate,  # type: ignore[arg-type]
                 proxies={"http": proxy, "https": proxy} if proxy else None,
             )
             _sessions[key] = session

@@ -1,5 +1,4 @@
 import base64
-import re
 
 from user_scanner.core.impersonate import impersonate_request, impersonate_validate
 from user_scanner.core.result import Result
