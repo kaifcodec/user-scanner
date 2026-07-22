@@ -1,6 +1,8 @@
 import re
 import html
-from user_scanner.core.orchestrator import generic_validate, Result
+
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
 def validate_spankbang(user):
@@ -21,7 +23,7 @@ def validate_spankbang(user):
 
         return Result.error("Profile confirmation not found", url=show_url)
 
-    return generic_validate(url, process, show_url=show_url)
+    return impersonate_validate(url, process, show_url=show_url)
 
 
 def _is_profile(html_text: str, user: str) -> bool:
@@ -42,11 +44,31 @@ def _extract_profile(html_text: str) -> dict:
     if name:
         extra["name"] = html.unescape(name.group(1)).strip()
 
+    # Stable numeric account id (the handle can be changed; this cannot).
+    user_id = re.search(r"ana_profile_id\s*=\s*'(\d+)'", html_text)
+    if user_id:
+        extra["user_id"] = user_id.group(1)
+
     # Country comes from the flag image filename (ISO code), which is stable
     # regardless of the page language.
     country = re.search(r'class="flag"[^>]*/Flags/([A-Za-z]{2})\.png', html_text, re.IGNORECASE | re.DOTALL)
     if country:
         extra["country"] = country.group(1).upper()
+
+    # Gender and age render in the details block; age is only present when set.
+    gender = re.search(r'<span class="gender">\s*([^<]+?)\s*</span>', html_text, re.IGNORECASE)
+    if gender:
+        extra["gender"] = gender.group(1).strip()
+
+    age = re.search(r'<span class="age">\s*(\d+)\s*</span>', html_text, re.IGNORECASE)
+    if age:
+        extra["age"] = age.group(1)
+
+    # Avatar is a Gravatar keyed on the MD5 of the account email — useful for
+    # cross-referencing even when it falls back to the robohash default.
+    avatar = re.search(r'class="avatar"[^>]*?src="([^"]+)"', html_text, re.IGNORECASE)
+    if avatar:
+        extra["avatar"] = html.unescape(avatar.group(1).strip())
 
     # Stat tabs render as <a href="/profile/<user>/<slug>">Label <span>N</span></a>.
     # Key off the URL slug rather than the visible label so localisation never
