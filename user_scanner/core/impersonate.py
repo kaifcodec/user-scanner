@@ -3,7 +3,7 @@ from typing import Callable, Literal, Optional
 
 from curl_cffi import requests as cffi
 
-from user_scanner.core.helpers import get_proxy
+from user_scanner.core.helpers import get_global_timeout, get_proxy
 from user_scanner.core.result import Result
 
 DEFAULT_IMPERSONATE = "chrome"
@@ -52,7 +52,7 @@ def impersonate_request(
     follow-up call (e.g. a profile API request) inherits the clearance cookie.
     """
     session = _get_warm_session(impersonate, get_proxy(), warmup_url)
-    kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
+    kwargs.setdefault("timeout", _timeout())
     kwargs.setdefault("allow_redirects", False)
     return session.request(method, url, **kwargs)
 
@@ -75,7 +75,14 @@ def _get_warm_session(
         if warmup_url and key not in _warmed:
             # A blocked (403) warm-up still returns normally and sets the cookie;
             # only a network error leaves the session unwarmed for a later retry.
-            session.get(warmup_url, timeout=DEFAULT_TIMEOUT)
+            session.get(warmup_url, timeout=_timeout())
             _warmed.add(key)
 
     return session
+
+
+def _timeout() -> float:
+    # Honour the CLI -t flag (get_global_timeout), matching make_request();
+    # fall back to DEFAULT_TIMEOUT when the user has not set one.
+    global_timeout = get_global_timeout()
+    return global_timeout if global_timeout is not None else DEFAULT_TIMEOUT
