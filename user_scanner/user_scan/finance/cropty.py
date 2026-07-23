@@ -11,21 +11,27 @@ def validate_cropty(user):
     }
 
     def process(response):
+        try:
+            data_json = response.json()
+        except Exception:
+            data_json = None
+
+        if isinstance(data_json, dict) and "errors" in data_json:
+            for err in data_json.get("errors", []):
+                if err.get("code") == "ModelNotFoundException":
+                    return Result.available()
+
         if response.status_code == 200:
-            try:
-                data_json = response.json()
-                if "data" in data_json:
-                    data = data_json["data"]
-                    extra = {}
-                    if name := data.get("name"): extra["name"] = name
-                    if nickname := data.get("nickname"): extra["nickname"] = nickname
-                    if image := data.get("image"):
-                        if "defaults" not in image:
-                            extra["avatar"] = image
-                    if ref_link := data.get("ref_link"): extra["referral_link"] = ref_link
-                    return Result.taken(extra=extra)
-            except Exception:
-                pass
+            if isinstance(data_json, dict) and "data" in data_json:
+                data = data_json["data"]
+                extra = {}
+                if name := data.get("name"): extra["name"] = name
+                if nickname := data.get("nickname"): extra["nickname"] = nickname
+                if image := data.get("image"):
+                    if "defaults" not in image:
+                        extra["avatar"] = image
+                if ref_link := data.get("ref_link"): extra["referral_link"] = ref_link
+                return Result.taken(extra=extra)
             return Result.taken()
 
         if response.status_code == 404:
