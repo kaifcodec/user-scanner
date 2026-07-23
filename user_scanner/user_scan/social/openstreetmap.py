@@ -3,6 +3,9 @@ from user_scanner.core.result import Result
 
 
 def validate_openstreetmap(user):
+    if "." in user:
+        return Result.error("Username cannot contain periods")
+
     url = f"https://www.openstreetmap.org/user/{user}"
     show_url = f"https://www.openstreetmap.org/user/{user}"
 
