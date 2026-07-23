@@ -10,14 +10,18 @@ def validate_xvideos(user):
     show_url = url
 
     def process(response):
+        # A genuinely missing handle 404s with an "Unknown profile" page (that
+        # phrase is its <title>); require the marker so a transient or blocked
+        # 404 isn't misread as "available".
         if response.status_code == 404:
-            return Result.available(url=show_url)
+            if "unknown profile" in response.text.lower():
+                return Result.available(url=show_url)
+            return Result.error("Unexpected 404 (not the profile-not-found page)", url=show_url)
 
         if response.status_code != 200:
             return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
 
-        # A real profile is titled "<name> - Profile page - XVIDEOS.COM"; a
-        # missing handle 404s with an "Unknown profile" page.
+        # A real profile is titled "<name> - Profile page - XVIDEOS.COM".
         if "profile page" in _title(response.text).lower():
             return Result.taken(extra=_extract_profile(response.text), url=show_url)
 
