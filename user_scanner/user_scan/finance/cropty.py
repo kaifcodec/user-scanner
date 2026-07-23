@@ -31,6 +31,20 @@ def validate_cropty(user):
         if response.status_code == 404:
             return Result.available()
 
+        
+        try:
+            data_json = response.json()
+
+            if (
+                "errors" in data_json
+                and data_json["errors"]
+                and data_json["errors"][0].get("code") == "ModelNotFoundException"
+            ):
+                return Result.available()
+
+        except Exception:
+            pass
+        
         return Result.error(f"Unexpected status: {response.status_code}")
 
     return generic_validate(url, process, headers=headers, show_url=show_url)
