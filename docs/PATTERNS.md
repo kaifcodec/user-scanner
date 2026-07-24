@@ -56,7 +56,7 @@ Specify the length of expansions from a character set.
 ```
 john[a-z]{0-2}    → "john", "johna", "johnb", ..., "johnz", "johnaa", ..., "johnzz"
 code[0-9]{2}      → "code00", "code01", ..., "code99"
-user[a-c]{1;3}    → "usera", "userb", "userc", "useraa", ..., "userccc"
+user[a-c]{1;3}    → "usera", "userb", "userc", "useraaa", ..., "userccc"
 text[0-1]{1-3}    → "text0", "text1", "text00", "text01", "text10", "text11", ..., "text111"
 ```
 
