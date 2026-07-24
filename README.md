@@ -92,6 +92,14 @@ nix shell github:kaifcodec/user-scanner/main
 nix develop .
 ```
 
+It is also [available](https://search.nixos.org/packages?channel=unstable&from=0&size=50&sort=relevance&type=packages&query=user-scanner)
+available in Nixpkgs. Keep in mind that the lastest releases might only
+be present in the `unstable` channel.
+
+```bash
+nix-env -iA nixos.user-scanner
+```
+
 ---
 ### Important Flags
 
