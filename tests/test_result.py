@@ -1,5 +1,6 @@
 import pytest
 
+from colorama import Fore
 from user_scanner.core.helpers import ScanConfig
 from user_scanner.core.result import Result, Status, _neutralize_csv_cell, indent_text
 
