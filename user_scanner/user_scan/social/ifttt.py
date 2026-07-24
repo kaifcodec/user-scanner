@@ -1,6 +1,9 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_ifttt(user):
+    if "." in user:
+        return Result.available("Username cannot contain periods")
+
     url = f"https://ifttt.com/p/{user}"
 
     def process(response):
