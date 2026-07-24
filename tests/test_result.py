@@ -1,6 +1,6 @@
 import pytest
-
 from colorama import Fore
+
 from user_scanner.core.helpers import ScanConfig
 from user_scanner.core.result import Result, Status, _neutralize_csv_cell, indent_text
 
@@ -233,3 +233,60 @@ def test_to_csv_neutralizes_extra_value_with_dangerous_key():
     csv_text = result.to_csv()
     assert not csv_text.startswith("=cmd")
     assert not csv_text.lstrip('"').startswith("=cmd")
+
+def test_humanize_exception_dns_and_network_branches():
+    assert (
+        "No internet connection or dns failure"
+        in Result.error(Exception("[Errno 7] no address associated with hostname")).get_reason()
+    )
+    assert (
+        "Network unreachable"
+        in Result.error(Exception("[Errno 101] Network is unreachable")).get_reason()
+    )
+
+
+def test_get_reason_skipped_default_message():
+    skipped = Result.skipped()
+    assert skipped.get_reason() == "Notifies the target by forgot password email or similar"
+
+    skipped_with_reason = Result.skipped("custom skip reason")
+    assert skipped_with_reason.get_reason() == "custom skip reason"
+
+
+def test_get_output_color_and_icon_per_status():
+    assert Result.taken().get_output_color() == Fore.GREEN
+    assert Result.taken().get_output_icon() == "[✔]"
+
+    assert Result.available().get_output_color() == Fore.RED
+    assert Result.available().get_output_icon() == "[✘]"
+
+    assert Result.error().get_output_color() == Fore.YELLOW
+    assert Result.error().get_output_icon() == "[!]"
+
+    assert Result.skipped().get_output_color() == Fore.WHITE
+    assert Result.skipped().get_output_icon() == "[~]"
+
+
+def test_show_only_found_filters_non_taken(capsys):
+    conf = ScanConfig(only_found=True)
+
+    Result.available(site_name="HiddenSite").show(conf)
+    assert capsys.readouterr().out == ""
+
+    Result.taken(site_name="VisibleSite").show(conf)
+    assert "VisibleSite" in capsys.readouterr().out
+
+
+def test_extra_update_skips_none_and_blank_values():
+    res = Result.available()
+    res.update(extra={"empty_str": "   ", "none_val": None, "kept": "value"})
+    assert "empty_str" not in res.extra
+    assert "none_val" not in res.extra
+    assert res.extra["kept"] == "value"
+
+
+def test_extra_update_preserves_bool_and_int_values():
+    res = Result.available()
+    res.update(extra={"is_verified": True, "follower_count": 42})
+    assert res.extra["is_verified"] is True
+    assert res.extra["follower_count"] == 42
