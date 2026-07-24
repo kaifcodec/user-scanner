@@ -37,7 +37,7 @@ def validate_codecademy(user):
                     return Result.taken(extra={"is_private": False})
                 return Result.available()
             except Exception:
-                return Result.taken()
+                return Result.error("200 response status with no recognizable data, report it via GitHub issues")
 
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
