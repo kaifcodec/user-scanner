@@ -42,7 +42,7 @@ def validate_chess_com(user: str) -> Result:
                 return Result.taken(extra=extra)
             except Exception:
                 pass
-            return Result.taken()
+            return Result.error("200 response status with no recognizable data, report it via GitHub issues")
         elif response.status_code == 404:
             return Result.available()
         
