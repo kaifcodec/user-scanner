@@ -12,6 +12,9 @@ def validate_freesound(user):
     }
 
     def process(response):
+        if response.status_code == 403:
+            return Result.error("Freesound rate limit or blocked with status code 403")
+
         if response.status_code == 404 or "Page not found" in response.text:
             return Result.available()
 
