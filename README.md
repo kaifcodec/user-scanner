@@ -198,7 +198,7 @@ Output:
 
 ### Using Proxies
 
-Validate proxies before scanning (tests each proxy against google.com):
+Validate proxies before scanning (tests each proxy against gstatic.com/generate_204):
 
 ```bash
 user-scanner -u johndoe -P proxies.txt --validate-proxies # recommended
