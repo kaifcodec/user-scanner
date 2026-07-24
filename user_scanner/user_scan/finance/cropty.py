@@ -32,7 +32,7 @@ def validate_cropty(user):
                         extra["avatar"] = image
                 if ref_link := data.get("ref_link"): extra["referral_link"] = ref_link
                 return Result.taken(extra=extra)
-            return Result.taken()
+            return Result.error("Unexpected 200 response shape (no 'data' or known error code)")
 
         if response.status_code == 404:
             return Result.available()
