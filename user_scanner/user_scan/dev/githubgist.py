@@ -25,7 +25,7 @@ def validate_githubgist(user):
                 
                 return Result.taken(extra=extra)
             except Exception:
-                return Result.taken()
+                return Result.error("200 response status with no recognizable data, report it via GitHub issues")
                 
         elif response.status_code == 403:
             return Result.error("Rate limited by GitHub API")
