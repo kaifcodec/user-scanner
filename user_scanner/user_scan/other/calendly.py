@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import Result, make_request
 
 def validate_calendly(user):
     if "." in user:
-        return Result.error("Username cannot contain periods")
+        return Result.available("Username cannot contain periods")
 
     api_url = f"https://calendly.com/api/booking/profiles/{user}"
     show_url = f"https://calendly.com/{user}"
