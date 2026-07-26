@@ -334,7 +334,8 @@ def load_config(path: str | Path | None = None) -> dict:
 
     default = {
         "auto_update_status": True,
-        "auto_hudson_prompt": True
+        "auto_hudson_prompt": True,
+        "auto_loud_single_module_prompt": True,
     }
     cp.parent.mkdir(parents=True, exist_ok=True)
     cp.write_text(json.dumps(default, indent=2))
