@@ -25,13 +25,14 @@ from user_scanner.core.helpers import (
     load_categories,
     load_modules,
     set_proxy_manager,
+    find_category,
 )
 from user_scanner.core.orchestrator import (
     run_user_category,
     run_user_full,
     run_user_module,
 )
-from user_scanner.core.result import Status
+from user_scanner.core.result import Result, Status
 from user_scanner.core.version import load_local_version
 from user_scanner.core.hudson import run_hudson_scan
 from user_scanner.utils.update import update_self
@@ -406,6 +407,14 @@ def main():
                 site_name = get_site_name(module)
                 if not config.allow_loud and is_loud(site_name, is_email):
                     if not check_loud_module_permission(site_name, target):
+                        skipped = Result.skipped().update(
+                            site_name=site_name,
+                            username=target,
+                            category=find_category(module) or "Unknown",
+                            is_email=is_email,
+                        )
+                        skipped.show(config)
+                        results.append(skipped)
                         continue
                     per_module_config = replace(config, allow_loud=True)
                     results.extend(fn(module, target, per_module_config))
