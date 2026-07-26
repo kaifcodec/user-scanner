@@ -1,5 +1,5 @@
 {
   "auto_update_status": true,
   "auto_hudson_prompt": true,
-  "auto_loud_single_module_prompt": false
+  "auto_loud_single_module_prompt": true
 }
