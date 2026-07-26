@@ -34,10 +34,9 @@ async def _check(email: str) -> Result:
             data = response.json()
 
             if data.get("success") is True:
-                if data.get("valid") is False:
+                if data.get("errorcode") == 3109:
                     return Result.taken(url=show_url)
-                elif data.get("valid") is True:
-                    return Result.available(url=show_url)
+                return Result.available(url=show_url)
 
             return Result.error("Unexpected JSON response from Flipboard, report it via GitHub issues", url=show_url)
 
