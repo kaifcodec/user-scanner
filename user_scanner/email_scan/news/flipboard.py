@@ -32,11 +32,25 @@ async def _check(email: str) -> Result:
                 return Result.error("Rate limited", url=show_url)
 
             data = response.json()
+            success = data.get("success")
+            valid = data.get("valid")
+            errorcode = data.get("errorcode")
+            reason = data.get("reason", "")
+            code = data.get("code")
 
-            if data.get("success") is True:
-                if data.get("errorcode") == 3109:
+            if success is True:
+                # 3109 means another account is already associated with this email.
+                if errorcode == 3109:
                     return Result.taken(url=show_url)
-                return Result.available(url=show_url)
+                # 3108 means Flipboard rejected the address itself, not that it is registered.
+                if errorcode == 3108:
+                    return Result.available(url=show_url, reason=reason)
+                if valid is True and errorcode is None and code == 200:
+                    return Result.available(url=show_url)
+                return Result.error(
+                    f"Unexpected Flipboard email response {errorcode}: {reason}",
+                    url=show_url,
+                )
 
             return Result.error("Unexpected JSON response from Flipboard, report it via GitHub issues", url=show_url)
 
