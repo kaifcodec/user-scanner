@@ -42,16 +42,22 @@ async def _check(email):
             res_text = response.text
             res_status = response.status_code
 
-            if "has already been taken" in res_text:
-                return Result.taken(url=base_url)
-            elif "registration attempt has been blocked" in res_text:
+            if "registration attempt has been blocked" in res_text:
                 return Result.error("Your IP has been flagged by mastodon, try after some time", url=base_url)
-            elif "has already been taken" not in res_text and res_status in [200, 302]:
-                return Result.available(url=base_url)
             elif res_status == 429:
                 return Result.error("Rate limited, use '-d' flag to avoid bot detection", url=base_url)
-            else:
+            elif res_status not in [200, 302]:
                 return Result.error("Unexpected error, report it via GitHub issues", url=base_url)
+
+            email_start = res_text.find('id="user_email"')
+            if email_start == -1:
+                return Result.error("Could not find email field", url=base_url)
+
+            email_end = res_text.find('<div class="input ', email_start)
+            email_field = res_text[email_start:email_end if email_end != -1 else None]
+            if '<span class="error">has already been taken</span>' in email_field:
+                return Result.taken(url=base_url)
+            return Result.available(url=base_url)
         except Exception as e:
             return Result.error(e, url=base_url)
 
