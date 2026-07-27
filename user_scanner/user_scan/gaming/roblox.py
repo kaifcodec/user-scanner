@@ -37,7 +37,7 @@ def _get_avatar_picture(user_id: int) -> str | None:
 
 
 def _fetch_user_details(uid: int) -> dict:
-    extra = {}
+    extra: dict = {}
 
     try:
         response = make_request(
