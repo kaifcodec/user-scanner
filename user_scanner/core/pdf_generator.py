@@ -1,5 +1,6 @@
 import io
 import json
+import html
 from datetime import datetime
 from typing import List, Any, Optional
 
@@ -227,15 +228,15 @@ def generate_pdf_report(
     summary_data = [
         [
             Paragraph(
-                f"<font size=7 color='#6b7280'>SUBJECT TARGET</font><br/><font size=10 name='Helvetica-Bold'>{target}</font>",
+                f"<font size=7 color='#6b7280'>SUBJECT TARGET</font><br/><font size=10 name='Helvetica-Bold'>{html.escape(str(target))}</font>",
                 normal_style,
             ),
             Paragraph(
-                f"<font size=7 color='#6b7280'>SCAN PARAMETER</font><br/><font size=10 name='Helvetica-Bold'>{scan_type.upper()}</font>",
+                f"<font size=7 color='#6b7280'>SCAN PARAMETER</font><br/><font size=10 name='Helvetica-Bold'>{html.escape(scan_type.upper())}</font>",
                 normal_style,
             ),
             Paragraph(
-                f"<font size=7 color='#6b7280'>DATE OF REPORT</font><br/><font size=10 name='Helvetica-Bold'>{date_str}</font>",
+                f"<font size=7 color='#6b7280'>DATE OF REPORT</font><br/><font size=10 name='Helvetica-Bold'>{html.escape(date_str)}</font>",
                 normal_style,
             ),
             Paragraph(
@@ -284,7 +285,7 @@ def generate_pdf_report(
                     else:
                         rl_img = img_io_or_drawing
                     caption = Paragraph(
-                        f"<font size=6 color='#6b7280'>{info['slNo']}. {info['site']}</font>",
+                        f"<font size=6 color='#6b7280'>{info['slNo']}. {html.escape(str(info['site']))}</font>",
                         ParagraphStyle("c", alignment=1),
                     )
                     photo_cells.append([rl_img, caption])
@@ -382,17 +383,17 @@ def generate_pdf_report(
                     ParagraphStyle("C", alignment=1),
                 ),
                 Paragraph(
-                    f"<font size=8>{hit.get('site_name', '')}</font>", normal_style
+                    f"<font size=8>{html.escape(str(hit.get('site_name', '')))}</font>", normal_style
                 ),
                 Paragraph(
-                    f"<font size=8>{hit.get('category', '')}</font>", normal_style
+                    f"<font size=8>{html.escape(str(hit.get('category', '')))}</font>", normal_style
                 ),
                 Paragraph(
-                    f"<font size=8 color='{status_color}'>{status}</font>",
+                    f"<font size=8 color='{status_color}'>{html.escape(status)}</font>",
                     normal_style,
                 ),
                 Paragraph(
-                    f"<font size=7 color='#2563eb'>{url_text}</font>", normal_style
+                    f"<font size=7 color='#2563eb'>{html.escape(url_text)}</font>", normal_style
                 ),
             ]
         )
@@ -431,7 +432,7 @@ def generate_pdf_report(
         for hit, meta in hits_with_meta:
             meta_elements = [
                 Paragraph(
-                    f"<font size=10 name='Helvetica-Bold'>{hit.get('site_name', '')}</font>",
+                    f"<font size=10 name='Helvetica-Bold'>{html.escape(str(hit.get('site_name', '')))}</font>",
                     normal_style,
                 ),
                 Spacer(1, 5),
@@ -440,9 +441,9 @@ def generate_pdf_report(
             meta_grid = []
             row = []
             for k, v in meta:
-                key_para = f"<font size=7 color='#6b7280'>{str(k).replace('_', ' ').upper()}</font>"
+                key_para = f"<font size=7 color='#6b7280'>{html.escape(str(k).replace('_', ' ').upper())}</font>"
                 val_para = (
-                    f"<font size=8 color='#1f2937'>{truncate(v, 200)}</font>"
+                    f"<font size=8 color='#1f2937'>{html.escape(truncate(v, 200))}</font>"
                 )
                 cell = Paragraph(f"{key_para}<br/>{val_para}", normal_style)
                 row.append(cell)
