@@ -6,23 +6,23 @@ from typing import List, Any, Optional
 import httpx
 
 try:
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage, KeepTogether
-    from reportlab.lib.units import inch
+    from reportlab.lib.pagesizes import A4  # type: ignore[import-untyped,import-not-found]
+    from reportlab.lib import colors  # type: ignore[import-untyped,import-not-found]
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # type: ignore[import-untyped,import-not-found]
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage, KeepTogether  # type: ignore[import-untyped,import-not-found]
+    from reportlab.lib.units import inch  # type: ignore[import-untyped,import-not-found]
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
 try:
-    from PIL import Image as PILImage
+    from PIL import Image as PILImage  # type: ignore[import-untyped,import-not-found]
     PIL_AVAILABLE = True
 except ImportError:
     PIL_AVAILABLE = False
 
 try:
-    from svglib.svglib import svg2rlg
+    from svglib.svglib import svg2rlg  # type: ignore[import-untyped,import-not-found]
     SVGLIB_AVAILABLE = True
 except ImportError:
     SVGLIB_AVAILABLE = False
@@ -79,8 +79,8 @@ def fetch_and_resize_image(url: str, size: tuple = (60, 60)) -> Optional[Any]:
                 except Exception:
                     pass
 
-            img = PILImage.open(io.BytesIO(resp.content))
-            img = img.convert("RGB")
+            img_raw = PILImage.open(io.BytesIO(resp.content))
+            img = img_raw.convert("RGB")
 
             # Crop to square
             min_dim = min(img.width, img.height)
@@ -88,11 +88,11 @@ def fetch_and_resize_image(url: str, size: tuple = (60, 60)) -> Optional[Any]:
             top = (img.height - min_dim) / 2
             right = (img.width + min_dim) / 2
             bottom = (img.height + min_dim) / 2
-            img = img.crop((left, top, right, bottom))
-            img = img.resize(size, PILImage.Resampling.LANCZOS)
+            cropped = img.crop((left, top, right, bottom))
+            resized = cropped.resize(size, PILImage.Resampling.LANCZOS)
 
             img_byte_arr = io.BytesIO()
-            img.save(img_byte_arr, format="JPEG")
+            resized.save(img_byte_arr, format="JPEG")
             img_byte_arr.seek(0)
             return img_byte_arr
     except Exception:

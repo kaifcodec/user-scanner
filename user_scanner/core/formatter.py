@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Optional
 
 from user_scanner.core.result import CSV_FIELDS, Result
 
@@ -23,9 +23,9 @@ def into_pdf(
     results: List[Result],
     target: str = "Target",
     scan_type: str = "Unknown",
-    total_modules: int = None,
+    total_modules: Optional[int] = None,
     include_media: bool = True,
-    version: str = None,
+    version: Optional[str] = None,
 ) -> bytes:
     from user_scanner.core.pdf_generator import generate_pdf_report
 
