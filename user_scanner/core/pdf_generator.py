@@ -1,7 +1,7 @@
 import io
 import json
 from datetime import datetime
-from typing import List, Dict, Any, Union, Optional
+from typing import List, Any, Optional
 
 import httpx
 
