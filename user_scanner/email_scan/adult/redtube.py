@@ -1,6 +1,6 @@
 import httpx
 import re
-from user_scanner.core.helpers import is_valid_email
+import secrets
 from user_scanner.core.result import Result
 
 RATE_LIMITED_MSG = "Rate limited, wait for a few minutes"
@@ -35,32 +35,32 @@ async def _check(email: str) -> Result:
 
             token = token_match.group(1)
 
-            params = {"token": token}
-            payload = {
-                "token": token,
-                "check_what": "email",
-                "email": email,
-            }
+            async def check(address: str) -> dict | Result:
+                response = await client.post(
+                    check_api,
+                    params={"token": token},
+                    headers=headers,
+                    data={"token": token, "check_what": "email", "email": address},
+                )
 
-            response = await client.post(
-                check_api,
-                params=params,
-                headers=headers,
-                data=payload,
-            )
+                if response.status_code == 429:
+                    return Result.error(RATE_LIMITED_MSG)
 
-            if response.status_code == 429:
-                return Result.error(RATE_LIMITED_MSG)
+                if response.status_code != 200:
+                    return Result.error(f"HTTP Error: {response.status_code}")
 
-            if response.status_code != 200:
-                return Result.error(f"HTTP Error: {response.status_code}")
+                data = response.json()
 
-            data = response.json()
+                # An anti-abuse throttle answers with a bare "NOK" / "NOK <n>" string
+                # instead of the usual JSON object.
+                if not isinstance(data, dict):
+                    return Result.error(RATE_LIMITED_MSG)
 
-            # An anti-abuse throttle answers with a bare "NOK" / "NOK <n>" string
-            # instead of the usual JSON object.
-            if not isinstance(data, dict):
-                return Result.error(RATE_LIMITED_MSG)
+                return data
+
+            data = await check(email)
+            if isinstance(data, Result):
+                return data
 
             status = data.get("email")
             error_msg = data.get("error_message", "")
@@ -71,9 +71,14 @@ async def _check(email: str) -> Result:
             if status == "create_account_failed":
                 if "already registered" in error_msg:
                     return Result.taken(url=show_url)
-                # For a well-formed address, RedTube reports an existing account
-                # by refusing registration rather than saying it's taken.
-                if "does not meet our registration requirements" in error_msg and is_valid_email(email):
+                if "does not meet our registration requirements" in error_msg:
+                    domain = email.rsplit("@", 1)[-1]
+                    probe = await check(f"{secrets.token_hex(16)}@{domain}")
+                    if isinstance(probe, Result):
+                        return probe
+                    probe_error = probe.get("error_message", "")
+                    if "does not meet our registration requirements" in probe_error:
+                        return Result.available(url=show_url, reason=error_msg)
                     return Result.taken(url=show_url)
                 return Result.available(url=show_url, reason=error_msg)
 

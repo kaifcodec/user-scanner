@@ -1,6 +1,6 @@
 import httpx
 import re
-from user_scanner.core.helpers import is_valid_email
+import secrets
 from user_scanner.core.result import Result
 
 RATE_LIMITED_MSG = "Rate limited, wait for a few minutes"
@@ -32,23 +32,25 @@ async def _check(email: str) -> Result:
 
             token = token_match.group(1)
 
-            params = {"token": token}
-            payload = {"token": token, "email": email}
+            async def check(address: str) -> dict | Result:
+                response = await client.post(
+                    check_api,
+                    params={"token": token},
+                    headers=headers,
+                    data={"token": token, "email": address},
+                )
 
-            response = await client.post(
-                check_api,
-                params=params,
-                headers=headers,
-                data=payload,
-            )
+                if response.status_code == 429:
+                    return Result.error(RATE_LIMITED_MSG)
 
-            if response.status_code == 429:
-                return Result.error(RATE_LIMITED_MSG)
+                if response.status_code != 200:
+                    return Result.error(f"HTTP Error: {response.status_code}")
 
-            if response.status_code != 200:
-                return Result.error(f"HTTP Error: {response.status_code}")
+                return response.json()
 
-            data = response.json()
+            data = await check(email)
+            if isinstance(data, Result):
+                return data
 
             if data.get("success") is True:
                 return Result.available(url=show_url)
@@ -56,12 +58,22 @@ async def _check(email: str) -> Result:
             messages = data.get("messages", [])
             message = " ".join(messages) if isinstance(messages, list) else str(messages)
 
-            # A well-formed address that fails the requirements check is YouPorn's
-            # way of reporting an existing account rather than saying it's taken.
             if "does not meet our registration requirements" in message:
-                if is_valid_email(email):
-                    return Result.taken(url=show_url)
-                return Result.available(url=show_url, reason=message)
+                domain = email.rsplit("@", 1)[-1]
+                probe = await check(f"{secrets.token_hex(16)}@{domain}")
+                if isinstance(probe, Result):
+                    return probe
+                probe_messages = probe.get("messages", [])
+                probe_message = (
+                    " ".join(probe_messages)
+                    if isinstance(probe_messages, list)
+                    else str(probe_messages)
+                )
+                if "does not meet our registration requirements" in probe_message:
+                    return Result.available(url=show_url, reason=message)
+                if "not available" in probe_message.lower():
+                    return Result.error(RATE_LIMITED_MSG)
+                return Result.taken(url=show_url)
 
             # A stale or over-used token answers "Not available." instead of a verdict.
             if "not available" in message.lower():
