@@ -17,3 +17,24 @@ def get_json_data(results: List[Result]) -> list:
 
 def into_csv(results: List[Result]) -> str:
     return CSV_HEADER + "\n" + "\n".join(result.to_csv() for result in results)
+
+
+def into_pdf(
+    results: List[Result],
+    target: str = "Target",
+    scan_type: str = "Unknown",
+    total_modules: int = None,
+    include_media: bool = True,
+    version: str = None,
+) -> bytes:
+    from user_scanner.core.pdf_generator import generate_pdf_report
+
+    return generate_pdf_report(
+        target=target,
+        scan_type=scan_type,
+        results=results,
+        total_modules=total_modules,
+        include_media=include_media,
+        version=version,
+    )
+
