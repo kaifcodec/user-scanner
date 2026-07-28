@@ -4,64 +4,76 @@ from user_scanner.core.result import Result
 
 def _extract_profile_data(entry: dict, extra: dict) -> None:
     if entry.get("preferredUsername"):
-        extra["username"] = entry["preferredUsername"]
+        extra["username"] = str(entry["preferredUsername"]).strip()
     if entry.get("displayName"):
-        extra["display_name"] = entry["displayName"]
+        extra["display_name"] = str(entry["displayName"]).strip()
     if entry.get("profileUrl"):
-        extra["profile_url"] = entry["profileUrl"]
+        extra["profile_url"] = str(entry["profileUrl"]).strip()
     if entry.get("thumbnailUrl"):
-        extra["thumbnail_url"] = entry["thumbnailUrl"]
+        extra["thumbnail_url"] = str(entry["thumbnailUrl"]).strip()
     if entry.get("aboutMe"):
-        extra["bio"] = entry["aboutMe"].strip()
+        extra["bio"] = str(entry["aboutMe"]).strip()
     if entry.get("currentLocation"):
-        extra["location"] = entry["currentLocation"].strip()
+        extra["location"] = str(entry["currentLocation"]).strip()
     if entry.get("jobTitle"):
-        extra["job_title"] = entry["jobTitle"].strip()
+        extra["job_title"] = str(entry["jobTitle"]).strip()
     if entry.get("company"):
-        extra["company"] = entry["company"].strip()
+        extra["company"] = str(entry["company"]).strip()
 
     name_info = entry.get("name")
     if isinstance(name_info, dict) and name_info.get("formatted"):
-        extra["full_name"] = name_info["formatted"].strip()
+        extra["full_name"] = str(name_info["formatted"]).strip()
 
-    photos = entry.get("photos", [])
-    if photos and isinstance(photos, list):
-        photo_list = [p.get("value").strip() for p in photos if isinstance(p, dict) and p.get("value")]
+    photos = entry.get("photos")
+    if isinstance(photos, list):
+        photo_list = [
+            str(p["value"]).strip()
+            for p in photos
+            if isinstance(p, dict) and p.get("value") is not None and str(p["value"]).strip()
+        ]
         if photo_list:
             extra["photos"] = ", ".join(photo_list)
 
-    accounts = entry.get("accounts", [])
-    if accounts and isinstance(accounts, list):
+    accounts = entry.get("accounts")
+    if isinstance(accounts, list):
         acc_list = []
         for acc in accounts:
             if not isinstance(acc, dict):
                 continue
-            acc_name = acc.get("name") or acc.get("shortname") or "Account"
+            acc_name = str(acc.get("name") or acc.get("shortname") or "Account")
             acc_url = acc.get("url") or acc.get("display") or acc.get("username")
-            if acc_url:
+            if acc_url is not None and str(acc_url).strip():
                 status = " (verified)" if acc.get("verified") else ""
-                acc_list.append(f"{acc_name}: {acc_url}{status}")
+                acc_list.append(f"{acc_name}: {str(acc_url).strip()}{status}")
         if acc_list:
             extra["verified_accounts"] = ", ".join(acc_list)
 
-    urls = entry.get("urls", [])
-    if urls and isinstance(urls, list):
-        url_list = [u.get("value").strip() for u in urls if isinstance(u, dict) and u.get("value")]
+    urls = entry.get("urls")
+    if isinstance(urls, list):
+        url_list = [
+            str(u["value"]).strip()
+            for u in urls
+            if isinstance(u, dict) and u.get("value") is not None and str(u["value"]).strip()
+        ]
         if url_list:
             extra["websites"] = ", ".join(url_list)
 
-    emails = entry.get("emails", [])
-    if emails and isinstance(emails, list):
-        email_list = [e.get("value").strip() for e in emails if isinstance(e, dict) and e.get("value")]
+    emails = entry.get("emails")
+    if isinstance(emails, list):
+        email_list = [
+            str(e["value"]).strip()
+            for e in emails
+            if isinstance(e, dict) and e.get("value") is not None and str(e["value"]).strip()
+        ]
         if email_list:
             extra["public_emails"] = ", ".join(email_list)
 
-    crypto = entry.get("crypto", [])
-    if crypto and isinstance(crypto, list):
+    crypto = entry.get("crypto")
+    if isinstance(crypto, list):
         crypto_list = [
-            f"{c.get('currency', 'Wallet')}: {c.get('value').strip()}"
+            f"{str(c.get('currency', 'Wallet'))}: {str(c['value']).strip()}"
             for c in crypto
-            if isinstance(c, dict) and c.get("value")
+            if isinstance(c, dict) and c.get("value") is not None and str(c["value"]).strip()
         ]
         if crypto_list:
             extra["crypto_addresses"] = ", ".join(crypto_list)
