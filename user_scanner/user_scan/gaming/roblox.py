@@ -1,69 +1,126 @@
-from user_scanner.core.orchestrator import generic_validate, status_validate, make_request
-from user_scanner.core.result import Result
+from urllib.parse import urlencode
+
 from user_scanner.core.helpers import get_random_user_agent
+from user_scanner.core.orchestrator import (
+    generic_validate,
+    make_request,
+    status_validate,
+)
+from user_scanner.core.result import Result
+
+
+def _get_avatar_picture(user_id: int) -> str | None:
+    # https://create.roblox.com/docs/cloud/reference/domains/thumbnails#thumbnails_get_v1_users_avatar_headshot
+
+    query = urlencode(
+        {
+            "userIds": user_id,
+            "includeBackground": "false",
+            "size": "720x720",
+            "format": "Png",
+            "isCircular": "false",
+        }
+    )
+
+    url = f"https://thumbnails.roblox.com/v1/users/avatar-headshot?{query}"
+    response = make_request(url, headers={"accept": "*/*"})
+
+    if response.status_code != 200:
+        return None
+
+    data = response.json().get("data", [])
+    entry = next(iter(data), None)
+    if not entry or entry.get("state") != "Completed":
+        return None
+
+    return entry.get("imageUrl")
+
+
+def _fetch_user_details(uid: int) -> dict:
+    extra: dict = {}
+
+    try:
+        response = make_request(
+            f"https://users.roblox.com/v1/users/{uid}", follow_redirects=True
+        )
+        if response.status_code != 200:
+            return extra
+
+        data = response.json()
+        if desc := data.get("description"):
+            extra["bio"] = desc
+        if created := data.get("created"):
+            extra["created"] = created
+        if data.get("isBanned"):
+            extra["banned"] = "Yes"
+
+    except Exception:
+        pass
+
+    return extra
+
+
+def process(response):
+    if response.status_code == 429:
+        return Result.error("Too many requests")
+    if response.status_code == 400:
+        return Result.error("Invalid username")
+    if response.status_code != 200:
+        return Result.available()
+
+    try:
+        data = response.json().get("data", [])
+        if not data:
+            return Result.available()
+
+        entry = data[0]
+        uid = entry.get("id")
+        extra = {
+            "display name": entry.get("displayName"),
+            "uid": uid,
+            "is verified": entry.get("hasVerifiedBadge"),
+        }
+
+        if uid:
+            extra.update(_fetch_user_details(uid))
+            if get_avatar_url := _get_avatar_picture(uid):
+                extra["avatar"] = get_avatar_url
+
+        return Result.taken(
+            extra=extra,
+            url=f"https://www.roblox.com/users/{uid}" if uid else None,
+        )
+
+    except Exception:
+        pass
+
+    return Result.available()
 
 
 def validate_roblox(user: str) -> Result:
-    url = "https://users.roblox.com/v1/usernames/users"
-    show_url = "https://roblox.com"
-
     headers = {
         "User-Agent": get_random_user_agent(),
         "Accept": "application/json",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
-    def process(response):
-        if response.status_code == 429:
-            return Result.error("Too many requests")
-
-        if response.status_code == 200:
-            try:
-                data = response.json().get("data", [])
-                if data:
-                    entry = data[0]
-                    uid = entry.get("id")
-                    extra = {
-                        "display name": entry.get("displayName"),
-                        "uid": uid,
-                        "is verified": entry.get("hasVerifiedBadge"),
-                    }
-                    if uid:
-                        try:
-                            detail_url = f"https://users.roblox.com/v1/users/{uid}"
-                            detail_response = make_request(detail_url, follow_redirects=True)
-                            if detail_response.status_code == 200:
-                                details = detail_response.json()
-                                if desc := details.get("description"): extra["bio"] = desc
-                                if created := details.get("created"): extra["created"] = created
-                                if details.get("isBanned"): extra["banned"] = "Yes"
-                        except Exception:
-                            pass
-                    return Result.taken(extra=extra)
-            except Exception:
-                pass
-            return Result.available()
-
-        if response.status_code == 400:
-            return Result.error("Invalid username")
-
-        return Result.available()
-
     result = generic_validate(
-        url,
+        "https://users.roblox.com/v1/usernames/users",
         process,
         method="POST",
         json={"usernames": [user], "excludeBannedUsers": False},
         headers=headers,
-        follow_redirects=True
+        follow_redirects=True,
     )
 
     if result.get_reason() != "Too many requests":
         return result
 
     # If rate limited, uses a simple status validation
-    fallback_url = f"https://www.roblox.com/user.aspx?username={user}"
-
     return status_validate(
-        fallback_url, 404, [200, 302], show_url=show_url, follow_redirects=True
+        f"https://www.roblox.com/user.aspx?username={user}",
+        404,
+        [200, 302],
+        show_url="https://roblox.com",
+        follow_redirects=True,
     )
