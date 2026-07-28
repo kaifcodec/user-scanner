@@ -52,7 +52,7 @@ def clean_metadata(extra: Any) -> List[tuple]:
     return [(k, v) for k, v in extra.items() if k not in ["avatar", "image"]]
 
 
-def fetch_and_resize_image(url: str, size: tuple = (60, 60)) -> Optional[Any]:
+def fetch_and_resize_image(url: str, max_size: tuple = (600, 600)) -> Optional[Any]:
     if not PIL_AVAILABLE:
         return None
     try:
@@ -70,12 +70,11 @@ def fetch_and_resize_image(url: str, size: tuple = (60, 60)) -> Optional[Any]:
                 try:
                     drawing = svg2rlg(io.BytesIO(resp.content))
                     if drawing and hasattr(drawing, "width") and hasattr(drawing, "height") and drawing.width > 0 and drawing.height > 0:
-                        sx = size[0] / drawing.width
-                        sy = size[1] / drawing.height
-                        s = min(sx, sy)
-                        drawing.scale(s, s)
-                        drawing.width = drawing.width * s
-                        drawing.height = drawing.height * s
+                        s = min(max_size[0] / drawing.width, max_size[1] / drawing.height)
+                        if s < 1.0:
+                            drawing.scale(s, s)
+                            drawing.width = drawing.width * s
+                            drawing.height = drawing.height * s
                         return drawing
                 except Exception:
                     pass
@@ -83,17 +82,22 @@ def fetch_and_resize_image(url: str, size: tuple = (60, 60)) -> Optional[Any]:
             img_raw = PILImage.open(io.BytesIO(resp.content))
             img = img_raw.convert("RGB")
 
-            # Crop to square
+            # Crop to 1:1 square
             min_dim = min(img.width, img.height)
             left = (img.width - min_dim) / 2
             top = (img.height - min_dim) / 2
             right = (img.width + min_dim) / 2
             bottom = (img.height + min_dim) / 2
             cropped = img.crop((left, top, right, bottom))
-            resized = cropped.resize(size, PILImage.Resampling.LANCZOS)
+
+            # Scale down only if larger than max_size limit (600x600)
+            if cropped.width > max_size[0] or cropped.height > max_size[1]:
+                final_img = cropped.resize(max_size, PILImage.Resampling.LANCZOS)
+            else:
+                final_img = cropped
 
             img_byte_arr = io.BytesIO()
-            resized.save(img_byte_arr, format="JPEG")
+            final_img.save(img_byte_arr, format="JPEG", quality=90)
             img_byte_arr.seek(0)
             return img_byte_arr
     except Exception:
