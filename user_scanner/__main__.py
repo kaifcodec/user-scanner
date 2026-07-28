@@ -498,7 +498,7 @@ def main():
                             scan_type="Email" if cross_is_email else "Username",
                             total_modules=len(load_modules(load_categories(cross_is_email, args.no_nsfw))), # approximate module count
                             include_media=True,
-                            version="1.4.1.9"
+                            version=load_local_version()[0]
                         )
                         with open(cross_output, "wb") as f:
                             f.write(cross_content)

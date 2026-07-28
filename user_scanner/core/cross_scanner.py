@@ -1,5 +1,4 @@
 import re
-import sys
 from colorama import Fore, Style
 from user_scanner.core.result import Result
 from user_scanner.core.helpers import is_valid_email
