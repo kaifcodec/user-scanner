@@ -37,7 +37,7 @@ def check_loud_module_permission(site_name: str, target: str) -> bool:
 
     print(f"\n{Y}[!] LOUD MODULE WARNING:{X}")
     print(f"    '{site_name}' is known to notify the target when queried (e.g. password reset email).")
-    print(f"    By proceeding, '{C}{target}{Y}' may be alerted that they were scanned.{X}")
+    print(f"    By proceeding, '{C}{target}{Y}' may receive a password reset or verification email.{X}")
 
     while True:
         choice = input(f"\n{C}Run '{site_name}' anyway? (y/n/d for don't ask again): {X}").lower().strip()
