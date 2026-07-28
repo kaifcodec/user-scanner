@@ -25,18 +25,19 @@ from user_scanner.core.helpers import (
     load_categories,
     load_modules,
     set_proxy_manager,
+    find_category,
 )
 from user_scanner.core.orchestrator import (
     run_user_category,
     run_user_full,
     run_user_module,
 )
-from user_scanner.core.result import Status
+from user_scanner.core.result import Result, Status
 from user_scanner.core.version import load_local_version
 from user_scanner.core.hudson import run_hudson_scan
 from user_scanner.utils.update import update_self
 from user_scanner.utils.updater_logic import check_for_updates
-
+from user_scanner.core.loud_prompt import check_loud_module_permission
 from user_scanner.core.patterns import expand_patterns_random, count_patterns
 
 # Color configs
@@ -402,9 +403,23 @@ def main():
 
         if args.module:
             fn = run_email_module_batch if is_email else run_user_module
-            module_config = replace(config, allow_loud=True)
             for module in validated_modules:
-                results.extend(fn(module, target, module_config))
+                site_name = get_site_name(module)
+                if not config.allow_loud and is_loud(site_name, is_email):
+                    if not check_loud_module_permission(site_name, target):
+                        skipped = Result.skipped().update(
+                            site_name=site_name,
+                            username=target,
+                            category=find_category(module) or "Unknown",
+                            is_email=is_email,
+                        )
+                        skipped.show(config)
+                        results.append(skipped)
+                        continue
+                    per_module_config = replace(config, allow_loud=True)
+                    results.extend(fn(module, target, per_module_config))
+                else:
+                    results.extend(fn(module, target, config))
 
         elif args.category:
             fn = run_email_category_batch if is_email else run_user_category
