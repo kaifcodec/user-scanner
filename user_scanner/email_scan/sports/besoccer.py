@@ -4,7 +4,7 @@ from user_scanner.core.result import Result
 
 def _generate_unique_username(base_user: str = "scanner_user") -> str:
     """Appends a large random integer to make sure the username doesn't trip error_code 1."""
-    return f"{base_user}_{random.randint(10000000, 99999999)}"
+    return f"{base_user}_{random.randint(1000000, 9999999)}"
 
 async def _check(email: str) -> Result:
     url = "https://fast.okcats.com/scripts/api/api.php"
@@ -47,15 +47,19 @@ async def _check(email: str) -> Result:
             if not isinstance(errors_list, list):
                 return Result.error("Unexpected schema structure for 'errors' element")
 
-            # Compile all error codes returned in this transaction flight
-            error_codes = {item.get("error_code") for item in errors_list if isinstance(item, dict)}
+            error_messages = {
+                item.get("message")
+                for item in errors_list
+                if isinstance(item, dict)
+            }
 
-            # error_code 2 means the email is tied to an existing database record
-            if 2 in error_codes:
+            if "Email is already in use" in error_messages:
                 return Result.taken(url=show_url)
 
-            # If error_code 3 is present but error_code 2 is NOT, the email is completely clear/available!
-            if 3 in error_codes:
+            if (
+                "You must introduce a valid email address" in error_messages
+                or "You must introduce a password" in error_messages
+            ):
                 return Result.available(url=show_url)
 
             return Result.error("Ambiguous error matrix returned from target endpoint")
