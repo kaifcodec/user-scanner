@@ -10,7 +10,7 @@ def validate_nexusmods(user: str) -> Result:
     url = f"https://www.nexusmods.com/profile/{quote(user, safe='')}"
 
     def process(response):
-        if response.status_code == 404:
+        if response.status_code == 404 and r'\"c\":[\"\",\"profile\"' in response.text:
             return Result.available()
 
         if response.status_code != 200:
