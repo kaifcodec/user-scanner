@@ -10,7 +10,7 @@ def validate_polarsteps(user: str) -> Result:
     show_url = f"https://www.polarsteps.com/{encoded_user}"
     headers = {
         "Accept": "application/json",
-        "Polarsteps-API-Version": "61",
+        "Polarsteps-API-Version": "61",  # bump if module starts erroring on all lookups
     }
 
     def process(response):
@@ -21,6 +21,12 @@ def validate_polarsteps(user: str) -> Result:
 
         if not isinstance(data, dict):
             return Result.error("Unexpected response body")
+
+        if data.get("error") == "api_version_too_old_for_endpoint":
+            return Result.error(
+                f"Polarsteps API version outdated — requires v{data.get('required_version')}, "
+                f"update 'Polarsteps-API-Version' header in polarsteps.py"
+            )
 
         if response.status_code == 404 and data == {"detail": "Not Found"}:
             return Result.available()
