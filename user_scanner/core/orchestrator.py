@@ -92,7 +92,8 @@ async def _run_batch(
         result = await coro
         
         actual_cat = result.category or "Unknown"
-        if configs.only_found and result.is_found():
+        # Handle specific logic where skipping needs to happen early
+        if not configs.show_all and result.is_found():
             if printed_cats is not None and actual_cat not in printed_cats:
                 print(f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}")
                 printed_cats.add(actual_cat)
@@ -116,7 +117,7 @@ def run_user_category(
     modules = load_modules(category_path)
     printed_cats = set()
 
-    if not configs.only_found:
+    if configs.show_all:
         print(f"\n{Fore.MAGENTA}== {category_name.upper()} SITES =={Style.RESET_ALL}")
         printed_cats.add(category_name)
 
@@ -156,14 +157,14 @@ async def _run_user_full_async(username: str, configs: ScanConfig) -> List[Resul
         if not tasks:
             continue
             
-        if not configs.only_found:
+        if configs.show_all:
             print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
             printed_cats.add(display_name)
             
         for coro in asyncio.as_completed(tasks):
             result = await coro
             
-            if configs.only_found and result.is_found():
+            if not configs.show_all and result.is_found():
                 if display_name not in printed_cats:
                     print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
                     printed_cats.add(display_name)

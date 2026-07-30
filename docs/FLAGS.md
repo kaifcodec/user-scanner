@@ -6,7 +6,6 @@
 | `-e, --email EMAIL`         | Scan a single email across platforms                        |
 | `-uf, --username-file FILE` | Scan multiple usernames from file (one per line)            |
 | `-ef, --email-file FILE`    | Scan multiple emails from file (one per line)               |
-| `--only-found`              | Only show sites where the username/email was found          |
 | `--allow-loud`              | Enable scanning sites that may send emails/notifications    |
 | `--no-nsfw`                 | Disable NSFW site scanning                                  |
 | `--hudson, --hudson-scan`   | Check for infostealer intelligence using Hudson Rock's API  |
@@ -14,6 +13,7 @@
 | `-lu, --list-user`          | List all available modules for username scanning            |
 | `-le, --list-email`         | List all available modules for email scanning               |
 | `-v, --verbose`             | Enable verbose output to show urls of the websites          |
+| `--all`                     | Show all results including Not Found/Not Registered/Error/Skipped |
 | `-m, --module MODULE`       | Scan a specific module (comma-separated for multiple)                    |
 | `-p, --permute PERMUTE`     | Generate username permutations using a pattern/suffix       |
 | `-P, --proxy-file FILE`     | Use proxies from file (one per line)                        |

@@ -282,9 +282,9 @@ class Result:
 
     def show(self, configs: ScanConfig):
         """Prints the console output and returns itself for chaining.
-        If only_found is True, only results with Status.TAKEN are printed."""
+        If show_all is False, only results with Status.TAKEN are printed."""
         # Updated show() to accept and pass the show_url flag
-        if configs.only_found and self.status != Status.TAKEN:
+        if not configs.show_all and self.status != Status.TAKEN:
             return self
         print(self.get_console_output(configs))
         return self

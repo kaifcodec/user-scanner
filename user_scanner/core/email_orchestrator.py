@@ -96,8 +96,8 @@ async def _async_worker(
 
         result.update(**params)
 
-        # Logic to print header dynamically for --only-found streaming
-        if configs.only_found and result.status == Status.TAKEN:
+        # Logic to print header dynamically for --show-all streaming
+        if not configs.show_all and result.status == Status.TAKEN:
             if printed_cats is not None and actual_cat not in printed_cats:
                 print(
                     f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}"
@@ -149,7 +149,7 @@ async def _run_email_category_batch_async(
     modules = load_modules(category_path)
     printed_cats = set()
 
-    if not configs.only_found:
+    if configs.show_all:
         print(f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}")
         printed_cats.add(cat_name)
 
@@ -174,7 +174,7 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
     for cat_name, cat_path in categories.items():
         modules = load_modules(cat_path)
 
-        if not configs.only_found:
+        if configs.show_all:
             print(f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}")
             printed_cats.add(cat_name)
 
