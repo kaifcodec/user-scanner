@@ -1,8 +1,9 @@
 import html
+import json
 import re
 from urllib.parse import quote
 
-from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
 
 
@@ -25,17 +26,19 @@ def validate_nexusmods(user: str) -> Result:
 
         extra = {}
         avatar = re.search(
-            r'src="(https://avatars\.nexusmods\.com/[^"]+)"', response.text
+            r'<meta property="og:image" content="([^"]+)"', response.text
         )
         if avatar:
             extra["avatar"] = html.unescape(avatar.group(1))
+            user_id = re.search(r"/(\d+)/100$", extra["avatar"])
+            if user_id:
+                extra["user_id"] = int(user_id.group(1))
 
         for field, marker in (
+            ("unique_downloads", "unique-download-count"),
             ("endorsements_given", "endorsements-given"),
             ("profile_views", "profile-views"),
             ("kudos", "kudos"),
-            ("last_active", "last-active-date"),
-            ("joined", "joined-date"),
         ):
             match = re.search(
                 rf'data-e2eid="{marker}"[^>]*>\s*([^<]+)', response.text
@@ -43,6 +46,41 @@ def validate_nexusmods(user: str) -> Result:
             if match:
                 extra[field] = html.unescape(match.group(1)).strip()
 
+        for field, marker in (
+            ("last_active", "last-active-date"),
+            ("joined", "joined-date"),
+        ):
+            match = re.search(
+                rf'data-e2eid="{marker}"[^>]*dateTime="([^"]+)"', response.text
+            )
+            if match:
+                extra[field] = match.group(1)
+
+        try:
+            match = re.search(
+                r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*UserByName(?:[^"\\]|\\.)*")\]\)</script>',
+                response.text,
+            )
+            flight = json.loads(match.group(1))
+            member_id = flight.index('"memberId":')
+            start = flight.rfind('"data":', 0, member_id) + len('"data":')
+            profile = json.JSONDecoder().raw_decode(flight[start:])[0]
+            extra.update(
+                {
+                    "country": profile.get("country"),
+                    "posts": profile.get("posts"),
+                    "recognized_author": profile.get("recognizedAuthor"),
+                    "membership_roles": ", ".join(
+                        profile.get("membershipRoles") or []
+                    ),
+                    "donations_enabled": profile.get("donationsEnabled"),
+                    "about": html.unescape(profile.get("about") or "").strip(),
+                    "paypal_email": profile.get("paypal"),
+                }
+            )
+        except (AttributeError, ValueError, json.JSONDecodeError):
+            pass
+
         return Result.taken(extra=extra)
 
-    return generic_validate(url, process, show_url=url, follow_redirects=True)
+    return impersonate_validate(url, process, show_url=url, allow_redirects=True)
