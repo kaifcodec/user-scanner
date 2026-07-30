@@ -192,6 +192,7 @@ def validate_example(user: str) -> Result:
   - `warmup_url` optionally fetches a page once per session before the main request so the session can obtain clearance cookies.
   - `impersonate` selects the browser profile and defaults to `"chrome"`.
   - `show_url` controls the URL attached to the returned `Result`; it defaults to the request URL.
+  - `allow_redirects` defaults to `False`, unlike httpx's `follow_redirects=True` in the `generic_validate` example. Pass `allow_redirects=True` when the profile URL redirects. Additional keyword arguments are forwarded to `impersonate_request`.
 
 ```python
 from user_scanner.core.impersonate import impersonate_validate
@@ -202,9 +203,9 @@ def validate_example(user: str) -> Result:
     url = f"https://www.example.com/profile/{user}"
 
     def process(response):
-        if response.status_code == 404:
+        if response.status_code == 404 and "User does not exist" in response.text:
             return Result.available()
-        if response.status_code == 200 and user.lower() in response.text.lower():
+        if response.status_code == 200 and f'profile/{user}' in response.text:
             return Result.taken()
         return Result.error(f"Unexpected response status: {response.status_code}")
 
