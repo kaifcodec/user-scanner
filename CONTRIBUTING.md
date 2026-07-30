@@ -184,7 +184,43 @@ def validate_example(user: str) -> Result:
     return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
 ```
 
-### 2. status_validate (Discouraged)
+### 2. impersonate_validate
+
+- **Purpose:** Run a request through a cookie-persistent `curl_cffi` session that impersonates a browser TLS fingerprint. Use it for services protected by strict anti-bot walls such as DataDome or Cloudflare, which may reject standard Python HTTP clients even when their headers look like a browser's.
+- **When to use:** Prefer `generic_validate` for ordinary endpoints. Choose `impersonate_validate` when the site is known to inspect the TLS fingerprint or requires browser-like session cookies.
+- **Key parameters:**
+  - `warmup_url` optionally fetches a page once per session before the main request so the session can obtain clearance cookies.
+  - `impersonate` selects the browser profile and defaults to `"chrome"`.
+  - `show_url` controls the URL attached to the returned `Result`; it defaults to the request URL.
+  - `allow_redirects` defaults to `False`, unlike httpx's `follow_redirects=True` in the `generic_validate` example. Pass `allow_redirects=True` when the profile URL redirects. Additional keyword arguments are forwarded to `impersonate_request`.
+
+```python
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
+
+
+def validate_example(user: str) -> Result:
+    url = f"https://www.example.com/profile/{user}"
+
+    def process(response):
+        if response.status_code == 404 and "User does not exist" in response.text:
+            return Result.available()
+        if response.status_code == 200 and f'profile/{user}' in response.text:
+            return Result.taken()
+        return Result.error(f"Unexpected response status: {response.status_code}")
+
+    return impersonate_validate(
+        url,
+        process,
+        warmup_url="https://www.example.com/",
+        impersonate="chrome",
+        show_url=url,
+    )
+```
+
+For multi-step flows, use `impersonate_request` directly. It returns the raw `curl_cffi` response and reuses the same browser-like session, cookies, proxy, and optional warm-up as `impersonate_validate`.
+
+### 3. status_validate (Discouraged)
 
 - **Purpose:** Simple helper for sites where availability can be determined purely from HTTP status codes (e.g., 404 = available, 200 = taken).
 - **Warning:** Use this *only* as a last resort if the site has absolutely no WAF and reliably returns strict HTTP codes without custom redirect/error pages. Modern sites heavily punish this approach.
