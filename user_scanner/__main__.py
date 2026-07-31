@@ -430,6 +430,18 @@ def main():
     if args.hudson_scan:
         sys.exit(0)
 
+    if args.output and not args.format:
+        ext = args.output.lower()
+        if ext.endswith('.json'):
+            args.format = 'json'
+        elif ext.endswith('.csv'):
+            args.format = 'csv'
+        elif ext.endswith('.pdf'):
+            args.format = 'pdf'
+        else:
+            print(f"\n{Fore.RED}[✘] Specify output format using -f (json, csv, pdf) or use a known file extension.{Style.RESET_ALL}")
+            sys.exit(1)
+
     is_pdf_export = args.format == "pdf" or (args.output and args.output.lower().endswith(".pdf"))
 
     if args.output or is_pdf_export:

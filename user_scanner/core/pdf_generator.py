@@ -39,7 +39,7 @@ def truncate(val: Any, max_length: int = 300) -> str:
             s = str(val)
     else:
         s = str(val)
-        
+
     s = "".join([c for c in s if ord(c) < 128])
     if len(s) > max_length:
         return s[:max_length] + "..."
@@ -49,7 +49,7 @@ def truncate(val: Any, max_length: int = 300) -> str:
 def clean_metadata(extra: Any) -> List[tuple]:
     if not extra or not isinstance(extra, dict):
         return []
-    return [(k, v) for k, v in extra.items() if k not in ["avatar", "image"]]
+    return [(k, v) for k, v in extra.items() if not any(x in k.lower() for x in ["avatar", "image", "pfp", "avatar_url", "image_url", "snapcode"])]
 
 
 def fetch_and_resize_image(url: str, max_size: tuple = (600, 600)) -> Optional[Any]:
@@ -192,7 +192,7 @@ def generate_pdf_report(
     version_str = f" v{version}" if version else ""
 
     header_left = [
-        Paragraph(f"USER SCANNER{version_str.upper()}", header_brand_style),
+        Paragraph(f"User Scanner{version_str.lower()}", header_brand_style),
         Spacer(1, 2),
         Paragraph("INTELLIGENCE DOSSIER", header_title_style),
         Spacer(1, 2),
@@ -266,10 +266,22 @@ def generate_pdf_report(
     if include_media and PIL_AVAILABLE:
         unique_photos = {}
         for idx, hit in enumerate(hits):
+            media = hit.get("media", {})
             extra = hit.get("extra", {})
-            if isinstance(extra, dict):
-                url = extra.get("avatar") or extra.get("image")
-                if url and isinstance(url, str) and url not in unique_photos:
+            
+            urls = []
+            
+            if isinstance(media, dict) and media:
+                urls.extend(str(v) for v in media.values() if v)
+            elif isinstance(extra, dict) and extra:
+                for k, v in extra.items():
+                    if v and isinstance(v, str):
+                        k_lower = k.lower()
+                        if any(x in k_lower for x in ["avatar", "image", "pfp", "profile_picture", "snapcode"]):
+                            urls.append(v)
+                            
+            for url in urls:
+                if url and isinstance(url, str) and url.startswith("http") and url not in unique_photos:
                     unique_photos[url] = {
                         "site": hit.get("site_name", "Unknown"),
                         "slNo": idx + 1,
@@ -287,7 +299,14 @@ def generate_pdf_report(
                     if isinstance(img_io_or_drawing, io.BytesIO):
                         rl_img = RLImage(img_io_or_drawing, width=60, height=60)
                     else:
-                        rl_img = img_io_or_drawing
+                        # For SVGs, we must scale the layout drawing itself to 60x60
+                        drawing = img_io_or_drawing
+                        if hasattr(drawing, "width") and hasattr(drawing, "height") and drawing.width > 0 and drawing.height > 0:
+                            s = min(60.0 / drawing.width, 60.0 / drawing.height)
+                            drawing.scale(s, s)
+                            drawing.width = drawing.width * s
+                            drawing.height = drawing.height * s
+                        rl_img = drawing
                     caption = Paragraph(
                         f"<font size=6 color='#6b7280'>{info['slNo']}. {html.escape(str(info['site']))}</font>",
                         ParagraphStyle("c", alignment=1),

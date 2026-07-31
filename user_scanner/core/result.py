@@ -89,6 +89,7 @@ class Result:
         self.category = None
         self.url = ""  # Initialized url field
         self.extra: dict[str, str | bool | int] = {}
+        self.media: dict[str, str] = {}
         self.is_email = False
         self.update(**kwargs)
 
@@ -111,6 +112,12 @@ class Result:
                     value = str(value)
 
                 self.extra[clean_key] = value
+
+        if "media" in kwargs and isinstance(kwargs["media"], dict):
+            for key, value in kwargs["media"].items():
+                if value is None or not str(value).strip():
+                    continue
+                self.media[key.strip().lower()] = str(value).strip()
 
         return self
 

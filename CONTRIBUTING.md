@@ -133,7 +133,7 @@ def validate_<sitename>(user: str) -> Result:
 **CRITICAL Rules for `user_scan` Modules:**
 
 1. **Explicit Verification (No False Positives):** Never rely solely on a generic HTTP 200 to assume availability. Many WAFs and CDNs intercept requests and return 200 OK. You MUST explicitly verify a unique string or JSON key for BOTH the `taken` and `available` states. **Never use a bare `else: return Result.available()` block.**
-2. **Deep Data Extraction:** If the user is found, attempt to extract rich metadata (fullname, location, bio, stats) and return it via `Result.taken(extra={"fullname": "John Doe", ...})`.
+2. **Deep Data Extraction:** If the user is found, attempt to extract rich metadata (fullname, location, bio, stats) and return it via `Result.taken(extra={"fullname": "John Doe", ...})`. **If extracting profile pictures, banners, or other images, you MUST pass their URLs in the `media` dictionary** (e.g., `Result.taken(media={"avatar": "https://..."})`), not in `extra`.
 3. **Strict Error Handling:** NEVER use `raise Exception()`. All unhandled states or unexpected status codes must return `Result.error(f"Unexpected status code {resp.status_code}")`.
 4. **Use Orchestrator Helpers:** Use `generic_validate` to standardize `httpx` logic, but write robust `process` callbacks.
 
@@ -184,7 +184,43 @@ def validate_example(user: str) -> Result:
     return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
 ```
 
-### 2. status_validate (Discouraged)
+### 2. impersonate_validate
+
+- **Purpose:** Run a request through a cookie-persistent `curl_cffi` session that impersonates a browser TLS fingerprint. Use it for services protected by strict anti-bot walls such as DataDome or Cloudflare, which may reject standard Python HTTP clients even when their headers look like a browser's.
+- **When to use:** Prefer `generic_validate` for ordinary endpoints. Choose `impersonate_validate` when the site is known to inspect the TLS fingerprint or requires browser-like session cookies.
+- **Key parameters:**
+  - `warmup_url` optionally fetches a page once per session before the main request so the session can obtain clearance cookies.
+  - `impersonate` selects the browser profile and defaults to `"chrome"`.
+  - `show_url` controls the URL attached to the returned `Result`; it defaults to the request URL.
+  - `allow_redirects` defaults to `False`, unlike httpx's `follow_redirects=True` in the `generic_validate` example. Pass `allow_redirects=True` when the profile URL redirects. Additional keyword arguments are forwarded to `impersonate_request`.
+
+```python
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
+
+
+def validate_example(user: str) -> Result:
+    url = f"https://www.example.com/profile/{user}"
+
+    def process(response):
+        if response.status_code == 404 and "User does not exist" in response.text:
+            return Result.available()
+        if response.status_code == 200 and f'profile/{user}' in response.text:
+            return Result.taken()
+        return Result.error(f"Unexpected response status: {response.status_code}")
+
+    return impersonate_validate(
+        url,
+        process,
+        warmup_url="https://www.example.com/",
+        impersonate="chrome",
+        show_url=url,
+    )
+```
+
+For multi-step flows, use `impersonate_request` directly. It returns the raw `curl_cffi` response and reuses the same browser-like session, cookies, proxy, and optional warm-up as `impersonate_validate`.
+
+### 3. status_validate (Discouraged)
 
 - **Purpose:** Simple helper for sites where availability can be determined purely from HTTP status codes (e.g., 404 = available, 200 = taken).
 - **Warning:** Use this *only* as a last resort if the site has absolutely no WAF and reliably returns strict HTTP codes without custom redirect/error pages. Modern sites heavily punish this approach.
@@ -195,7 +231,7 @@ def validate_example(user: str) -> Result:
 
 - Always return a Result object:
   - `Result.available()`
-  - `Result.taken(extra={"fullname": "..."})`
+  - `Result.taken(extra={"fullname": "..."}, media={"avatar": "..."})`
   - `Result.error("short diagnostic message")`
 - The orchestrator captures network errors (`httpx.ConnectError`, `httpx.TimeoutException`, etc.) and returns `Result.error(...)` automatically.
 - **NEVER** use `raise Exception("...")`. If you encounter an anomaly in your `process` function, always return `Result.error("...")` so the scanner can gracefully continue to the next module.
