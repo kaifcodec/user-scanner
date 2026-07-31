@@ -269,7 +269,7 @@ def generate_pdf_report(
             media = hit.get("media", {})
             extra = hit.get("extra", {})
             
-            urls = []
+            urls: List[str] = []
             
             if isinstance(media, dict) and media:
                 urls.extend(str(v) for v in media.values() if v)
