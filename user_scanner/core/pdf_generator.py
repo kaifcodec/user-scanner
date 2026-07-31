@@ -29,6 +29,9 @@ except ImportError:
     SVGLIB_AVAILABLE = False
 
 
+IMAGE_HEURISTIC_KEYS = ["avatar", "image", "pfp", "profile_picture", "snapcode"]
+
+
 def truncate(val: Any, max_length: int = 300) -> str:
     if val is None:
         return ""
@@ -49,7 +52,7 @@ def truncate(val: Any, max_length: int = 300) -> str:
 def clean_metadata(extra: Any) -> List[tuple]:
     if not extra or not isinstance(extra, dict):
         return []
-    return [(k, v) for k, v in extra.items() if not any(x in k.lower() for x in ["avatar", "image", "pfp", "avatar_url", "image_url", "snapcode"])]
+    return [(k, v) for k, v in extra.items() if not any(x in k.lower() for x in IMAGE_HEURISTIC_KEYS)]
 
 
 def fetch_and_resize_image(url: str, max_size: tuple = (600, 600)) -> Optional[Any]:
@@ -277,7 +280,7 @@ def generate_pdf_report(
                 for k, v in extra.items():
                     if v and isinstance(v, str):
                         k_lower = k.lower()
-                        if any(x in k_lower for x in ["avatar", "image", "pfp", "profile_picture", "snapcode"]):
+                        if any(x in k_lower for x in IMAGE_HEURISTIC_KEYS):
                             urls.append(v)
                             
             for url in urls:
