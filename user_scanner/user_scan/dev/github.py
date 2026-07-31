@@ -17,6 +17,7 @@ def validate_github(user):
         if api_response.status_code == 200:
             data = api_response.json()
             extra = {}
+            media = {}
             if name := data.get("name"): extra["name"] = name
             if bio := data.get("bio"): extra["bio"] = bio
             if company := data.get("company"): extra["company"] = company
@@ -39,7 +40,7 @@ def validate_github(user):
                     pass
             if followers := data.get("followers"): extra["followers"] = str(followers)
             if following := data.get("following"): extra["following"] = str(following)
-            if avatar_url := data.get("avatar_url"): extra["avatar"] = avatar_url
+            if avatar_url := data.get("avatar_url"): media["avatar"] = avatar_url
             if twitter := data.get("twitter_username"): extra["twitter"] = twitter
             if repos := data.get("public_repos"): extra["public_repos"] = str(repos)
             if created_at := data.get("created_at"): extra["created_at"] = created_at
@@ -60,7 +61,7 @@ def validate_github(user):
                 unique_links = list(dict.fromkeys(links))
                 extra["links"] = ", ".join(unique_links)
             
-            return Result.taken(extra=extra, url=show_url)
+            return Result.taken(extra=extra, media=media, url=show_url)
             
         elif api_response.status_code == 404:
             return Result.available(url=show_url)
@@ -77,6 +78,7 @@ def validate_github(user):
             return Result.available(url=show_url)
         elif response.status_code == 200:
             extra = {}
+            media = {}
             try:
                 name_match = local_re.search(r'itemprop="name">\s*([^<\n\r]+)\s*</span>', response.text)
                 if name_match: extra["name"] = name_match.group(1).strip()
@@ -114,7 +116,7 @@ def validate_github(user):
                 
                 # Fixed avatar extraction (using meta tag instead of random images on page)
                 avatar_match = local_re.search(r'<meta property=\"og:image\" content=\"([^\"]+)\"', response.text)
-                if avatar_match: extra["avatar"] = avatar_match.group(1).replace("&amp;", "&")
+                if avatar_match: media["avatar"] = avatar_match.group(1).replace("&amp;", "&")
                 
                 orgs = local_re.findall(r'data-hovercard-type="organization"[^>]*href="/([^/"]+)"', response.text)
                 if orgs:
@@ -123,7 +125,7 @@ def validate_github(user):
                     
             except Exception:
                 pass
-            return Result.taken(extra=extra, url=show_url)
+            return Result.taken(extra=extra, media=media, url=show_url)
         else:
             return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
             
