@@ -22,6 +22,10 @@ def check_for_updates():
         latest_ver = get_pypi_version(PYPI_URL)
         current_ver, _ = load_local_version()
 
+        if latest_ver is None:
+            print(f"[{Y}!{X}] {R}Could not reach PyPI, skipping update check.{X}")
+            return
+            
         if current_ver != latest_ver:
             print(
                 f"\n[!] New version available: "
