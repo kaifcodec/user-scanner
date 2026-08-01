@@ -25,4 +25,4 @@
 | `-f, --format {csv,json}`   | Select output format                                        |
 | `-o, --output OUTPUT`       | Save results to a file                                      |
 | `-U, --update`              | Update the tool to the latest version                       |
-| `--version`                | Print the current version                                   |
+| `--version`                 | Print the current version                                   |
