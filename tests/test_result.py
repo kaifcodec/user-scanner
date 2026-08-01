@@ -90,6 +90,26 @@ def test_number_roundtrip():
     assert Result.from_number(c.to_number()) == c
 
 
+def test_result_update_empty_values():
+    result = Result(Status.TAKEN)
+    result.update(username="test", site_name="", category=None, url="  ", extra={"key": "  "})
+    assert result.username == "test"
+    assert result.site_name == ""
+    assert result.category is None
+    assert result.url == "  "
+    assert "key" not in result.extra
+
+
+def test_result_media():
+    result = Result.taken(media={"avatar": "https://example.com/a.png", " banner ": "https://example.com/b.png "})
+    assert result.media == {"avatar": "https://example.com/a.png", "banner": "https://example.com/b.png"}
+    
+    # Test fallback ignores empty media values
+    result.update(media={"empty": "   ", "none": None})
+    assert "empty" not in result.media
+    assert "none" not in result.media
+
+
 def test_update_and_fields():
     res = Result.available()
     assert res.username is None

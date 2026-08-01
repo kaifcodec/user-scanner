@@ -24,6 +24,7 @@ keywords = ["osint", "email-osint", "username-osint", "python", "cli-tool", "cyb
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov", "pytest-anyio", "anyio[trio]"]
+pdf = ["reportlab>=4.0.0", "pillow>=10.0.0", "svglib>=1.5.0"]
 
 [project.urls]
 Homepage = "https://github.com/kaifcodec/user-scanner"

@@ -133,7 +133,7 @@ def validate_<sitename>(user: str) -> Result:
 **CRITICAL Rules for `user_scan` Modules:**
 
 1. **Explicit Verification (No False Positives):** Never rely solely on a generic HTTP 200 to assume availability. Many WAFs and CDNs intercept requests and return 200 OK. You MUST explicitly verify a unique string or JSON key for BOTH the `taken` and `available` states. **Never use a bare `else: return Result.available()` block.**
-2. **Deep Data Extraction:** If the user is found, attempt to extract rich metadata (fullname, location, bio, stats) and return it via `Result.taken(extra={"fullname": "John Doe", ...})`.
+2. **Deep Data Extraction:** If the user is found, attempt to extract rich metadata (fullname, location, bio, stats) and return it via `Result.taken(extra={"fullname": "John Doe", ...})`. **If extracting profile pictures, banners, or other images, you MUST pass their URLs in the `media` dictionary** (e.g., `Result.taken(media={"avatar": "https://..."})`), not in `extra`.
 3. **Strict Error Handling:** NEVER use `raise Exception()`. All unhandled states or unexpected status codes must return `Result.error(f"Unexpected status code {resp.status_code}")`.
 4. **Use Orchestrator Helpers:** Use `generic_validate` to standardize `httpx` logic, but write robust `process` callbacks.
 
@@ -231,7 +231,7 @@ For multi-step flows, use `impersonate_request` directly. It returns the raw `cu
 
 - Always return a Result object:
   - `Result.available()`
-  - `Result.taken(extra={"fullname": "..."})`
+  - `Result.taken(extra={"fullname": "..."}, media={"avatar": "..."})`
   - `Result.error("short diagnostic message")`
 - The orchestrator captures network errors (`httpx.ConnectError`, `httpx.TimeoutException`, etc.) and returns `Result.error(...)` automatically.
 - **NEVER** use `raise Exception("...")`. If you encounter an anomaly in your `process` function, always return `Result.error("...")` so the scanner can gracefully continue to the next module.

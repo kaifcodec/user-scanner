@@ -13,6 +13,7 @@ def validate_steam(user):
                 return Result.available()
             else:
                 extra = {}
+                media = {}
                 steamid_match = local_re.search(r'"steamid"\s*:\s*"((?:[^"\\]|\\.)*)"', response.text)
                 if steamid_match: extra["steam_id"] = steamid_match.group(1)
 
@@ -28,11 +29,11 @@ def validate_steam(user):
 
                 avatar_match = local_re.search(r'class="playerAvatar profile_header_size.*?<picture>.*?<img srcset="([^"]+)"', response.text, local_re.DOTALL)
                 if avatar_match:
-                    extra["avatar"] = avatar_match.group(1).strip()
+                    media["avatar"] = avatar_match.group(1).strip()
                 else:
                     full_avatar_match = local_re.search(r'https?://avatars\.(?:fastly\.)?steamstatic\.com/[a-f0-9]+_full\.jpg', response.text)
                     if full_avatar_match:
-                        extra["avatar"] = full_avatar_match.group(0)
+                        media["avatar"] = full_avatar_match.group(0)
 
                 summary_match = local_re.search(r'"summary"\s*:\s*"((?:[^"\\]|\\.)*)"', response.text)
                 if summary_match:
@@ -42,7 +43,7 @@ def validate_steam(user):
                     if clean_summary:
                         extra["summary"] = clean_summary
 
-                return Result.taken(extra=extra)
+                return Result.taken(extra=extra, media=media)
 
         return Result.error("Invalid status code")
 

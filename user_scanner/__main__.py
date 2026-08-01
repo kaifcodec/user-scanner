@@ -119,7 +119,13 @@ def main():
         "-d", "--delay", type=float, default=0, help="Delay between requests"
     )
 
-    parser.add_argument("-f", "--format", choices=["csv", "json"], help="Output format")
+    parser.add_argument("-f", "--format", choices=["csv", "json", "pdf"], help="Output format")
+
+    parser.add_argument(
+        "--no-pdf-media",
+        action="store_true",
+        help="Disable profile photo media fetching in PDF report generation",
+    )
 
     parser.add_argument("-o", "--output", type=str, help="Output file path")
 
@@ -439,46 +445,72 @@ def main():
     if args.hudson_scan:
         sys.exit(0)
 
-    if args.output:
-        content = (
-            formatter.into_csv(results)
-            if args.format == "csv"
-            else formatter.into_json(results)
-        )
-        if args.format == "json":
-            # Get the new data as a LIST of DICTS, not a string
+    if args.output and not args.format:
+        ext = args.output.lower()
+        if ext.endswith('.json'):
+            args.format = 'json'
+        elif ext.endswith('.csv'):
+            args.format = 'csv'
+        elif ext.endswith('.pdf'):
+            args.format = 'pdf'
+        else:
+            print(f"\n{Fore.RED}[✘] Specify output format using -f (json, csv, pdf) or use a known file extension.{Style.RESET_ALL}")
+            sys.exit(1)
+
+    is_pdf_export = args.format == "pdf" or (args.output and args.output.lower().endswith(".pdf"))
+
+    if args.output or is_pdf_export:
+        output_path = args.output or f"{targets_found[0] if targets_found else 'target'}_report.pdf"
+
+        if is_pdf_export:
+            version_str, _ = load_local_version()
+            try:
+                pdf_bytes = formatter.into_pdf(
+                    results,
+                    target=targets_found[0] if targets_found else "Target",
+                    scan_type="Email" if is_email else "Username",
+                    total_modules=len(results),
+                    include_media=not args.no_pdf_media,
+                    version=version_str,
+                )
+                with open(output_path, "wb") as f:
+                    f.write(pdf_bytes)
+                print(G + f"\n[+] PDF report saved to {output_path}" + Style.RESET_ALL)
+            except ImportError as e:
+                print(f"\n{R}[✘] PDF export failed: {e}{X}")
+            except Exception as e:
+                print(f"\n{R}[✘] Failed to generate PDF report: {e}{X}")
+        elif args.format == "json":
             new_items = formatter.get_json_data(results)
             data = []
 
-            # Try to load existing data
-            if os.path.exists(args.output):
+            if os.path.exists(output_path):
                 try:
-                    with open(args.output, "r", encoding="utf-8") as f:
+                    with open(output_path, "r", encoding="utf-8") as f:
                         old = json.load(f)
                         if isinstance(old, list):
                             data = old
                 except (json.JSONDecodeError, Exception):
                     pass
 
-            # Merge and save
             data.extend(new_items)
-            with open(args.output, "w", encoding="utf-8") as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
-
-
-        if args.format == "csv":
+            print(G + f"\n[+] Results saved to {output_path}" + Style.RESET_ALL)
+        else:
+            content = formatter.into_csv(results) if args.format == "csv" else formatter.into_json(results)
             try:
-                with open(args.output, "r", encoding="utf-8") as init_file:
+                with open(output_path, "r", encoding="utf-8") as init_file:
                     has_content = init_file.read().strip() != ""
             except Exception:
                 has_content = False
 
-            with open(args.output, "a", encoding="utf-8") as f:
+            with open(output_path, "a", encoding="utf-8") as f:
                 if has_content:
                     f.write("\n")
                 f.write(content)
+            print(G + f"\n[+] Results saved to {output_path}" + Style.RESET_ALL)
 
-        print(G + f"\n[+] Results saved to {args.output}" + Style.RESET_ALL)
 
     total_found = len([r for r in results if r.is_found()])
     total_skipped = len([r for r in results if r.status == Status.SKIPPED])
