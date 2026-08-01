@@ -2,6 +2,9 @@ from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import Result, make_request
 
 def validate_academia(user: str) -> Result:
+    if "." in user:
+        return Result.available("Username cannot contain periods")
+
     url = f"https://independent.academia.edu/{user}"
     
     headers = {
