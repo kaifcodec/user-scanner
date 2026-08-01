@@ -73,15 +73,24 @@ async def _check(email: str) -> Result:
                 "Failed to check, the response structure may have changed. Please create Github issue."
             )
 
-    extra = {
-        "exists": exists,
-        "exists_as_recovery_email": exists_as_recovery_email,
-        "has_passkey": has_passkey,
-    }
+    # Email is associated with a Dropbox account as primary
+    if exists:
+        return Result.taken(
+            extra={
+                "exists_as_recovery_email": exists_as_recovery_email,
+                "has_passkey": has_passkey,
+            },
+            url=show_url,
+        )
 
-    if exists or exists_as_recovery_email:
-        return Result.taken(extra=extra, url=show_url)
-    return Result.available(extra=extra, url=show_url)
+    # Email is associated with a Dropbox account as recovery, primary email of one account cannot be used as recovery for another account
+    if exists_as_recovery_email:
+        return Result.taken(
+            extra={"exists_as_recovery_email": exists_as_recovery_email}, url=show_url
+        )
+
+    # Email is not associated with any Dropbox account
+    return Result.available(url=show_url)
 
 
 async def validate_dropbox(email: str) -> Result:
