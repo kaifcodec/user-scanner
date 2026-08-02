@@ -173,6 +173,7 @@ class Result:
             "category": self.category,
             "url": self.url,  # Added url to dictionary output
             "extra": self.extra,
+            "media": self.media,
             "is_email": self.is_email,
         }
 
