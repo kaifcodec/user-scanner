@@ -31,7 +31,7 @@ def validate_bluesky(user):
                 return Result.available()
             return Result.error(message or "Invalid Bluesky handle")
 
-        return Result.error(f"HTTP {response.status_code}")
+        return Result.error(f"HTTP {response.status_code}, report it via GitHub issues")
 
     return generic_validate(
         url,
