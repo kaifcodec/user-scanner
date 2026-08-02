@@ -14,6 +14,7 @@ def validate_openstreetmap(user):
             return Result.available()
         if "Mapper since" in response.text:
             extra = {}
+            media = {}
             try:
                 import re as local_re
                 match = local_re.search(r"Mapper since:</dt>\s*<dd[^>]*>([^<]+)</dd>", response.text)
@@ -24,10 +25,10 @@ def validate_openstreetmap(user):
                     img_url = avatar_match.group(1)
                     if img_url.startswith("/"):
                         img_url = "https://www.openstreetmap.org" + img_url
-                    extra["avatar"] = img_url
+                    media["avatar"] = img_url
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
         if "does not exist" in response.text:
             return Result.available()
         return Result.error()

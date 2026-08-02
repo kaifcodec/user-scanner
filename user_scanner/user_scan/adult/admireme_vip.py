@@ -1,5 +1,6 @@
 import re
 import html
+from statistics import median
 from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import Result, generic_validate
 
@@ -17,6 +18,7 @@ def validate_admireme_vip(user):
         if "creator-stat subscriber" in response.text or response.status_code == 200:
             if "creator-stat subscriber" in response.text or "admireme.vip" in response.text:
                 extra = {}
+                media = {}
 
                 # Extract Display Name/Title
                 title_match = re.search(
@@ -63,7 +65,7 @@ def validate_admireme_vip(user):
                 image_match = re.search(
                     r'<meta\s+property="og:image"\s+content="([^"]+)"', response.text, re.IGNORECASE)
                 if image_match:
-                    extra["image"] = image_match.group(1).strip()
+                    media["image"] = image_match.group(1).strip()
                 else:
                     bg_video_match = re.search(
                         r'class="profile_video"[^>]*style="[^"]*background-image:\s*url\(\s*\'?([^\')]+)\'?\s*\)', response.text, re.IGNORECASE)
@@ -84,7 +86,7 @@ def validate_admireme_vip(user):
                 banner_match = re.search(
                     r'id="banner".*?<img[^>]+src="([^"]+)"', response.text, re.DOTALL | re.IGNORECASE)
                 if banner_match:
-                    extra["banner"] = banner_match.group(1).strip()
+                    media["banner"] = banner_match.group(1).strip()
 
                 # Extract Subscription Price
                 price_match = re.search(
@@ -109,7 +111,7 @@ def validate_admireme_vip(user):
                 if t_count or s_count:
                     extra["posts"] = str(t_count + s_count)
 
-                return Result.taken(extra=extra, url=show_url)
+                return Result.taken(extra=extra, media=media, url=show_url)
 
         if response.status_code == 404 or "<title>Page Not Found |" in response.text:
             return Result.available(url=show_url)

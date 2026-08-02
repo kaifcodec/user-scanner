@@ -14,26 +14,27 @@ def validate_scratch(user):
         response = make_request(api_url, headers=headers, follow_redirects=True)
         if response.status_code == 200:
             data = response.json()
-            
+
             extra = {}
+            media = {}
             if user_id := data.get("id"):
                 extra["id"] = str(user_id)
-            if history := data.get("history", {}):
+            if history := data.get("history"):
                 if joined := history.get("joined"):
                     extra["joined"] = joined
             if profile := data.get("profile", {}):
                 if images := profile.get("images", {}):
                     if avatar := images.get("90x90"):
-                        extra["avatar"] = avatar
+                        media["avatar"] = avatar
                 if country := profile.get("country"):
                     extra["country"] = country
-                
-            return Result.taken(extra=extra, url=show_url)
-            
+
+            return Result.taken(extra=extra, media=media, url=show_url)
+
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:
             return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
-            
+
     except Exception as e:
         return Result.error(e, url=show_url)

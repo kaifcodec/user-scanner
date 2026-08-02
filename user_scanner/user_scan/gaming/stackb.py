@@ -87,6 +87,8 @@ def validate_stackb(user: str) -> Result:
             return Result.error("Unexpected login check response", url=url)
 
         extra = {}
+        media = {}
+
         try:
             profile_response = make_request(
                 url,
@@ -114,7 +116,7 @@ def validate_stackb(user: str) -> Result:
 
                 if name := profile.get("name"): extra["display_name"] = name
                 if description := profile.get("description"): extra["bio"] = description
-                if image := profile.get("image"): extra["avatar"] = image
+                if image := profile.get("image"): media["avatar"] = image
 
                 if stats_text:
                     if rank_match := re.search(r"Ранг:\s*([^\.]+)", stats_text):
@@ -126,6 +128,6 @@ def validate_stackb(user: str) -> Result:
         except Exception:
             pass
 
-        return Result.taken(extra=extra, url=url)
+        return Result.taken(extra=extra, media=media, url=url)
     except Exception as exc:
         return Result.error(exc, url=url)

@@ -11,6 +11,7 @@ def validate_coderlegion(user):
             return Result.available()
         if response.status_code == 200:
             extra = {}
+            media = {}
             html = response.text
             try:
                 # Extract name
@@ -34,7 +35,7 @@ def validate_coderlegion(user):
                     avatar_url = avatar_match.group(1)
                     if avatar_url.startswith("../"):
                         avatar_url = "https://coderlegion.com/" + avatar_url.lstrip("../")
-                    extra["avatar"] = avatar_url.replace("&amp;", "&")
+                    media["avatar"] = avatar_url.replace("&amp;", "&")
 
                 # Extract stats
                 points_match = re.search(r'<strong>([^<]+)</strong> Points', html)
@@ -55,7 +56,7 @@ def validate_coderlegion(user):
 
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         return Result.error(f"Unexpected status code: {response.status_code}")
 

@@ -21,6 +21,7 @@ def validate_gitlab(user):
                 else:
                     import re
                     extra = {}
+                    media = {}
                     try:
                         u_data = data[0]
                         if u_data.get("id"):
@@ -31,10 +32,10 @@ def validate_gitlab(user):
                             extra["username"] = u_data.get("username").strip()
                         if u_data.get("state"):
                             extra["state"] = u_data.get("state")
-                        
+
                         avatar_url = u_data.get("avatar_url")
                         if avatar_url:
-                            extra["image"] = avatar_url
+                            media["avatar"] = avatar_url
                             # Extract gravatar fields
                             m = re.search(r'gravatar\.com/avatar/([a-f0-9]{32})', avatar_url)
                             if m:
@@ -44,8 +45,7 @@ def validate_gitlab(user):
                                 extra["gravatar_email_md5_hash"] = md5_hash
                     except Exception:
                         pass
-                    return Result.taken(extra=extra)
+                    return Result.taken(extra=extra, media=media)
         return Result.error(f"Unexpected status or response: {response.status_code}")
 
     return generic_validate(url, process, show_url=show_url, headers=headers)
-

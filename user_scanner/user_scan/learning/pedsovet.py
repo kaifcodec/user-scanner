@@ -39,6 +39,7 @@ def validate_pedsovet(user: str) -> Result:
             and "Ссылка на профиль:" in response_text
         ):
             extra = {"login": found_login}
+            media = {}
 
             if id_match := re.search(r"/index/8-(\d+)", response_text):
                 extra["id"] = id_match.group(1)
@@ -63,7 +64,7 @@ def validate_pedsovet(user: str) -> Result:
                     avatar = "https:" + avatar
                 elif avatar.startswith("/"):
                     avatar = "https://pedsovet.su" + avatar
-                extra["avatar"] = avatar
+                media["avatar"] = avatar
 
             if about_match := re.search(
                 r'<div class="osebe">О себе</div>.*?<p class="clr">(.*?)</p>', response_text, re.IGNORECASE | re.DOTALL
@@ -73,7 +74,7 @@ def validate_pedsovet(user: str) -> Result:
                 if about != "Пользователь пока ничего не сообщил о себе.":
                     extra["about"] = about
 
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         return Result.error("Unexpected response body")
 

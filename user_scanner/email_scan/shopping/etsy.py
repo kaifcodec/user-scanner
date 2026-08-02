@@ -91,10 +91,13 @@ async def _check(email: str) -> Result:
                     "privacy": f"Items are {fav_items} | Shops are {fav_shops}",
                     "joined": date_created,
                     "last profile update": date_updated,
+                }
+
+                media = {
                     "avatar": pfp,
                 }
 
-                return Result.taken(url=show_url, extra=extras)
+                return Result.taken(url=show_url, extra=extras, media=media)
 
             return Result.error("Unexpected response body structure")
 

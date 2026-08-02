@@ -17,6 +17,8 @@ def validate_zomato(user):
                 match = local_re.search(r'window\.__PRELOADED_STATE__\s*=\s*([\s\S]*?);', response.text)
 
             extra = {}
+            media = {}
+
             if match:
                 try:
                     raw_json_str = match.group(1)
@@ -24,13 +26,13 @@ def validate_zomato(user):
                         decoded_js_str = json.loads(raw_json_str)
                     else:
                         decoded_js_str = json.loads(f'"{raw_json_str}"')
-                    
+
                     data = json.loads(decoded_js_str)
                     user_id = data.get("pages", {}).get("current", {}).get("userId")
                     if user_id:
                         user_id_str = str(user_id)
                         basic_info = data.get("pages", {}).get("user", {}).get(user_id_str, {}).get("sections", {}).get("SECTION_USER_BASIC_INFO", {})
-                        
+
                         if name := basic_info.get("name"):
                             extra["name"] = name.strip()
                         if bio := basic_info.get("bio"):
@@ -48,12 +50,12 @@ def validate_zomato(user):
                         if photos := basic_info.get("photoCount"):
                             extra["photos"] = int(photos)
                         if avatar := basic_info.get("profilePicture"):
-                            extra["avatar"] = avatar.strip()
+                            media["avatar"] = avatar.strip()
                         if website := basic_info.get("websiteLink"):
                             extra["website"] = website.strip()
                 except Exception:
                     pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         if response.status_code == 404:
             return Result.available()
@@ -61,4 +63,3 @@ def validate_zomato(user):
         return Result.error(f"Unexpected status: {response.status_code}")
 
     return generic_validate(url, process, headers=headers, show_url=show_url)
-

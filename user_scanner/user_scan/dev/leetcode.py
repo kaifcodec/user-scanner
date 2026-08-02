@@ -16,7 +16,7 @@ def validate_leetcode(user: str) -> Result:
         )
 
     show_url = f"https://leetcode.com/u/{user}/"
-    
+
     query = '''query userPublicProfile($username: String!) { matchedUser(username: $username) { username profile { realName aboutMe userAvatar countryName company school ranking } } }'''
     variables = json.dumps({"username": user})
     url = f"https://leetcode.com/graphql?query={quote(query)}&variables={quote(variables)}"
@@ -32,22 +32,23 @@ def validate_leetcode(user: str) -> Result:
             data = response.json()
             if data.get("errors") and "That user does not exist" in str(data.get("errors")):
                 return Result.available(url=show_url)
-            
+
             matched_user = data.get("data", {}).get("matchedUser")
             if matched_user:
                 extra = {}
+                media = {}
                 profile = matched_user.get("profile", {})
-                
+
                 if profile.get("realName"): extra["fullname"] = profile.get("realName")
                 if profile.get("aboutMe"): extra["bio"] = profile.get("aboutMe")
-                if profile.get("userAvatar"): extra["image"] = profile.get("userAvatar")
+                if profile.get("userAvatar"): media["image"] = profile.get("userAvatar")
                 if profile.get("countryName"): extra["country"] = profile.get("countryName")
                 if profile.get("company"): extra["company"] = profile.get("company")
                 if profile.get("school"): extra["school"] = profile.get("school")
                 if profile.get("ranking"): extra["ranking"] = profile.get("ranking")
-                
-                return Result.taken(extra=extra, url=show_url)
-                
+
+                return Result.taken(extra=extra, media=media, url=show_url)
+
             return Result.available(url=show_url)
         else:
             return Result.error(f"Unexpected status: {response.status_code}", url=show_url)

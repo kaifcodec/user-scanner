@@ -12,6 +12,7 @@ def validate_anilist(user):
     def process(response):
         if response.status_code == 200 and '"id":' in response.text:
             extra = {}
+            media = {}
             try:
                 data = response.json()
                 user_data = data.get("data", {}).get("User", {})
@@ -24,13 +25,13 @@ def validate_anilist(user):
                         clean_about = re.sub('<[^<]+?>', '', user_data.get("about"))
                         extra["about"] = clean_about.strip()
                     if user_data.get("avatar") and isinstance(user_data["avatar"], dict) and user_data["avatar"].get("large"):
-                        extra["avatar"] = user_data["avatar"]["large"]
+                        media["avatar"] = user_data["avatar"]["large"]
                     if user_data.get("bannerImage"):
-                        extra["banner"] = user_data.get("bannerImage")
+                        media["banner"] = user_data.get("bannerImage")
             except Exception:
                 pass  # Gracefully ignore any parsing issues and fallback to basic taken status
 
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         if response.status_code == 404 or "Not Found" in response.text:
             return Result.available()
@@ -40,4 +41,3 @@ def validate_anilist(user):
     return generic_validate(
         url, process, show_url=show_url, method="POST", json=payload, headers=headers
     )
-

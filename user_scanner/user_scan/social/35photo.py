@@ -7,6 +7,7 @@ def validate_35photo(user):
     def process(response):
         if '<span title="Total photos' in response.text:
             extra = {}
+            media = {}
             try:
                 import re as local_re
                 # Name
@@ -27,15 +28,14 @@ def validate_35photo(user):
                 # Avatar
                 avatar_match = local_re.search(r'img class="avatar140"\s+src="([^"]+)"', response.text)
                 if avatar_match:
-                    extra["avatar"] = avatar_match.group(1)
+                    media["avatar"] = avatar_match.group(1)
             except Exception:
                 pass
-            return Result.taken(extra=extra)
-        
+            return Result.taken(extra=extra, media=media)
+
         if "Catalogs of professional author" in response.text or response.status_code == 302:
             return Result.available()
 
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     return generic_validate(url, process, show_url=show_url)
-

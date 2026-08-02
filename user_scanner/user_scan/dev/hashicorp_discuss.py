@@ -12,6 +12,7 @@ def validate_hashicorp_discuss(user):
             u = data.get("user", {})
             if u:
                 extra = {}
+                media = {}
                 if u.get("id"): extra["id"] = u.get("id")
                 if u.get("name"): extra["name"] = u.get("name")
                 if u.get("username"): extra["username"] = u.get("username")
@@ -19,7 +20,7 @@ def validate_hashicorp_discuss(user):
                 if u.get("last_posted_at"): extra["last_posted"] = u.get("last_posted_at")
                 if u.get("last_seen_at"): extra["last_seen"] = u.get("last_seen_at")
                 if u.get("created_at"): extra["registered"] = u.get("created_at")
-                
+
                 # Resolve avatar
                 avatar = u.get("avatar_template")
                 if avatar:
@@ -27,10 +28,10 @@ def validate_hashicorp_discuss(user):
                         avatar = avatar.format(size=120)
                     if avatar.startswith("/"):
                         avatar = "https://discuss.hashicorp.com" + avatar
-                    extra["avatar"] = avatar
-                    
-                return Result.taken(extra=extra)
-            
+                    media["avatar"] = avatar
+
+                return Result.taken(extra=extra, media=media)
+
         return Result.error(f"Unexpected response status: {response.status_code}")
 
     headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}

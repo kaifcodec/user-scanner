@@ -15,6 +15,7 @@ def validate_audiojungle(user):
             return Result.available()
         elif response.status_code == 200:
             extra = {}
+            media = {}
             try:
                 import re as local_re
                 # 1. Location
@@ -28,7 +29,7 @@ def validate_audiojungle(user):
                 # 3. Avatar
                 avatar_match = local_re.search(r'class="user-info-header__user-details">\s*<img[^>]*src="([^"]+)"', response.text, local_re.DOTALL)
                 if avatar_match:
-                    extra["avatar"] = avatar_match.group(1).strip()
+                    media["avatar"] = avatar_match.group(1).strip()
                 # 4. Followers
                 followers_match = local_re.search(r'href="/user/[^/]+/followers">Followers\s*<span[^>]*>([0-9]+)</span>', response.text, local_re.DOTALL)
                 if followers_match:
@@ -39,9 +40,8 @@ def validate_audiojungle(user):
                     extra["following"] = int(following_match.group(1))
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
         else:
             return Result.error(f"HTTP {response.status_code}")
 
     return generic_validate(url, process, show_url=show_url, headers=headers)
-

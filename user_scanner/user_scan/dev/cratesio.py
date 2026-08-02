@@ -18,6 +18,7 @@ def validate_cratesio(user):
             return Result.available()
         elif response.status_code == 200:
             extra = {}
+            media = {}
             try:
                 data = response.json()
                 u_data = data.get("user", {})
@@ -27,14 +28,13 @@ def validate_cratesio(user):
                     if u_data.get("name"):
                         extra["name"] = u_data.get("name").strip()
                     if u_data.get("avatar"):
-                        extra["avatar"] = u_data.get("avatar")
+                        media["avatar"] = u_data.get("avatar")
                     if u_data.get("url"):
                         extra["github_url"] = u_data.get("url")
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
         else:
             return Result.error(f"HTTP {response.status_code}")
 
     return generic_validate(url, process, show_url=show_url, headers=headers)
-

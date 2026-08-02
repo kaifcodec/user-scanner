@@ -49,10 +49,14 @@ def validate_e621(user: str) -> Result:
         if response.status_code == 404:
             if _reason(response.text) == "not found":
                 return Result.available(url=show_url)
-            return Result.error("Unexpected 404 (not the not-found payload)", url=show_url)
+            return Result.error(
+                "Unexpected 404 (not the not-found payload)", url=show_url
+            )
 
         if response.status_code != 200:
-            return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
+            return Result.error(
+                f"Unexpected status: {response.status_code}", url=show_url
+            )
 
         try:
             profile = json.loads(response.text)
@@ -64,7 +68,8 @@ def validate_e621(user: str) -> Result:
         if str(profile.get("name", "")).lower() != user.lower():
             return Result.error("Profile confirmation not found", url=show_url)
 
-        return Result.taken(extra=_extract_profile(profile), url=show_url)
+        extra, media = _extract_profile(profile)
+        return Result.taken(extra=extra, media=media, url=show_url)
 
     return impersonate_validate(url, process, show_url=show_url, headers=HEADERS)
 
@@ -76,8 +81,9 @@ def _reason(body: str) -> str:
         return ""
 
 
-def _extract_profile(profile: dict) -> dict:
+def _extract_profile(profile: dict) -> tuple[dict, dict]:
     extra = {}
+    media = {}
 
     for key, label in FIELDS.items():
         value = profile.get(key)
@@ -93,11 +99,11 @@ def _extract_profile(profile: dict) -> dict:
     # The avatar is a regular post, so link it rather than reporting a bare id.
     avatar_id = profile.get("avatar_id")
     if avatar_id:
-        extra["avatar"] = f"{BASE_URL}/posts/{avatar_id}"
+        media["avatar"] = f"{BASE_URL}/posts/{avatar_id}"
 
     for key, label in (("profile_about", "about"), ("profile_artinfo", "artist_info")):
         text = re.sub(r"\s+", " ", str(profile.get(key) or "")).strip()
         if text:
             extra[label] = text
 
-    return extra
+    return extra, media

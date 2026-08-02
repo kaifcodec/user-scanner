@@ -7,14 +7,16 @@ def validate_donation_alerts(user):
     def process(response):
         if response.status_code == 200:
             extra = {}
+            media = {}
+
             try:
                 data = response.json().get("data", {})
                 if name := data.get("name"): extra["name"] = name
                 if currency := data.get("preferred_currency"): extra["currency"] = currency
-                if avatar := data.get("avatar"): extra["avatar"] = avatar
+                if avatar := data.get("avatar"): media["avatar"] = avatar
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
         elif response.status_code == 202 or (response.status_code == 200 and not response.json().get("success", True)):
             return Result.available()
         return Result.error(f"Unexpected status {response.status_code}")

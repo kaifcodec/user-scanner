@@ -42,6 +42,7 @@ def validate_bluesky(user):
                 == "com.atproto.temp.checkHandleAvailability#resultUnavailable"
             ):
                 extra = {}
+                media = {}
                 try:
                     import httpx
                     profile_res = httpx.get(
@@ -63,10 +64,10 @@ def validate_bluesky(user):
                         if p_data.get("postsCount") is not None:
                             extra["posts"] = p_data.get("postsCount")
                         if p_data.get("avatar"):
-                            extra["avatar"] = p_data.get("avatar")
+                            media["avatar"] = p_data.get("avatar")
                 except Exception:
                     pass
-                return Result.taken(extra=extra)
+                return Result.taken(extra=extra, media=media)
         elif response.status_code == 400:
             return Result.error(
                 "Username can only contain letters, numbers, hyphens (no leading/trailing)"

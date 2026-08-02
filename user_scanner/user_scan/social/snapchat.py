@@ -27,6 +27,7 @@ def validate_snapchat(user):
             return Result.available()
         elif response.status_code == 200:
             extra = {}
+            media = {}
             try:
                 import re as local_re
                 import json as local_json
@@ -39,14 +40,13 @@ def validate_snapchat(user):
                         if u_info.get("displayName"):
                             extra["display_name"] = u_info.get("displayName")
                         if u_info.get("snapcodeImageUrl"):
-                            extra["snapcode"] = u_info.get("snapcodeImageUrl")
+                            media["snapcode"] = u_info.get("snapcodeImageUrl")
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
         else:
             return Result.error(f"HTTP {response.status_code}")
 
     return generic_validate(
         url, process, show_url=show_url, headers=headers, follow_redirects=True
     )
-

@@ -10,8 +10,9 @@ def validate_pinterest(user):
         if response.status_code == 200:
             if "User not found." in response.text:
                 return Result.available()
-            
+
             extra = {}
+            media = {}
             try:
                 import re as local_re
                 import json as local_json
@@ -38,15 +39,14 @@ def validate_pinterest(user):
                         if u_data.get("website_url"):
                             extra["website"] = u_data.get("website_url")
                         if u_data.get("image_xlarge_url"):
-                            extra["avatar"] = u_data.get("image_xlarge_url")
+                            media["avatar"] = u_data.get("image_xlarge_url")
                         elif u_data.get("image_medium_url"):
-                            extra["avatar"] = u_data.get("image_medium_url")
+                            media["avatar"] = u_data.get("image_medium_url")
             except Exception:
                 pass
-            
-            return Result.taken(extra=extra)
+
+            return Result.taken(extra=extra, media=media)
         else:
             return Result.error("Invalid status code")
 
     return generic_validate(url, process, show_url=show_url, follow_redirects=True)
-

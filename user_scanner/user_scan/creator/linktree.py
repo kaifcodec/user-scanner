@@ -19,6 +19,7 @@ def validate_linktree(user):
         if response.status_code == 200:
             html = response.text
             extra = {}
+            media = {}
 
             # Try to parse __NEXT_DATA__ first for deep extraction
             next_data_match = re.search(
@@ -43,7 +44,7 @@ def validate_linktree(user):
                     avatar = account.get(
                         'profilePictureUrl') or page_props.get('customAvatar')
                     if avatar:
-                        extra['avatar'] = avatar.strip()
+                        media['avatar'] = avatar.strip()
 
                     verified = page_props.get('isProfileVerified')
                     if verified is not None:
@@ -86,9 +87,9 @@ def validate_linktree(user):
                 img = re.search(
                     r'<meta[^>]*property="og:image"[^>]*content="([^"]+)"', html, re.IGNORECASE)
                 if img:
-                    extra["image"] = img.group(1).strip()
+                    media["image"] = img.group(1).strip()
 
-            return Result.taken(extra=extra, url=show_url)
+            return Result.taken(extra=extra, media=media, url=show_url)
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:

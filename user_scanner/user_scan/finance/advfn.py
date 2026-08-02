@@ -9,6 +9,7 @@ def validate_advfn(user):
     def process(response):
         if "Profile | ADVFN" in response.text:
             extra = {}
+            media = {}
             html = response.text
 
             avatar_match = local_re.search(r'<img class="profile-pic" src="([^"]+)">', html)
@@ -16,7 +17,7 @@ def validate_advfn(user):
                 url_src = avatar_match.group(1)
                 if url_src.startswith("//"):
                     url_src = "https:" + url_src
-                extra["avatar"] = url_src
+                media["avatar"] = url_src
 
             joined_match = local_re.search(r'<span class="registration">Member since:\s*([^<]+)</span>', html)
             if joined_match:
@@ -44,7 +45,7 @@ def validate_advfn(user):
                 if "has no comment yet" not in bio.lower():
                     extra["bio"] = bio
 
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         if "ADVFN ERROR - Page Not Found" in response.text:
             return Result.available()
@@ -52,4 +53,3 @@ def validate_advfn(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     return generic_validate(url, process, show_url=show_url)
-

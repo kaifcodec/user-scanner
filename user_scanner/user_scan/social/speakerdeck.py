@@ -17,6 +17,7 @@ def validate_speakerdeck(user: str) -> Result:
                 return Result.available()
 
             extra = {}
+            media = {}
             # Extract display name
             name_match = re.search(r"<h1>\s*([^\n<]+)\s*</h1>", r.text)
             if name_match:
@@ -25,7 +26,7 @@ def validate_speakerdeck(user: str) -> Result:
             # Extract avatar URL
             avatar_match = re.search(r'<img[^>]+class="[^"]*avatar[^"]*"[^>]+src="([^"]+)"', r.text)
             if avatar_match:
-                extra["avatar_url"] = avatar_match.group(1).strip()
+                media["avatar_url"] = avatar_match.group(1).strip()
 
             # Extract decks count
             decks_match = re.search(r"([0-9]+)\s*Decks", r.text)
@@ -42,7 +43,7 @@ def validate_speakerdeck(user: str) -> Result:
             if followers_match:
                 extra["followers"] = int(followers_match.group(1))
 
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         return Result.error(f"HTTP {r.status_code}")
 
