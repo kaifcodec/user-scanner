@@ -188,7 +188,7 @@ def run_email_category_batch(
 async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[Result]:
     categories = load_categories(True, configs.no_nsfw)
     all_results = []
-    printed_cats = set()
+    printed_cats: Set[str] = set()
 
     # 1. Pre-spawn all tasks for all categories (global concurrency)
     category_tasks = []
