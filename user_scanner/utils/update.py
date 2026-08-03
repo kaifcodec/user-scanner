@@ -19,7 +19,7 @@ def update_self():
             sys.executable, "-m", "pip", "install", "user-scanner"
         ])
     except subprocess.CalledProcessError as e:
-        print(f"{Fore.RED}Failed to update user-scanner: {e}{Fore.reset}")
+        print(f"{Fore.RED}Failed to update user-scanner: {e}{Fore.RESET}")
         return
 
 
