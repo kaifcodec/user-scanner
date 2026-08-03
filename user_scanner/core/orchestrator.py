@@ -20,7 +20,7 @@ from user_scanner.core.helpers import (
     load_modules,
     get_global_timeout,
 )
-from user_scanner.core.result import Result, Status
+from user_scanner.core.result import Result
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
 
 
