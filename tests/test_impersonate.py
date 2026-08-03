@@ -7,9 +7,10 @@ from user_scanner.core.result import Result, Status
 class FakeSession:
     instances = []
 
-    def __init__(self, impersonate=None, proxies=None):
+    def __init__(self, impersonate=None, proxies=None, curl_options=None):
         self.impersonate = impersonate
         self.proxies = proxies
+        self.curl_options = curl_options
         self.calls = []
         FakeSession.instances.append(self)
 

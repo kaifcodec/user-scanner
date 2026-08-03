@@ -1,5 +1,8 @@
 import re
-from user_scanner.core.orchestrator import generic_validate, make_request, Result
+
+from user_scanner.core.helpers import get_global_timeout
+from user_scanner.core.impersonate import impersonate_request, impersonate_validate
+from user_scanner.core.result import Result
 
 CHECK_URL = "https://motherless.xxx/register/checkusername"
 HEADERS = {
@@ -12,6 +15,8 @@ HEADERS = {
 
 def validate_motherless(user):
     show_url = f"https://motherless.xxx/m/{user}"
+    global_timeout = get_global_timeout()
+    timeout = global_timeout if global_timeout is not None else 5.0
 
     def process(response):
         if response.status_code != 200:
@@ -24,23 +29,29 @@ def validate_motherless(user):
         if 'class="not-available"' in body:
             if "invalid" in body.lower():
                 return Result.error("Username rejected by Motherless", url=show_url)
-            return Result.taken(extra=_fetch_profile(show_url), url=show_url)
+            return Result.taken(extra=_fetch_profile(show_url, timeout), url=show_url)
 
         if 'class="available"' in body:
             return Result.available(url=show_url)
 
         return Result.error("Unexpected response body, report it via GitHub issues", url=show_url)
 
-    return generic_validate(
-        CHECK_URL, process, show_url=show_url, method="POST", data={"username": user}, headers=HEADERS
+    return impersonate_validate(
+        CHECK_URL,
+        process,
+        show_url=show_url,
+        method="POST",
+        data={"username": user},
+        headers=HEADERS,
+        timeout=timeout,
     )
 
 
-def _fetch_profile(profile_url: str) -> dict:
+def _fetch_profile(profile_url: str, timeout: float) -> dict:
     """The checkusername endpoint only reports availability, so pull the public
     member page for metadata. Best-effort: a failed fetch yields no extra."""
     try:
-        response = make_request(profile_url)
+        response = impersonate_request(profile_url, timeout=timeout)
         if response.status_code != 200:
             return {}
         return _extract_profile(response.text)

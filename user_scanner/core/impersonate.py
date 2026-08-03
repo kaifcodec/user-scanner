@@ -1,7 +1,8 @@
 import threading
-from typing import Callable, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 from curl_cffi import requests as cffi
+from curl_cffi.const import CurlOpt
 
 from user_scanner.core.helpers import get_global_timeout, get_proxy
 from user_scanner.core.result import Result
@@ -58,18 +59,22 @@ def impersonate_request(
 
 
 def _get_warm_session(
-    impersonate: str, proxy: Optional[str], warmup_url: Optional[str]
+    impersonate: str,
+    proxy: Optional[str],
+    warmup_url: Optional[str],
 ) -> cffi.Session:
     key = (impersonate, proxy)
     with _lock:
         session = _sessions.get(key)
         if session is None:
-            session = cffi.Session(
+            session_kwargs: dict[str, Any] = {
                 # curl_cffi types this as a browser-name Literal; the value is a
                 # validated runtime string, so widen it here only.
-                impersonate=impersonate,  # type: ignore[arg-type]
-                proxies={"http": proxy, "https": proxy} if proxy else None,
-            )
+                "impersonate": impersonate,
+                "proxies": {"http": proxy, "https": proxy} if proxy else None,
+                "curl_options": {CurlOpt.QUICK_EXIT: 1},
+            }
+            session = cffi.Session(**session_kwargs)
             _sessions[key] = session
 
         if warmup_url and key not in _warmed:
