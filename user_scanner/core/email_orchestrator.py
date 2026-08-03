@@ -18,6 +18,7 @@ from user_scanner.core.helpers import (
     get_global_timeout,
 )
 from user_scanner.core.result import Result, Status
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
 
 # Monkey-patch httpx clients to automatically use proxies for email scans
 _original_async_client_init = httpx.AsyncClient.__init__
@@ -128,7 +129,25 @@ async def _run_batch(
 
     if not tasks:
         return []
-    return list(await asyncio.gather(*tasks))
+
+    results = []
+    
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        transient=True,
+    ) as progress:
+        task_id = progress.add_task(f"[cyan]Scanning {email}...", total=len(tasks))
+
+        for coro in asyncio.as_completed(tasks):
+            result = await coro
+            results.append(result)
+            progress.advance(task_id)
+
+    return results
 
 
 async def _run_email_module_batch_async(
@@ -171,20 +190,51 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
     all_results = []
     printed_cats = set()
 
+    # 1. Pre-spawn all tasks for all categories (global concurrency)
+    category_tasks = []
+    total_tasks = 0
     for cat_name, cat_path in categories.items():
+        display_name = cat_name.capitalize()
         modules = load_modules(cat_path)
+        
+        sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+        tasks = []
+        for module in modules:
+            tasks.append(
+                _async_worker(
+                    module,
+                    email,
+                    sem,
+                    configs,
+                    printed_cats=printed_cats,
+                )
+            )
+        category_tasks.append((display_name, tasks))
+        total_tasks += len(tasks)
 
-        if configs.show_all:
-            print(f"\n{Fore.MAGENTA}== {cat_name.upper()} SITES =={Style.RESET_ALL}")
-            printed_cats.add(cat_name)
-
-        cat_results = await _run_batch(
-            modules,
-            email,
-            configs,
-            printed_cats=printed_cats,
-        )
-        all_results.extend(cat_results)
+    # 2. Await tasks category by category to stream grouped output
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        transient=True,
+    ) as progress:
+        task_id = progress.add_task(f"[cyan]Scanning {email}...", total=total_tasks)
+        
+        for display_name, tasks in category_tasks:
+            if not tasks:
+                continue
+                
+            if configs.show_all:
+                print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
+                printed_cats.add(display_name)
+                
+            for coro in asyncio.as_completed(tasks):
+                result = await coro
+                all_results.append(result)
+                progress.advance(task_id)
 
     return all_results
 
