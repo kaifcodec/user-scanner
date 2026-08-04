@@ -21,6 +21,7 @@ from user_scanner.core.helpers import (
     get_global_timeout,
 )
 from user_scanner.core.result import Result
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
 
 
 MAX_CONCURRENT_REQUESTS = 60
@@ -88,17 +89,30 @@ async def _run_batch(
         )
 
     results = []
-    for coro in asyncio.as_completed(tasks):
-        result = await coro
-        
-        actual_cat = result.category or "Unknown"
-        if configs.only_found and result.is_found():
-            if printed_cats is not None and actual_cat not in printed_cats:
-                print(f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}")
-                printed_cats.add(actual_cat)
-                
-        result.show(configs)
-        results.append(result)
+    
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        transient=True,
+    ) as progress:
+        task_id = progress.add_task(f"[cyan]Scanning {username}...", total=len(tasks))
+
+        for coro in asyncio.as_completed(tasks):
+            result = await coro
+            
+            actual_cat = result.category or "Unknown"
+            # Handle specific logic where skipping needs to happen early
+            if not configs.show_all and result.is_found():
+                if printed_cats is not None and actual_cat not in printed_cats:
+                    print(f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}")
+                    printed_cats.add(actual_cat)
+                    
+            result.show(configs)
+            results.append(result)
+            progress.advance(task_id)
         
     return results
 
@@ -116,7 +130,7 @@ def run_user_category(
     modules = load_modules(category_path)
     printed_cats = set()
 
-    if not configs.only_found:
+    if configs.show_all:
         print(f"\n{Fore.MAGENTA}== {category_name.upper()} SITES =={Style.RESET_ALL}")
         printed_cats.add(category_name)
 
@@ -139,6 +153,7 @@ async def _run_user_full_async(username: str, configs: ScanConfig) -> List[Resul
     
     # 1. Pre-spawn all tasks for all categories (global concurrency)
     category_tasks = []
+    total_tasks = 0
     for cat_name, cat_path in categories:
         display_name = cat_name.capitalize()
         modules = load_modules(cat_path)
@@ -150,26 +165,39 @@ async def _run_user_full_async(username: str, configs: ScanConfig) -> List[Resul
                 )
             )
         category_tasks.append((display_name, tasks))
+        total_tasks += len(tasks)
 
     # 2. Await tasks category by category to stream grouped output
-    for display_name, tasks in category_tasks:
-        if not tasks:
-            continue
-            
-        if not configs.only_found:
-            print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
-            printed_cats.add(display_name)
-            
-        for coro in asyncio.as_completed(tasks):
-            result = await coro
-            
-            if configs.only_found and result.is_found():
-                if display_name not in printed_cats:
-                    print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
-                    printed_cats.add(display_name)
-                    
-            result.show(configs)
-            all_results.append(result)
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        transient=True,
+    ) as progress:
+        task_id = progress.add_task(f"[cyan]Scanning {username}...", total=total_tasks)
+        
+        for display_name, tasks in category_tasks:
+            if not tasks:
+                continue
+                
+            if configs.show_all:
+                print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
+                printed_cats.add(display_name)
+                
+            for coro in asyncio.as_completed(tasks):
+                result = await coro
+                
+                if not configs.show_all and result.is_found():
+                    display_name = result.category or "Unknown"
+                    if display_name not in printed_cats:
+                        print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
+                        printed_cats.add(display_name)
+                        
+                result.show(configs)
+                all_results.append(result)
+                progress.advance(task_id)
 
     return all_results
 

@@ -110,7 +110,9 @@ user-scanner -u johndoe             # single username scanning
 ```
 ### Verbose mode 
 
-Use `-v` flag to show the url of the sites being checked
+Use `-v` flag to show the url of the sites being checked.
+Use `--all` flag to show all sites (including those where the target was not found, skipped, or errored).
+Note: By default, the scanner only displays sites where the target is found/registered.
 ```bash
 user-scanner -v -e johndoe@gmail.com -c dev
 ```

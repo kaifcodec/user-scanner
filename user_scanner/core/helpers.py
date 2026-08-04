@@ -60,7 +60,7 @@ CONFIG_PATH = Path(__file__).parent.parent / "config.json"
 class ScanConfig:
     allow_loud: bool = False
     no_nsfw: bool = False
-    only_found: bool = False
+    show_all: bool = False
     verbose: bool = False
     timeout: Optional[float] = None
 

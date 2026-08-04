@@ -51,6 +51,12 @@ MAX_PERMUTATIONS_LIMIT = 100
 
 
 def main():
+    if "--only-found" in sys.argv:
+        print(f"{Fore.YELLOW}[!] The '--only-found' flag is deprecated and has been removed.{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}[!] Showing only found modules is now the DEFAULT behavior.{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}[!] To show all results, use the '--all' flag.{Style.RESET_ALL}")
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(
         prog="user-scanner",
         description="Scan usernames or emails across multiple platforms.",
@@ -91,6 +97,12 @@ def main():
         "--verbose",
         action="store_true",
         help="Enable verbose output to show urls of the websites",
+    )
+
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Show all results including Not Found/Not Registered/Error/Skipped.",
     )
 
     parser.add_argument(
@@ -140,12 +152,6 @@ def main():
         "--validate-proxies",
         action="store_true",
         help="Validate proxies before scanning (tests against gstatic.com/generate_204)",
-    )
-
-    parser.add_argument(
-        "--only-found",
-        action="store_true",
-        help="Only show sites where the username/email was found",
     )
 
     parser.add_argument(
@@ -339,7 +345,7 @@ def main():
 
     config = ScanConfig(
         allow_loud=args.allow_loud,
-        only_found=args.only_found,
+        show_all=args.all,
         no_nsfw=args.no_nsfw,
         verbose=args.verbose,
         timeout=args.timeout,
@@ -515,7 +521,7 @@ def main():
     total_found = len([r for r in results if r.is_found()])
     total_skipped = len([r for r in results if r.status == Status.SKIPPED])
 
-    if args.only_found and total_found == 0:
+    if not config.show_all and total_found == 0:
         print(f"\n{R}[✘] No results found for the given target(s).{X}")
     else:
         print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")

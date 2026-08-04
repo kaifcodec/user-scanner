@@ -26,7 +26,7 @@ def test_run_module_single_prints_json_and_csv(capsys):
 
     setattr(module, "validate_testsite", validate_testsite)
 
-    orchestrator.run_user_module(module, "bob", ScanConfig())
+    orchestrator.run_user_module(module, "bob", ScanConfig(show_all=True))
     out = capsys.readouterr().out
     assert "bob" in out  # Needs to be improved
 
