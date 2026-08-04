@@ -1,6 +1,5 @@
 import re
 import html
-from statistics import median
 from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import Result, generic_validate
 

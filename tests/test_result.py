@@ -104,7 +104,7 @@ def test_result_update_empty_values():
 def test_result_media():
     result = Result.taken(media={"avatar": "https://example.com/a.png", " banner ": "https://example.com/b.png "})
     assert result.media == {"avatar": "https://example.com/a.png", "banner": "https://example.com/b.png"}
-    
+
     # Test fallback ignores empty media values
     result.update(media={"empty": "   ", "none": None})
     assert "empty" not in result.media
@@ -140,22 +140,25 @@ def test_output_formats():
         category="Tech",
         url="https://example.com/user",
         extra={"Additional info:": "smth"},
+        media={"avatar": "https://example.com/a.png"},
     )
 
     d = res.as_dict()
     assert d["url"] == "https://example.com/user"
     assert d["extra"] == {"additional_info": "smth"}
+    assert d["media"] == {"avatar": "https://example.com/a.png"}
     assert d["status"] == "Found"
 
     assert (
         res.to_csv()
-        == "testuser,Tech,Example,Found,https://example.com/user,additional_info: smth,"
+        == "testuser,Tech,Example,Found,https://example.com/user,additional_info: smth,avatar: https://example.com/a.png,"
     )
 
     json_std = res.to_json()
     assert '"username": "testuser"' in json_std
     assert '"url": "https://example.com/user"' in json_std
     assert '"extra":{\n"additional_info":"smth"\n}' in json_std.replace(" ", "")
+    assert '"media":{\n"avatar":"https://example.com/a.png"\n}' in json_std.replace(" ", "")
 
     res.update(is_email=True)
     json_email = res.to_json()
