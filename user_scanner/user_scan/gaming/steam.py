@@ -1,4 +1,4 @@
-from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
 import re as local_re
 import html
@@ -47,4 +47,4 @@ def validate_steam(user):
 
         return Result.error("Invalid status code")
 
-    return generic_validate(url, process, show_url=show_url)
+    return impersonate_validate(url, process, show_url=show_url)
