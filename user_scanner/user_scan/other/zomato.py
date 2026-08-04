@@ -62,4 +62,6 @@ def validate_zomato(user):
 
         return Result.error(f"Unexpected status: {response.status_code}")
 
-    return generic_validate(url, process, headers=headers, show_url=show_url)
+    return generic_validate(
+        url, process, headers=headers, show_url=show_url, follow_redirects=True
+    )

@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "user-scanner"
-version = "1.4.2.1"
+version = "1.4.3"
 description = "Check username availability across multiple popular platforms"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -16,7 +16,8 @@ dependencies = [
   "httpx[http2]>=0.27,<0.29",
   "socksio>=1.0,<2",
   "colorama>=0.4,<1",
-  "curl_cffi>=0.7,<1"
+  "curl_cffi>=0.7,<1",
+  "rich>=13.0.0"
 ]
 
 requires-python = ">=3.10"

@@ -2,7 +2,7 @@
 
 ![User Scanner Logo](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.4.2.1-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.4.3-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
@@ -23,7 +23,7 @@
 ---
 A powerful **2-in-1 OSINT suite** engineered for deep **Email and Username Intelligence**.
 
-With **365+ total scan vectors**—including **140+ email-integrated sites** and **225+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, and verify account registrations in seconds.
+With **375+ total scan vectors**—including **150+ email-integrated sites** and **225+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, and verify account registrations in seconds.
 
 The ultimate reconnaissance tool for hunting down targets using just an email or username—now fully integrated with **Hudson Rock** for instant data breach intelligence.
 
@@ -43,14 +43,14 @@ The ultimate reconnaissance tool for hunting down targets using just an email or
 
 ## User Scanner Features:
 
-- ✅ **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 365+ platforms.
+- ✅ **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 375+ platforms.
 - ✅ **Profile Data Extraction:** Goes beyond basic availability checks to scrape and extract rich metadata, account details, and digital footprints from target profiles.
 - ✅ **Dual-Mode Engine:** Run targeted email campaigns, massive username sweeps, or simultaneous dual-identifier scans.
 - ✅ **Granular Status Reporting:** Get crystal-clear results (`Registered`/`Available` for emails; `Found`/`Not Found`/`Error` for usernames) backed by precise exception handling.
 - ✅ **Modular & Extensible:** Built on a highly decoupled, modular architecture, adding new platform modules takes just a few lines of code.
 - ✅ **Mass Bulk Scanning:** High-throughput processing for bulk lists of usernames and emails via structured input files.
 - ✅ **Permutation Generator:** Wildcard-based username variation generation to catch typosquatting or alternative aliases.
-- ✅ **Multi-Format Export:** Clean console output paired with structured, automated exports to **JSON** and **CSV** for easy pipeline integration.
+- ✅ **Multi-Format Export:** Clean console output paired with structured, automated exports to **PDF**, **JSON** and **CSV** for easy pipeline integration.
 - ✅ **Advanced Proxy Rotation:** Built-in proxy pivoting with automated rotation and pre-scan health checks to bypass strict rate-limiting.
 - ✅ **Smart Auto-Update System:** Keeps your signatures and modules fresh with interactive, seamless PyPI update prompts.
 
@@ -110,7 +110,9 @@ user-scanner -u johndoe             # single username scanning
 ```
 ### Verbose mode 
 
-Use `-v` flag to show the url of the sites being checked
+Use `-v` flag to show the url of the sites being checked.
+Use `--all` flag to show all sites (including those where the target was not found, skipped, or errored).
+Note: By default, the scanner only displays sites where the target is found/registered.
 ```bash
 user-scanner -v -e johndoe@gmail.com -c dev
 ```

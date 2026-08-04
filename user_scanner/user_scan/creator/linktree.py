@@ -1,98 +1,115 @@
-import re
 import json
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, make_request
+import re
+
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
-def validate_linktree(user):
+def validate_linktree(user: str) -> Result:
     url = f"https://linktr.ee/{user}"
-    show_url = f"https://linktr.ee/{user}"
 
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-    }
+    def process(response):
+        html = response.text
 
-    try:
-        response = make_request(url, headers=headers, follow_redirects=True)
-        if response.status_code == 200:
-            html = response.text
-            extra = {}
-            media = {}
+        # Try to parse __NEXT_DATA__ first for deep extraction
+        data = {}
+        page_props = {}
+        next_data_match = re.search(
+            r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL
+        )
+        if next_data_match:
+            try:
+                data = json.loads(next_data_match.group(1))
+                page_props = data.get("props", {}).get("pageProps", {})
+            except json.JSONDecodeError:
+                pass
 
-            # Try to parse __NEXT_DATA__ first for deep extraction
-            next_data_match = re.search(
-                r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL)
-            parsed_successfully = False
-            if next_data_match:
-                try:
-                    data = json.loads(next_data_match.group(1))
-                    page_props = data.get('props', {}).get('pageProps', {})
-                    account = page_props.get('account', {})
+        if response.status_code == 404:
+            if (
+                data.get("page") == "/_error" and page_props.get("statusCode") == 404
+            ) or "Linktree | Page Not Found" in html:
+                return Result.available()
+            return Result.error("Unrecognized Linktree not-found response")
 
-                    name = page_props.get(
-                        'pageTitle') or account.get('pageTitle')
-                    if name:
-                        extra['name'] = name.strip()
+        if response.status_code != 200:
+            return Result.error(f"Unexpected response status: {response.status_code}")
 
-                    desc = page_props.get(
-                        'description') or account.get('description')
-                    if desc:
-                        extra['description'] = desc.strip()
+        banned_user = data.get("query", {}).get("username")
+        if data.get("page") == "/status/blocked" and (
+            isinstance(banned_user, str) and banned_user.lower() == user.lower()
+        ):
+            return Result.taken(extra={"banned": True})
 
-                    avatar = account.get(
-                        'profilePictureUrl') or page_props.get('customAvatar')
-                    if avatar:
-                        media['avatar'] = avatar.strip()
+        account = page_props.get("account", {})
+        embedded_user = page_props.get("username") or account.get("username")
+        canonical_match = re.search(
+            r'<(?:link[^>]*rel="canonical"[^>]*href|meta[^>]*property="og:url"[^>]*content)="([^"]+)"',
+            html,
+            re.IGNORECASE,
+        )
+        canonical_url = canonical_match.group(1).rstrip("/") if canonical_match else ""
+        if not (
+            isinstance(embedded_user, str) and embedded_user.lower() == user.lower()
+        ) and canonical_url.lower() != url.lower():
+            return Result.error("Linktree profile markers were missing")
 
-                    verified = page_props.get('isProfileVerified')
-                    if verified is not None:
-                        extra['verified'] = verified
+        extra = {}
+        media = {}
 
-                    links = page_props.get('links', [])
-                    if links:
-                        extra['showcased_links'] = [
-                            f"{link.get('title', '').strip()}: {link.get('url', '').strip()}"
-                            for link in links if link.get('url')
-                        ]
+        name = page_props.get("pageTitle") or account.get("pageTitle")
+        if name:
+            extra["name"] = name.strip()
 
-                    social = page_props.get('socialLinks', [])
-                    if social:
-                        extra['social_links'] = [
-                            f"{s.get('platform', '').strip()}: {s.get('url', '').strip()}"
-                            for s in social if s.get('url')
-                        ]
-                    parsed_successfully = True
-                except Exception:
-                    pass
+        description = page_props.get("description") or account.get("description")
+        if description:
+            extra["description"] = description.strip()
 
-            # Fallback to metadata regex if NEXT_DATA parsing failed or was incomplete
-            if not parsed_successfully:
-                title = re.search(
-                    r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE)
-                if title:
-                    title_text = title.group(1).strip()
-                    if " | Linktree" in title_text:
-                        title_text = title_text.split(" | Linktree")[0]
-                    elif "| Linktree" in title_text:
-                        title_text = title_text.split("| Linktree")[0]
-                    extra["name"] = title_text.strip()
+        avatar = account.get("profilePictureUrl") or page_props.get("customAvatar")
+        if avatar:
+            media["avatar"] = avatar.strip()
 
-                desc = re.search(
-                    r'<meta[^>]*property="og:description"[^>]*content="([^"]+)"', html, re.IGNORECASE)
-                if desc:
-                    extra["description"] = desc.group(1).strip()
+        verified = page_props.get("isProfileVerified")
+        if verified is not None:
+            extra["verified"] = verified
 
-                img = re.search(
-                    r'<meta[^>]*property="og:image"[^>]*content="([^"]+)"', html, re.IGNORECASE)
-                if img:
-                    media["image"] = img.group(1).strip()
+        links = page_props.get("links", [])
+        if links:
+            extra["showcased_links"] = [
+                f"{link.get('title', '').strip()}: {link.get('url', '').strip()}"
+                for link in links
+                if link.get("url")
+            ]
 
-            return Result.taken(extra=extra, media=media, url=show_url)
-        elif response.status_code == 404:
-            return Result.available(url=show_url)
-        else:
-            return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
-    except Exception as e:
-        return Result.error(e, url=show_url)
+        social_links = page_props.get("socialLinks", [])
+        if social_links:
+            extra["social_links"] = [
+                f"{link.get('platform', '').strip()}: {link.get('url', '').strip()}"
+                for link in social_links
+                if link.get("url")
+            ]
+
+        # Fallback to metadata regex if NEXT_DATA parsing failed or was incomplete
+        if not page_props:
+            title = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE)
+            if title:
+                extra["name"] = title.group(1).split("| Linktree")[0].strip()
+
+            description = re.search(
+                r'<meta[^>]*property="og:description"[^>]*content="([^"]+)"',
+                html,
+                re.IGNORECASE,
+            )
+            if description:
+                extra["description"] = description.group(1).strip()
+
+            image = re.search(
+                r'<meta[^>]*property="og:image"[^>]*content="([^"]+)"',
+                html,
+                re.IGNORECASE,
+            )
+            if image:
+                media["avatar"] = image.group(1).strip()
+
+        return Result.taken(extra=extra, media=media)
+
+    return impersonate_validate(url, process, show_url=url, allow_redirects=True)

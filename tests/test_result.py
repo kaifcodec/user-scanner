@@ -287,13 +287,20 @@ def test_get_output_color_and_icon_per_status():
     assert Result.skipped().get_output_icon() == "[~]"
 
 
-def test_show_only_found_filters_non_taken(capsys):
-    conf = ScanConfig(only_found=True)
+def test_show_default_filters_non_taken(capsys):
+    conf = ScanConfig()
 
     Result.available(site_name="HiddenSite").show(conf)
     assert capsys.readouterr().out == ""
 
     Result.taken(site_name="VisibleSite").show(conf)
+    assert "VisibleSite" in capsys.readouterr().out
+
+
+def test_show_all_displays_non_taken(capsys):
+    conf = ScanConfig(show_all=True)
+
+    Result.available(site_name="VisibleSite").show(conf)
     assert "VisibleSite" in capsys.readouterr().out
 
 

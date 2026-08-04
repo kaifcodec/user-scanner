@@ -8,8 +8,7 @@ PROFILE_TITLE_RE = re.compile(r'<meta property="og:title" content="[^"]+"')
 PROFILE_URL_RE = re.compile(
     r'<meta property="og:url" content="https://www\.facebook\.com/[^"]+"'
 )
-UNAVAILABLE_MARKER = "This content isn't available right now"
-
+UNAVAILABLE_MARKER = "This content isn't available at the moment"
 
 def _process_profile_response(status_code: int, html: str) -> Result:
     if status_code == 429:
