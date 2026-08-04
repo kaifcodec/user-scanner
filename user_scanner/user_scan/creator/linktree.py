@@ -34,6 +34,12 @@ def validate_linktree(user: str) -> Result:
         if response.status_code != 200:
             return Result.error(f"Unexpected response status: {response.status_code}")
 
+        banned_user = data.get("query", {}).get("username")
+        if data.get("page") == "/status/blocked" and (
+            isinstance(banned_user, str) and banned_user.lower() == user.lower()
+        ):
+            return Result.taken(extra={"banned": True})
+
         account = page_props.get("account", {})
         embedded_user = page_props.get("username") or account.get("username")
         canonical_match = re.search(
