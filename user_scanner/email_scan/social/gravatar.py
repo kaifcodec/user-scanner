@@ -90,7 +90,7 @@ async def _check(email: str) -> Result:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(url, headers=headers)
             if response.status_code == 200:
-                extra = {}
+                extra: dict = {}
                 media = {"avatar": f"https://www.gravatar.com/avatar/{email_hash}"}
                 profile_url = f"https://en.gravatar.com/{email_hash}.json"
                 try:

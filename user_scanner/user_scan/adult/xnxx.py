@@ -57,13 +57,13 @@ def _public_profile(user: str) -> tuple[dict, dict]:
     try:
         response = impersonate_request(f"{BASE_URL}/pornstar/{user}", allow_redirects=True)
         if response.status_code != 200:
-            return {"type": "member"}
+            return {"type": "member"}, {}
     except Exception:
-        return {"type": "member"}
+        return {"type": "member"}, {}
 
     user_obj = _user_object(response.text)
     if user_obj.get("username", "").lower() != user.lower():
-        return {"type": "member"}
+        return {"type": "member"}, {}
 
     return _extract_profile(response.text, user_obj)
 
