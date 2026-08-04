@@ -218,6 +218,18 @@ def main():
         parser.print_help()
         return
 
+    if args.output and not args.format:
+        ext = args.output.lower()
+        if ext.endswith('.json'):
+            args.format = 'json'
+        elif ext.endswith('.csv'):
+            args.format = 'csv'
+        elif ext.endswith('.pdf'):
+            args.format = 'pdf'
+        else:
+            print(f"\n{Fore.RED}[✘] Specify output format using -f (json, csv, pdf) or use a known file extension.{Style.RESET_ALL}")
+            sys.exit(1)
+
     # Initialize proxy manager if proxy file is provided
     if args.proxy_file:
         try:
@@ -450,18 +462,6 @@ def main():
 
     if args.hudson_scan:
         sys.exit(0)
-
-    if args.output and not args.format:
-        ext = args.output.lower()
-        if ext.endswith('.json'):
-            args.format = 'json'
-        elif ext.endswith('.csv'):
-            args.format = 'csv'
-        elif ext.endswith('.pdf'):
-            args.format = 'pdf'
-        else:
-            print(f"\n{Fore.RED}[✘] Specify output format using -f (json, csv, pdf) or use a known file extension.{Style.RESET_ALL}")
-            sys.exit(1)
 
     is_pdf_export = args.format == "pdf" or (args.output and args.output.lower().endswith(".pdf"))
 
