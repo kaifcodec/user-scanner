@@ -40,7 +40,7 @@ def validate_gitlab(user):
                             m = re.search(r'gravatar\.com/avatar/([a-f0-9]{32})', avatar_url)
                             if m:
                                 md5_hash = m.group(1)
-                                extra["gravatar_url"] = f"https://gravatar.com/{md5_hash}"
+                                media["gravatar_url"] = f"https://gravatar.com/{md5_hash}"
                                 extra["gravatar_username"] = u_data.get("username", "")
                                 extra["gravatar_email_md5_hash"] = md5_hash
                     except Exception:

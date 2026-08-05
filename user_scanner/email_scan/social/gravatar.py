@@ -2,7 +2,7 @@ import hashlib
 import httpx
 from user_scanner.core.result import Result
 
-def _extract_profile_data(entry: dict, extra: dict) -> None:
+def _extract_profile_data(entry: dict, extra: dict, media: dict) -> None:
     if entry.get("preferredUsername"):
         extra["username"] = str(entry["preferredUsername"]).strip()
     if entry.get("displayName"):
@@ -10,7 +10,7 @@ def _extract_profile_data(entry: dict, extra: dict) -> None:
     if entry.get("profileUrl"):
         extra["profile_url"] = str(entry["profileUrl"]).strip()
     if entry.get("thumbnailUrl"):
-        extra["thumbnail_url"] = str(entry["thumbnailUrl"]).strip()
+        media["thumbnail_url"] = str(entry["thumbnailUrl"]).strip()
     if entry.get("aboutMe"):
         extra["bio"] = str(entry["aboutMe"]).strip()
     if entry.get("currentLocation"):
@@ -32,7 +32,7 @@ def _extract_profile_data(entry: dict, extra: dict) -> None:
             if isinstance(p, dict) and p.get("value") is not None and str(p["value"]).strip()
         ]
         if photo_list:
-            extra["photos"] = ", ".join(photo_list)
+            media["photos"] = ", ".join(photo_list)
 
     accounts = entry.get("accounts")
     if isinstance(accounts, list):
@@ -99,7 +99,7 @@ async def _check(email: str) -> Result:
                         data = profile_resp.json()
                         entries = data.get("entry", [])
                         if entries and isinstance(entries, list):
-                            _extract_profile_data(entries[0], extra)
+                            _extract_profile_data(entries[0], extra, media)
                 except Exception:
                     pass
                 final_url = extra.get("profile_url", show_url)
@@ -120,7 +120,7 @@ async def _check(email: str) -> Result:
                             data = profile_resp.json()
                             entries = data.get("entry", [])
                             if entries and isinstance(entries, list):
-                                _extract_profile_data(entries[0], extra)
+                                _extract_profile_data(entries[0], extra, media)
                     except Exception:
                         pass
                     final_url = extra.get("profile_url", show_url)

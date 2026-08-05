@@ -69,17 +69,17 @@ def validate_admireme_vip(user):
                     bg_video_match = re.search(
                         r'class="profile_video"[^>]*style="[^"]*background-image:\s*url\(\s*\'?([^\')]+)\'?\s*\)', response.text, re.IGNORECASE)
                     if bg_video_match:
-                        extra["image"] = bg_video_match.group(1).strip()
+                        media["image"] = bg_video_match.group(1).strip()
                     else:
                         bg_pic_match = re.search(
                             r'class="profile-pic[^"]*"[^>]*style="[^"]*background-image:\s*url\(\s*\'?([^\')]+)\'?\s*\)', response.text, re.IGNORECASE)
                         if bg_pic_match:
-                            extra["image"] = bg_pic_match.group(1).strip()
+                            media["image"] = bg_pic_match.group(1).strip()
                         else:
                             img_tag_match = re.search(
                                 r'class="profile-pic[^"]*".*?<img[^>]+src="([^"]+)"', response.text, re.DOTALL | re.IGNORECASE)
                             if img_tag_match:
-                                extra["image"] = img_tag_match.group(1).strip()
+                                media["image"] = img_tag_match.group(1).strip()
 
                 # Extract Banner Image
                 banner_match = re.search(
