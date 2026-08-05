@@ -115,6 +115,45 @@ def fetch_and_resize_image(url: str, max_size: tuple = (600, 600), timeout: floa
     return None
 
 
+def download_images_parallel(items: List[tuple]) -> dict:
+    downloaded_images: dict = {}
+    if not items:
+        return downloaded_images
+
+    max_workers = min(10, max(1, len(items)))
+
+    def _execute_downloads(progress_callback=None):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_url = {
+                executor.submit(fetch_and_resize_image, url): url
+                for url, _ in items
+            }
+            for future in concurrent.futures.as_completed(future_to_url):
+                url = future_to_url[future]
+                try:
+                    downloaded_images[url] = future.result()
+                except Exception:
+                    downloaded_images[url] = None
+                if progress_callback:
+                    progress_callback()
+
+    if RICH_AVAILABLE:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            transient=True,
+        ) as progress:
+            task_id = progress.add_task("[cyan]Downloading profile media...", total=len(items))
+            _execute_downloads(progress_callback=lambda: progress.advance(task_id))
+    else:
+        _execute_downloads()
+
+    return downloaded_images
+
+
 def generate_pdf_report(
     target: str,
     scan_type: str,
@@ -299,44 +338,7 @@ def generate_pdf_report(
 
         if unique_photos:
             items = list(unique_photos.items())
-            downloaded_images: dict = {}
-            max_workers = min(10, max(1, len(items)))
-
-            if RICH_AVAILABLE:
-                with Progress(
-                    SpinnerColumn(),
-                    TextColumn("[progress.description]{task.description}"),
-                    BarColumn(),
-                    MofNCompleteColumn(),
-                    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-                    transient=True,
-                ) as progress:
-                    task_id = progress.add_task("[cyan]Downloading profile media...", total=len(items))
-
-                    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                        future_to_url = {
-                            executor.submit(fetch_and_resize_image, url): url
-                            for url, _ in items
-                        }
-                        for future in concurrent.futures.as_completed(future_to_url):
-                            url = future_to_url[future]
-                            try:
-                                downloaded_images[url] = future.result()
-                            except Exception:
-                                downloaded_images[url] = None
-                            progress.advance(task_id)
-            else:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    future_to_url = {
-                        executor.submit(fetch_and_resize_image, url): url
-                        for url, _ in items
-                    }
-                    for future in concurrent.futures.as_completed(future_to_url):
-                        url = future_to_url[future]
-                        try:
-                            downloaded_images[url] = future.result()
-                        except Exception:
-                            downloaded_images[url] = None
+            downloaded_images = download_images_parallel(items)
 
             photo_cells = []
             for url, info in items:
