@@ -74,7 +74,8 @@ mislabeled types, missed namespaces, and false positives/negatives.
 
 - If the `ax` CLI (https://ax.yusuke.run) is available, prefer it over
   throwaway scripts for investigating page structure — `--outline`,
-  `--locate`, and `--row` cover most namespace-mapping probes. Note it
+  `--locate`, and `--row` cover most namespace-mapping probes. Run
+  `ax agent-context` first to learn how to drive it. Note it
   uses a plain HTTP client, so bot-walled sites still need curl_cffi.
 - Sites behind active JS challenges (Cloudflare "Just a moment…") can only
   be investigated with a real browser — e.g. the Playwright MCP server
