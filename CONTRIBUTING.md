@@ -245,6 +245,9 @@ For multi-step flows, use `impersonate_request` directly. It returns the raw `cu
 - Keep code readable and small.
 - Add docstrings to explain non-obvious heuristics.
 - Run linters and formatters before opening a PR (pre-commit is recommended).
+- If you contribute with an AI coding agent, the
+  [ponytail](https://github.com/DietrichGebert/ponytail) skill pairs well
+  with this project's philosophy of small, self-contained modules.
 
 ---
 
