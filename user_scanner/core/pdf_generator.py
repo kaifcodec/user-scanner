@@ -1,3 +1,4 @@
+import concurrent.futures
 import io
 import json
 import html
@@ -5,6 +6,12 @@ from datetime import datetime
 from typing import List, Any, Optional
 
 import httpx
+
+try:
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn  # type: ignore[import-untyped,import-not-found]
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
 
 try:
     from reportlab.lib.pagesizes import A4  # type: ignore[import-untyped,import-not-found]
@@ -55,7 +62,7 @@ def clean_metadata(extra: Any) -> List[tuple]:
     return [(k, v) for k, v in extra.items() if not any(x in k.lower() for x in IMAGE_HEURISTIC_KEYS)]
 
 
-def fetch_and_resize_image(url: str, max_size: tuple = (600, 600)) -> Optional[Any]:
+def fetch_and_resize_image(url: str, max_size: tuple = (600, 600), timeout: float = 5.0) -> Optional[Any]:
     if not PIL_AVAILABLE:
         return None
     try:
@@ -64,7 +71,7 @@ def fetch_and_resize_image(url: str, max_size: tuple = (600, 600)) -> Optional[A
             headers={
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
             },
-            timeout=3.0,
+            timeout=timeout,
             follow_redirects=True,
         )
         if resp.status_code == 200:
@@ -291,13 +298,49 @@ def generate_pdf_report(
                     }
 
         if unique_photos:
-            elements.append(
-                Paragraph("IDENTIFIED PROFILE MEDIA", section_title_style)
-            )
+            items = list(unique_photos.items())
+            downloaded_images: dict = {}
+            max_workers = min(10, max(1, len(items)))
+
+            if RICH_AVAILABLE:
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    MofNCompleteColumn(),
+                    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                    transient=True,
+                ) as progress:
+                    task_id = progress.add_task("[cyan]Downloading profile media...", total=len(items))
+
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                        future_to_url = {
+                            executor.submit(fetch_and_resize_image, url): url
+                            for url, _ in items
+                        }
+                        for future in concurrent.futures.as_completed(future_to_url):
+                            url = future_to_url[future]
+                            try:
+                                downloaded_images[url] = future.result()
+                            except Exception:
+                                downloaded_images[url] = None
+                            progress.advance(task_id)
+            else:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    future_to_url = {
+                        executor.submit(fetch_and_resize_image, url): url
+                        for url, _ in items
+                    }
+                    for future in concurrent.futures.as_completed(future_to_url):
+                        url = future_to_url[future]
+                        try:
+                            downloaded_images[url] = future.result()
+                        except Exception:
+                            downloaded_images[url] = None
 
             photo_cells = []
-            for url, info in unique_photos.items():
-                img_io_or_drawing = fetch_and_resize_image(url)
+            for url, info in items:
+                img_io_or_drawing = downloaded_images.get(url)
                 if img_io_or_drawing:
                     if isinstance(img_io_or_drawing, io.BytesIO):
                         rl_img = RLImage(img_io_or_drawing, width=60, height=60)
@@ -317,6 +360,9 @@ def generate_pdf_report(
                     photo_cells.append([rl_img, caption])
 
             if photo_cells:
+                elements.append(
+                    Paragraph("IDENTIFIED PROFILE MEDIA", section_title_style)
+                )
                 row = []
                 grid_data = []
                 for cell in photo_cells:
