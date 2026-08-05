@@ -280,11 +280,17 @@ class Result:
         """Returns True if the target was found or registered (Status.TAKEN)"""
         return self.status == Status.TAKEN
 
+    def is_visible(self, configs: ScanConfig | None = None) -> bool:
+        """Returns True if the result should be printed under the current configuration.
+        By default (show_all=False), TAKEN and SKIPPED results are visible."""
+        if configs and configs.show_all:
+            return True
+        return self.status in (Status.TAKEN, Status.SKIPPED)
+
     def show(self, configs: ScanConfig):
         """Prints the console output and returns itself for chaining.
-        If show_all is False, only results with Status.TAKEN are printed."""
-        # Updated show() to accept and pass the show_url flag
-        if not configs.show_all and self.status != Status.TAKEN:
+        If show_all is False, TAKEN and SKIPPED results are printed."""
+        if not self.is_visible(configs):
             return self
         print(self.get_console_output(configs))
         return self

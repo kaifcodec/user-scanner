@@ -52,10 +52,10 @@ async def _async_worker(
         }
 
         if not func:
-            return Result.error(f"{site_name} has no validate_ function", **params).show(configs)
+            return Result.error(f"{site_name} has no validate_ function", **params)
 
         if not configs.allow_loud and is_loud(site_name):
-            return Result.skipped().update(**params).show(configs)
+            return Result.skipped().update(**params)
 
         try:
             if inspect.iscoroutinefunction(func):
@@ -105,7 +105,7 @@ async def _run_batch(
             
             actual_cat = result.category or "Unknown"
             # Handle specific logic where skipping needs to happen early
-            if not configs.show_all and result.is_found():
+            if not configs.show_all and result.is_visible(configs):
                 if printed_cats is not None and actual_cat not in printed_cats:
                     print(f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}")
                     printed_cats.add(actual_cat)
@@ -189,7 +189,7 @@ async def _run_user_full_async(username: str, configs: ScanConfig) -> List[Resul
             for coro in asyncio.as_completed(tasks):
                 result = await coro
                 
-                if not configs.show_all and result.is_found():
+                if not configs.show_all and result.is_visible(configs):
                     display_name = result.category or "Unknown"
                     if display_name not in printed_cats:
                         print(f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}")
