@@ -36,6 +36,8 @@
             socksio
             colorama
             h2
+            curl-cffi
+            rich
           ];
 
           pythonImportsCheck = ["user_scanner"];

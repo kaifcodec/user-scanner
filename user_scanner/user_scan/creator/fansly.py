@@ -8,29 +8,30 @@ def validate_fansly(user):
         if response.status_code == 200:
             try:
                 data = response.json()
-                if data.get('success') and data.get('response'):
-                    res = data['response'][0]
-                    extra = {}
-                    if res.get('id'):
-                        extra['id'] = res.get('id')
-                    if res.get('displayName'):
-                        extra['displayName'] = res.get('displayName')
-                    if res.get('followCount') is not None:
-                        extra['followers'] = res.get('followCount')
-                    
-                    timelineStats = res.get('timelineStats', {})
-                    if timelineStats:
-                        if timelineStats.get('imageCount') is not None:
-                            extra['images'] = timelineStats.get('imageCount')
-                        if timelineStats.get('videoCount') is not None:
-                            extra['videos'] = timelineStats.get('videoCount')
+                if data.get('success'):
+                    accounts = data.get('response')
+                    if accounts == []:
+                        return Result.available()
+                    if accounts:
+                        res = accounts[0]
+                        extra = {}
+                        if res.get('id'):
+                            extra['id'] = res.get('id')
+                        if res.get('displayName'):
+                            extra['displayName'] = res.get('displayName')
+                        if res.get('followCount') is not None:
+                            extra['followers'] = res.get('followCount')
 
-                    return Result.taken(extra=extra)
+                        timelineStats = res.get('timelineStats', {})
+                        if timelineStats:
+                            if timelineStats.get('imageCount') is not None:
+                                extra['images'] = timelineStats.get('imageCount')
+                            if timelineStats.get('videoCount') is not None:
+                                extra['videos'] = timelineStats.get('videoCount')
+
+                        return Result.taken(extra=extra)
             except Exception:
                 pass
-        elif response.status_code == 404:
-            return Result.available()
-            
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}

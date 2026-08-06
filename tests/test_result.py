@@ -296,6 +296,9 @@ def test_show_default_filters_non_taken(capsys):
     Result.available(site_name="HiddenSite").show(conf)
     assert capsys.readouterr().out == ""
 
+    Result.skipped(site_name="SkippedSite").show(conf)
+    assert "SkippedSite" in capsys.readouterr().out
+
     Result.taken(site_name="VisibleSite").show(conf)
     assert "VisibleSite" in capsys.readouterr().out
 
