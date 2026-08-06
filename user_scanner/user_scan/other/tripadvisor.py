@@ -18,14 +18,16 @@ def validate_tripadvisor(user):
 
     def process(response):
         if response.status_code == 200:
-            return Result.taken(extra=_fetch_profile(user))
+            extra, media = _fetch_profile(user)
+            return Result.taken(extra=extra, media=media)
         # Handles are case-canonicalized: a non-canonical casing 301-redirects
         # to the real profile, so a redirect back to /Profile/ still means the
         # account exists. Only a genuinely missing handle returns 404.
         if response.status_code in (301, 302):
             location = response.headers.get("location", "")
             if "/profile/" in location.lower():
-                return Result.taken(extra=_fetch_profile(user))
+                extra, media = _fetch_profile(user)
+                return Result.taken(extra=extra, media=media)
         if response.status_code == 404:
             return Result.available()
         return Result.error(f"Unexpected status: {response.status_code}")
@@ -33,7 +35,7 @@ def validate_tripadvisor(user):
     return impersonate_validate(url, process, warmup_url=WARMUP_URL, show_url=url)
 
 
-def _fetch_profile(user: str) -> dict:
+def _fetch_profile(user: str) -> tuple[dict, dict]:
     payload = [
         {
             "variables": {"username": user},
@@ -48,25 +50,29 @@ def _fetch_profile(user: str) -> dict:
         )
         profiles = response.json()[0]["data"]["memberProfiles"]
         profile = profiles[0] if profiles else None
-        return _parse_profile(profile) if profile else {}
+        return _parse_profile(profile) if profile else ({}, {})
     except Exception:
-        return {}
+        return ({}, {})
 
 
-def _parse_profile(profile: dict) -> dict:
+def _parse_profile(profile: dict) -> tuple[dict, dict]:
     sizes = (profile.get("avatar") or {}).get("photoSizes") or []
     avatar = max(sizes, key=lambda p: p.get("width") or 0).get("url") if sizes else None
 
-    return {
-        "name": profile.get("displayName"),
-        "user_id": profile.get("userId"),
-        "bio": profile.get("bio"),
-        "joined": profile.get("created"),
-        "hometown": _extract_hometown(profile),
-        "website": _decode_website(profile.get("website")),
-        "verified": profile.get("isVerified"),
-        "avatar": avatar,
-    }
+    return (
+        {
+            "name": profile.get("displayName"),
+            "user_id": profile.get("userId"),
+            "bio": profile.get("bio"),
+            "joined": profile.get("created"),
+            "hometown": _extract_hometown(profile),
+            "website": _decode_website(profile.get("website")),
+            "verified": profile.get("isVerified"),
+        },
+        {
+            "avatar": avatar,
+        },
+    )
 
 
 def _extract_hometown(profile: dict) -> str | None:

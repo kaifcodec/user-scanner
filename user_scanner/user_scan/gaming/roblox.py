@@ -80,14 +80,16 @@ def process(response):
             "uid": uid,
             "is verified": entry.get("hasVerifiedBadge"),
         }
+        media = {}
 
         if uid:
             extra.update(_fetch_user_details(uid))
             if get_avatar_url := _get_avatar_picture(uid):
-                extra["avatar"] = get_avatar_url
+                media["avatar"] = get_avatar_url
 
         return Result.taken(
             extra=extra,
+            media=media,
             url=f"https://www.roblox.com/users/{uid}" if uid else None,
         )
 

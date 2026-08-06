@@ -12,21 +12,22 @@ def validate_coderwall(user):
             data = response.json()
             if data and "username" in data:
                 extra = {}
+                media = {}
                 if data.get("id"): extra["id"] = data.get("id")
                 if data.get("name"): extra["name"] = data.get("name")
                 if data.get("location"): extra["location"] = data.get("location")
                 if data.get("karma") is not None: extra["karma"] = data.get("karma")
                 if data.get("company"): extra["company"] = data.get("company")
                 if data.get("about"): extra["about"] = data.get("about").strip()
-                if data.get("thumbnail"): extra["avatar"] = data.get("thumbnail")
-                
+                if data.get("thumbnail"): media["avatar"] = data.get("thumbnail")
+
                 accounts = data.get("accounts", {})
                 if accounts:
                     for platform, handle in accounts.items():
                         if handle:
                             extra[f"{platform}_handle"] = handle
-                            
-                return Result.taken(extra=extra, url=show_url)
+
+                return Result.taken(extra=extra, media=media, url=show_url)
             return Result.available(url=show_url)
         elif response.status_code == 404:
             return Result.available(url=show_url)

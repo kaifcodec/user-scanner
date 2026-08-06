@@ -19,6 +19,7 @@ def validate_habr(user):
                     if user_key:
                         user_info = data[user_key]
                         extra = {}
+                        media = {}
                         if user_info.get('fullname'): extra['name'] = user_info.get('fullname')
                         if user_info.get('speciality'): extra['speciality'] = user_info.get('speciality')
                         if user_info.get('rating') is not None: extra['rating'] = user_info.get('rating')
@@ -28,8 +29,8 @@ def validate_habr(user):
                         if user_info.get('counterStats', {}).get('postCount') is not None: extra['posts'] = user_info.get('counterStats', {}).get('postCount')
                         if user_info.get('counterStats', {}).get('commentCount') is not None: extra['comments'] = user_info.get('counterStats', {}).get('commentCount')
                         if user_info.get('registerDateTime'): extra['registered'] = user_info.get('registerDateTime')
-                        if user_info.get('avatarUrl'): extra['avatar'] = user_info.get('avatarUrl')
-                        return Result.taken(extra=extra)
+                        if user_info.get('avatarUrl'): media['avatar'] = user_info.get('avatarUrl')
+                        return Result.taken(extra=extra, media=media)
                 except Exception:
                     pass
         return Result.error(f"Unexpected response status: {response.status_code}")

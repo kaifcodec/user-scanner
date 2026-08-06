@@ -17,26 +17,27 @@ def validate_apexlegends(user):
                 payload = response.json()
                 data = payload.get("data", {})
                 extra = {}
-                
+                media = {}
+
                 p_info = data.get("platformInfo", {})
                 if handle := p_info.get("platformUserHandle"): extra["username"] = handle
-                if avatar := p_info.get("avatarUrl"): extra["avatar"] = avatar
-                
+                if avatar := p_info.get("avatarUrl"): media["avatar"] = avatar
+
                 u_info = data.get("userInfo", {})
                 if country := u_info.get("countryCode"): extra["country"] = country
                 if u_info.get("isPremium"): extra["premium"] = "Yes"
                 if u_info.get("isInfluencer"): extra["influencer"] = "Yes"
-                
+
                 meta = data.get("metadata", {})
                 if legend := meta.get("activeLegendName"): extra["active_legend"] = legend
-                
+
                 segments = data.get("segments", [])
                 if segments:
                     stats = segments[0].get("stats", {})
                     if lvl := stats.get("level"): extra["level"] = str(lvl.get("displayValue"))
                     if kills := stats.get("kills"): extra["kills"] = str(kills.get("displayValue"))
-                
-                return Result.taken(extra=extra)
+
+                return Result.taken(extra=extra, media=media)
             except Exception:
                 pass
             return Result.error("200 response status with no recognizable data, report it via GitHub issues")

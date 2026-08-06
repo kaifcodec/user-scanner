@@ -13,6 +13,7 @@ def validate_hamaha(user):
     def process(response):
         if 'id="profile"' in response.text:
             extra = {}
+            media = {}
             try:
                 name_match = local_re.search(r'<h2>(.*?)</h2>', response.text)
                 if name_match:
@@ -24,7 +25,7 @@ def validate_hamaha(user):
                 if avatar_match:
                     avatar_val = avatar_match.group(1).strip()
                     if "_noavatar_user.gif" not in avatar_val:
-                        extra["avatar"] = avatar_val
+                        media["avatar"] = avatar_val
 
                 bio_match = local_re.search(r'<h3>Обо мне</h3>.*?<td>(.*?)</td>', response.text, local_re.DOTALL)
                 if bio_match:
@@ -53,7 +54,7 @@ def validate_hamaha(user):
 
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         if 'content="HAMAHA  Биткоин форум' in response.text or 'быстрая регистрация' in response.text.lower():
             return Result.available()
@@ -61,4 +62,3 @@ def validate_hamaha(user):
         return Result.error("Unexpected response body.")
 
     return generic_validate(url, process, headers=headers, show_url=show_url)
-

@@ -15,6 +15,7 @@ def validate_buzzfeed(user: str) -> Result:
 
         if r.status_code == 200:
             extra = {}
+            media = {}
             match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', r.text)
             if match:
                 try:
@@ -26,12 +27,12 @@ def validate_buzzfeed(user: str) -> Result:
                         extra["display_name"] = user_data.get("displayName")
                     if user_data.get("bio"):
                         extra["bio"] = user_data.get("bio")
-                    
+
                     if user_data.get("image"):
                         img = user_data.get("image")
                         if not img.startswith("http"):
                             img = f"https://img.buzzfeed.com/buzzfeed-static{img}"
-                        extra["avatar_url"] = img
+                        media["avatar_url"] = img
 
                     if user_data.get("memberSince"):
                         try:
@@ -53,7 +54,7 @@ def validate_buzzfeed(user: str) -> Result:
                     if links:
                         extra["links"] = links
 
-                    return Result.taken(extra=extra)
+                    return Result.taken(extra=extra, media=media)
                 except Exception:
                     pass
 

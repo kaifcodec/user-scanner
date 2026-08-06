@@ -195,26 +195,20 @@ class Result:
         return json.dumps(data, indent=4)
 
     def to_csv(self) -> str:
+        def flatten_dict(d):
+            result = ""
+            for key, value in d.items():
+                result += f"{key}: {value}; "
+            return result.rstrip("; ")
+
         # uses .as_dict() since header has "username"
         data = self.as_dict()
 
         # flatten multiline extra string parameters so it doesn't break row alignments
-        if data.get("extra"):
-            clean_extra = ""
-            for key, value in data["extra"].items():
-                clean_extra += f"{key}: {value}; "
+        data["extra"] = flatten_dict(data["extra"]) if data.get("extra") else ""
+        data["media"] = flatten_dict(data["media"]) if data.get("media") else ""
 
-            data["extra"] = clean_extra.rstrip("; ")
-        else:
-            data["extra"] = ""
 
-        if data.get("media"):
-            clean_media = ""
-            for key, value in data["media"].items():
-                clean_media += f"{key}: {value}; "
-            data["media"] = clean_media.rstrip("; ")
-        else:
-            data["media"] = ""
 
         del data["is_email"]
 

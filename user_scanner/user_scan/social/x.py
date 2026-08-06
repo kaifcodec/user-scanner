@@ -10,23 +10,24 @@ def validate_x(user):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "application/json",
     }
-    
+
     try:
         vx_response = make_request(vx_url, headers=vx_headers, follow_redirects=True)
         if vx_response.status_code == 200:
             data = vx_response.json()
             extra = {}
+            media = {}
             if name := data.get("name"): extra["name"] = name
             if bio := data.get("description"): extra["bio"] = bio
             if loc := data.get("location"): extra["location"] = loc
             if created := data.get("created_at"): extra["created_at"] = created
             if followers := data.get("followers_count"): extra["followers"] = str(followers)
             if following := data.get("following_count"): extra["following"] = str(following)
-            if avatar := data.get("profile_image_url"): extra["avatar"] = avatar.replace("_normal", "")
+            if avatar := data.get("profile_image_url"): media["avatar"] = avatar.replace("_normal", "")
             if protected := data.get("protected"): extra["protected"] = str(protected)
             if tweets := data.get("tweet_count"): extra["tweets"] = str(tweets)
-            
-            return Result.taken(extra=extra, url=show_url)
+
+            return Result.taken(extra=extra, media=media, url=show_url)
     except Exception:
         pass
 

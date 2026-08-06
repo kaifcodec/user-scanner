@@ -35,6 +35,7 @@ def validate_instagram(user: str) -> Result:
             user_data = data.get("data", {}).get("user")
             if user_data:
                 extra = {}
+                media = {}
 
                 # Base Fields
                 if user_data.get("username"):
@@ -44,7 +45,7 @@ def validate_instagram(user: str) -> Result:
                 if user_data.get("id"):
                     extra["id"] = user_data.get("id")
                 if user_data.get("profile_pic_url_hd"):
-                    extra["image"] = user_data.get("profile_pic_url_hd")
+                    media["image"] = user_data.get("profile_pic_url_hd")
                 if user_data.get("biography"):
                     extra["bio"] = user_data.get("biography")
 
@@ -76,7 +77,7 @@ def validate_instagram(user: str) -> Result:
                     extra["following_count"] = user_data.get(
                         "edge_follow", {}).get("count")
 
-                return Result.taken(extra=extra, url=show_url)
+                return Result.taken(extra=extra, media=media, url=show_url)
             else:
                 # If API response succeeded but user object is empty/null, the user does not exist
                 return Result.available(url=show_url)

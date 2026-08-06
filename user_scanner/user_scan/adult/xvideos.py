@@ -23,15 +23,17 @@ def validate_xvideos(user):
 
         # A real profile is titled "<name> - Profile page - XVIDEOS.COM".
         if "profile page" in _title(response.text).lower():
-            return Result.taken(extra=_extract_profile(response.text), url=show_url)
+            extra, media = _extract_profile(response.text)
+            return Result.taken(extra=extra, media=media, url=show_url)
 
         return Result.error("Profile confirmation not found", url=show_url)
 
     return generic_validate(url, process, show_url=show_url)
 
 
-def _extract_profile(html_text: str) -> dict:
+def _extract_profile(html_text: str) -> tuple[dict, dict]:
     extra = {}
+    media = {}
 
     # Structured identity from the embedded JSON `user` object.
     user = _user_object(html_text)
@@ -41,7 +43,7 @@ def _extract_profile(html_text: str) -> dict:
         extra["user_id"] = str(user["id_user"])
     avatar = user.get("profile_picture") or user.get("profile_picture_small")
     if avatar:
-        extra["avatar"] = avatar
+        media["avatar"] = avatar
 
     # The visible "profile info" panel carries gender, age, country, hits,
     # languages, signup, last activity, plus any personal/physical details the
@@ -56,7 +58,7 @@ def _extract_profile(html_text: str) -> dict:
         if label and value and value.lower() != "display":
             extra[label] = value
 
-    return extra
+    return extra, media
 
 
 def _user_object(html_text: str) -> dict:

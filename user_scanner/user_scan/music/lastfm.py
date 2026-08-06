@@ -10,6 +10,7 @@ def validate_lastfm(user):
             return Result.available()
         elif response.status_code == 200:
             extra = {}
+            media = {}
             try:
                 import re as local_re
                 # 1. Display Name
@@ -31,10 +32,10 @@ def validate_lastfm(user):
                 # 5. Avatar
                 avatar_match = local_re.search(r'src="([^"]+)"[^>]*alt="Avatar for [^"]+"[^>]*itemprop="image"', response.text, local_re.DOTALL)
                 if avatar_match:
-                    extra["avatar"] = avatar_match.group(1).strip()
+                    media["avatar"] = avatar_match.group(1).strip()
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
         else:
             return Result.error(f"HTTP {response.status_code}")
 
@@ -44,4 +45,3 @@ def validate_lastfm(user):
         "Accept-Language": "en-US,en;q=0.9",
     }
     return generic_validate(url, process, show_url=show_url, headers=headers)
-

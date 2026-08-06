@@ -15,36 +15,37 @@ def validate_spotify(user):
         if response.status_code == 200:
             data = response.json()
             item = data.get("item", {})
-            
+
             extra = {}
+            media = {}
             if name := item.get("displayName"):
                 extra["name"] = name
             if image := item.get("image"):
-                extra["image"] = image
+                media["image"] = image
             if created_at := item.get("createdAt"):
                 extra["created_at"] = created_at
             if timezone := item.get("timezone"):
                 extra["timezone"] = timezone
-                
+
             # Extra profile metadata
             profile = item.get("profile", {})
             if bio := profile.get("bio"):
                 extra["bio"] = bio
             if pronouns := profile.get("pronouns"):
                 extra["pronouns"] = pronouns
-                
+
             # Subscription info
             if "isPro" in item:
                 extra["is_pro"] = str(item["isPro"])
             if "isPlus" in item:
                 extra["is_plus"] = str(item["isPlus"])
 
-            return Result.taken(extra=extra, url=show_url)
-            
+            return Result.taken(extra=extra, media=media, url=show_url)
+
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:
             return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
-            
+
     except Exception as e:
         return Result.error(e, url=show_url)

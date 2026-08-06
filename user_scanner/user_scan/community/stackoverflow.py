@@ -28,6 +28,7 @@ def validate_stackoverflow(user: str) -> Result:
 
             if found_card:
                 extra = {}
+                media = {}
                 try:
                     loc_match = re.search(r'<span class="user-location">([^<]*)</span>', found_card)
                     rep_match = re.search(r'title="[^"]*total reputation:\s*([^"]+)"', found_card)
@@ -41,10 +42,10 @@ def validate_stackoverflow(user: str) -> Result:
                         avatar_url = img_match.group(1).strip()
                         if avatar_url.startswith("//"):
                             avatar_url = "https:" + avatar_url
-                        extra["avatar"] = avatar_url.replace("&amp;", "&")
+                        media["avatar"] = avatar_url.replace("&amp;", "&")
                 except Exception:
                     pass
-                return Result.taken(extra=extra)
+                return Result.taken(extra=extra, media=media)
 
             return Result.available()
 

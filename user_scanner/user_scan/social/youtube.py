@@ -21,6 +21,7 @@ def validate_youtube(user) -> Result:
                 return Result.available(url=show_url)
 
             extra = {}
+            media = {}
             marker = "var ytInitialData = "
             start = response.text.find(marker)
             if start == -1:
@@ -41,7 +42,7 @@ def validate_youtube(user) -> Result:
                 if keywords := meta.get("keywords"):
                     extra["keywords"] = keywords
                 if thumbs := meta.get("avatar", {}).get("thumbnails"):
-                    extra["image"] = thumbs[0].get("url")
+                    media["image"] = thumbs[0].get("url")
             except json.JSONDecodeError:
                 return Result.error("Could not confirm YouTube channel", url=show_url)
 
@@ -49,7 +50,7 @@ def validate_youtube(user) -> Result:
             if subs:
                 extra["subscribers"] = subs.group(1)
 
-            return Result.taken(extra=extra, url=show_url)
+            return Result.taken(extra=extra, media=media, url=show_url)
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:

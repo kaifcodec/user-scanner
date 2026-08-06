@@ -47,8 +47,9 @@ def validate_livejasmin(user: str) -> Result:
     # existence signal rather than a live-stream one.
     performer = _meta(response.text, "performerName")
     if performer and performer.lower() == user.lower():
-        extra = {"type": "performer", **_extract_profile(response.text)}
-        return Result.taken(extra=extra, url=show_url)
+        extra, media = _extract_profile(response.text)
+        extra = {"type": "performer", **extra}
+        return Result.taken(extra=extra, media=media, url=show_url)
 
     # The miss page is titled "<handle> is not available". Not being a performer
     # says nothing about member accounts, which have no public page at all, so
@@ -110,8 +111,9 @@ def _signup_token(refresh: bool = False) -> str | None:
         return _form_token
 
 
-def _extract_profile(html_text: str) -> dict:
+def _extract_profile(html_text: str) -> tuple[dict, dict]:
     extra = {}
+    media = {}
 
     # The player bootstrap config holds the profile details as a flat JS object.
     for key, label in CONFIG_FIELDS.items():
@@ -125,9 +127,9 @@ def _extract_profile(html_text: str) -> dict:
     avatar = _meta(html_text, "og:image")
     # The miss page falls back to a static site banner; only keep real snapshots.
     if avatar and "seo_og" not in avatar:
-        extra["avatar"] = avatar
+        media["avatar"] = avatar
 
-    return extra
+    return extra, media
 
 
 def _meta(html_text: str, name: str) -> str | None:

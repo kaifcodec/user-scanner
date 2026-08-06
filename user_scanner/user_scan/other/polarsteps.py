@@ -47,7 +47,6 @@ def validate_polarsteps(user: str) -> Result:
                 "last_name": data.get("last_name"),
                 "bio": data.get("description"),
                 "joined": data.get("creation_date"),
-                "avatar": data.get("profile_image_path"),
                 "locality": location.get("locality"),
                 "administrative_area": location.get("administrative_area"),
                 "country": location.get("country"),
@@ -69,7 +68,8 @@ def validate_polarsteps(user: str) -> Result:
                 "furthest_country": stats.get("furthest_place_from_home_country"),
                 "furthest_distance_km": stats.get("furthest_place_from_home_km"),
             }
-            return Result.taken(extra=extra)
+            media = {"avatar": data.get("profile_image_path"),}
+            return Result.taken(extra=extra, media=media)
 
         return Result.error(f"Unexpected response status: {response.status_code}")
 

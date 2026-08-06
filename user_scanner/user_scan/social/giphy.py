@@ -21,6 +21,7 @@ def validate_giphy(user: str) -> Result:
                 or "giphy://shortcut/channel/" in r.text
             ):
                 extra = {}
+                media = {}
                 title_match = re.search(r"<title>([^<]+)</title>", r.text)
                 if title_match:
                     display_name = title_match.group(1).replace(" GIFs on GIPHY - Be Animated", "").strip()
@@ -36,9 +37,9 @@ def validate_giphy(user: str) -> Result:
                     r'<meta property="og:image" content="([^"]+)"', r.text
                 )
                 if image_match:
-                    extra["avatar_url"] = image_match.group(1).strip()
+                    media["avatar_url"] = image_match.group(1).strip()
 
-                return Result.taken(extra=extra)
+                return Result.taken(extra=extra, media=media)
 
         return Result.error(f"HTTP {r.status_code}")
 

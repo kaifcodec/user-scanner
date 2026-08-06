@@ -26,6 +26,7 @@ def validate_soundcloud(user):
 
             if is_taken:
                 extra = {}
+                media = {}
                 try:
                     import re as local_re
                     import json as local_json
@@ -55,12 +56,12 @@ def validate_soundcloud(user):
                             if u_data.get("likes_count") is not None:
                                 extra["likes"] = u_data.get("likes_count")
                             if u_data.get("avatar_url"):
-                                extra["avatar"] = u_data.get("avatar_url")
+                                media["avatar"] = u_data.get("avatar_url")
                             if u_data.get("verified"):
                                 extra["verified"] = "Yes"
                 except Exception:
                     pass
-                return Result.taken(extra=extra)
+                return Result.taken(extra=extra, media=media)
 
             return Result.error("Unexpected response, report it via GitHub issues")
 

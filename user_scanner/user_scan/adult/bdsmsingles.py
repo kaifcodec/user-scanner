@@ -9,6 +9,7 @@ def validate_bdsmsingles(user):
     def process(response):
         if response.status_code == 200 and "<title>Profile" in response.text:
             extra = {}
+            media = {}
 
             # Headline
             headline_match = re.search(r"<h1>(.*?)</h1>", response.text)
@@ -29,7 +30,7 @@ def validate_bdsmsingles(user):
             avatar_match = re.search(
                 r'src="(https://media\.bdsmsingles\.com/images/user_photo/[^"]+)"', response.text)
             if avatar_match and "nophoto" not in avatar_match.group(1):
-                extra["image"] = avatar_match.group(1)
+                media["image"] = avatar_match.group(1)
 
             # Table fields extraction
             def extract_table_field(field_name):
@@ -59,7 +60,7 @@ def validate_bdsmsingles(user):
             if ethnicity:
                 extra["ethnicity"] = ethnicity
 
-            return Result.taken(extra=extra, url=show_url)
+            return Result.taken(extra=extra, media=media, url=show_url)
 
         if response.status_code == 302 or "BDSM Singles" in response.text:
             return Result.available(url=show_url)

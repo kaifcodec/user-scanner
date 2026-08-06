@@ -8,6 +8,7 @@ def validate_bandlab(user):
     def process(response):
         if response.status_code == 200 and "about" in response.text:
             extra = {}
+            media = {}
             try:
                 data = response.json()
                 if data.get("id"):
@@ -31,10 +32,10 @@ def validate_bandlab(user):
                     if counters.get("bands") is not None:
                         extra["bands"] = counters.get("bands")
                 if data.get("picture") and isinstance(data["picture"], dict) and data["picture"].get("url"):
-                    extra["avatar"] = data["picture"]["url"]
+                    media["avatar"] = data["picture"]["url"]
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         if response.status_code == 404 or "Couldn't find any matching element" in response.text:
             return Result.available()
@@ -42,4 +43,3 @@ def validate_bandlab(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     return generic_validate(url, process, show_url=show_url)
-

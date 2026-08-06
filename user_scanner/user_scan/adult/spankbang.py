@@ -19,7 +19,8 @@ def validate_spankbang(user):
         # A real profile answers 200 with a "<user> Profile ... @ SpankBang"
         # title; the not-found page is a 200-less generic front page.
         if _is_profile(response.text, user):
-            return Result.taken(extra=_extract_profile(response.text), url=show_url)
+            extra, media = _extract_profile(response.text)
+            return Result.taken(extra=extra, media=media, url=show_url)
 
         return Result.error("Profile confirmation not found", url=show_url)
 
@@ -35,9 +36,9 @@ def _is_profile(html_text: str, user: str) -> bool:
     return title.startswith(user.lower() + " profile") and "spankbang" in title
 
 
-def _extract_profile(html_text: str) -> dict:
+def _extract_profile(html_text: str) -> tuple[dict, dict]:
     extra = {}
-
+    media = {}
     # The OpenGraph tags are templated boilerplate here, so read the real
     # server-rendered profile markup instead.
     name = re.search(r'<h1 class="profile_name">\s*([^<]+?)\s*</h1>', html_text, re.IGNORECASE)
@@ -68,7 +69,7 @@ def _extract_profile(html_text: str) -> dict:
     # cross-referencing even when it falls back to the robohash default.
     avatar = re.search(r'class="avatar"[^>]*?src="([^"]+)"', html_text, re.IGNORECASE)
     if avatar:
-        extra["avatar"] = html.unescape(avatar.group(1).strip())
+        media["avatar"] = html.unescape(avatar.group(1).strip())
 
     # Stat tabs render as <a href="/profile/<user>/<slug>">Label <span>N</span></a>.
     # Key off the URL slug rather than the visible label so localisation never
@@ -81,4 +82,4 @@ def _extract_profile(html_text: str) -> dict:
         if slug not in extra and count not in ("0", ""):
             extra[slug] = count
 
-    return extra
+    return extra, media

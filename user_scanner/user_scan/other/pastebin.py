@@ -9,6 +9,8 @@ def validate_pastebin(user):
         if response.status_code == 200:
             if "info-bar" in response.text or "user-icon" in response.text:
                 extra = {}
+                media = {}
+
                 html = response.text
 
                 # Avatar
@@ -18,7 +20,7 @@ def validate_pastebin(user):
                     if "guest.png" not in avatar_src:
                         if avatar_src.startswith("/"):
                             avatar_src = "https://pastebin.com" + avatar_src
-                        extra["avatar"] = avatar_src
+                        media["avatar"] = avatar_src
 
                 # Pro User
                 if 'class="pro"' in html:
@@ -54,7 +56,7 @@ def validate_pastebin(user):
                 if loc_match:
                     extra["location"] = loc_match.group(1).strip()
 
-                return Result.taken(extra=extra)
+                return Result.taken(extra=extra, media=media)
 
             return Result.available()
 
@@ -64,4 +66,3 @@ def validate_pastebin(user):
         return Result.error(f"Unexpected status code: {response.status_code}")
 
     return generic_validate(url, process, show_url=show_url)
-

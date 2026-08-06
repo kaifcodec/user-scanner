@@ -15,15 +15,16 @@ def validate_destream(user):
             try:
                 data = response.json()
                 extra = {}
+                media = {}
                 if username := data.get("userName"):
                     extra["username"] = username
                 if avatar := data.get("logoImageUrl"):
-                    extra["avatar"] = avatar
+                    media["avatar"] = avatar
                 if stream := data.get("liveStream"):
                     extra["live_stream"] = str(stream)
                 if channel := data.get("channel"):
                     extra["channel"] = str(channel)
-                return Result.taken(extra=extra)
+                return Result.taken(extra=extra, media=media)
             except Exception:
                 pass
             return Result.error("200 response status with no recognizable data, report it via GitHub issues")
