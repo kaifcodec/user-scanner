@@ -1,5 +1,6 @@
 import re
-from user_scanner.core.orchestrator import generic_validate, Result
+
+from user_scanner.core.orchestrator import Result, generic_validate
 
 
 def validate_bentbox(user):
@@ -7,10 +8,21 @@ def validate_bentbox(user):
     show_url = f"https://bentbox.co/{user}"
 
     def process(response):
+        if "<h3>User not found</h3>" in response.text:
+            return Result.available(url=show_url)
+
         if response.status_code == 200:
-            if "user_bar" in response.text or "bentbox.co" in response.text:
-                if "user is currently not available" in response.text:
-                    return Result.available(url=show_url)
+            username_match = re.search(
+                r'"alternateName":\s*"([^"]+)"', response.text, re.IGNORECASE
+            ) or re.search(
+                r'<meta\s+property="profile:username"\s+content="([^"]+)"',
+                response.text,
+                re.IGNORECASE,
+            )
+            if (
+                username_match
+                and username_match.group(1).strip().casefold() == user.casefold()
+            ):
 
                 extra = {}
                 media = {}
@@ -33,11 +45,7 @@ def validate_bentbox(user):
                             r'\(@[a-zA-Z0-9_-]+\)', '', fullname).strip()
 
                 # Extract Alternate Name / Username
-                username_match = re.search(r'"alternateName":\s*"([^"]+)"', response.text, re.IGNORECASE) or \
-                    re.search(
-                        r'<meta\s+property="profile:username"\s+content="([^"]+)"', response.text, re.IGNORECASE)
-                if username_match:
-                    extra["username"] = username_match.group(1).strip()
+                extra["username"] = username_match.group(1).strip()
 
                 # Extract Bio
                 desc_match = re.search(
@@ -92,9 +100,6 @@ def validate_bentbox(user):
                 f"Rate limit / Cloudflare protection block (HTTP {response.status_code}). Run with residential proxy or active session cookies.",
                 url=show_url
             )
-
-        if "user is currently not available" in response.text or response.status_code == 404:
-            return Result.available(url=show_url)
 
         return Result.error(f"Unexpected response code/body: {response.status_code}", url=show_url)
 
