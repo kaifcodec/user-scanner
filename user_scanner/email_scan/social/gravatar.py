@@ -24,7 +24,17 @@ LINK_RE = re.compile(r'<a class="card-item__link"\s+href="([^"]+)"\s+title="([^"
 INTERESTS_RE = re.compile(r'g-profile__interests-list">(.*?)</ul>', re.S)
 INTEREST_ITEM_RE = re.compile(r"<span>\s*([^<]+?)\s*</span>")
 ADV_DETAIL_RE = re.compile(
-    r"<span>\s*(Profile|Updated|Created|Languages|Verified connections|Time):\s*([^<]+?)\s*</span>"
+    r"<span>\s*(Profile|Updated|Created|Languages|Time):\s*([^<]+?)\s*</span>"
+)
+# Both JSON APIs list only the providers their schema knows about — a YouTube
+# connection is absent from each yet rendered on the page, so the card is the
+# only complete source.
+VERIFIED_SECTION_RE = re.compile(
+    r'g-profile__card is-verified-accounts".*?(?=<div class="g-profile__card|\Z)', re.S
+)
+VERIFIED_ITEM_RE = re.compile(
+    r'card-item__label-text">\s*([^<]+?)\s*</span>.*?class="card-item__link"\s+href="([^"]+)"',
+    re.S,
 )
 TIMEZONE_RE = re.compile(r"\(([^)]+)\)")
 
@@ -41,7 +51,6 @@ ADV_DETAIL_KEYS = {
     "Updated": "last_updated",
     "Created": "created",
     "Languages": "languages",
-    "Verified connections": "verified_connections",
 }
 
 
@@ -210,6 +219,8 @@ def _extract_profile_data(entry: dict, extra: dict, media: dict) -> None:
 
 
 def _extract_page_data(page: str, extra: dict) -> None:
+    _merge_verified_accounts(page, extra)
+
     section = LINKS_SECTION_RE.search(page)
     if section:
         links = []
@@ -243,6 +254,24 @@ def _extract_page_data(page: str, extra: dict) -> None:
         extra[ADV_DETAIL_KEYS[label]] = value
 
 
+def _merge_verified_accounts(page: str, extra: dict) -> None:
+    section = VERIFIED_SECTION_RE.search(page)
+    if not section:
+        return
+
+    existing = [e for e in str(extra.get("verified_accounts", "")).split(", ") if e]
+    known = {_normalize_url(e.rsplit(": ", 1)[-1]) for e in existing}
+    for label, url in VERIFIED_ITEM_RE.findall(section.group(0)):
+        label = html.unescape(label).strip()
+        url = html.unescape(url).strip()
+        if not url or _normalize_url(url) in known:
+            continue
+        known.add(_normalize_url(url))
+        existing.append(f"{label or 'Account'}: {url} (verified)")
+    if existing:
+        extra["verified_accounts"] = ", ".join(existing)
+
+
 def _extract_markdown_data(page: str, extra: dict) -> None:
     for label, key in MARKDOWN_KEYS.items():
         match = re.search(rf"^- {label}: (.+)$", page, re.M)
@@ -252,3 +281,7 @@ def _extract_markdown_data(page: str, extra: dict) -> None:
         value = re.sub(r"\\(.)", r"\1", match.group(1)).strip()
         if value:
             extra[key] = value
+
+
+def _normalize_url(value: str) -> str:
+    return value.removesuffix(" (verified)").strip().rstrip("/").lower()
