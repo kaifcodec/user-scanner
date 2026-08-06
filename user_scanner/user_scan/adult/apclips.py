@@ -1,84 +1,109 @@
-import re
 import html
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+import re
+
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
+
+BASE_URL = "https://apclips.com"
+
+ABOUT_STAT = re.compile(
+    r'<div class="about-stat">\s*<span class="stat-label">(.*?)</span>\s*'
+    r'<span class="stat-text">(.*?)</span>',
+    re.DOTALL,
+)
+
 
 def validate_apclips(user: str) -> Result:
-    url = f"https://apclips.com/{user}"
-    show_url = url
-
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-    }
+    url = f"{BASE_URL}/{user}"
 
     def process(response):
-        final_url = str(response.url)
-        
-        if final_url.endswith("/models") or "/models" in final_url:
-            return Result.available()
+        if response.status_code in (301, 302):
+            # An unknown handle is bounced to the creator directory; following the
+            # redirect lands on a 200 listing page and destroys the miss signal.
+            location = response.headers.get("location", "")
+            if re.fullmatch(rf"(?:{re.escape(BASE_URL)})?/models/?", location):
+                return Result.available()
+            return Result.error(f"Unexpected redirect: {location}")
 
-        if response.status_code == 200:
-            if "AP Model" in response.text or "profile-fit-text" in response.text:
-                extra = {}
+        if response.status_code != 200:
+            return Result.error(f"Unexpected response status: {response.status_code}")
 
-                name_match = re.search(
-                    r'<h1 class="page-modelname[^"]*">\s*<span>([^<]+)</span>\s*</h1>',
-                    response.text,
-                    re.IGNORECASE
-                )
-                if name_match:
-                    extra["name"] = html.unescape(name_match.group(1)).strip()
+        page = response.text
+        owner = re.search(r'data-username="([^"]+)"', page)
+        if not owner or owner.group(1).lower() != user.lower():
+            return Result.error("Profile confirmation not found")
 
-                def parse_stat(label):
-                    match = re.search(
-                        rf'<span class="stat-label">[^<]*{label}[^<]*</span>\s*<span class="stat-text">([^<]+)</span>',
-                        response.text,
-                        re.IGNORECASE | re.DOTALL
-                    )
-                    if match:
-                        return match.group(1).strip()
-                    return None
+        return Result.taken(extra=_profile(page, user), media=_media(page, user))
 
-                videos = parse_stat("Videos")
-                if videos:
-                    extra["videos"] = videos
+    return impersonate_validate(url, process, show_url=url)
 
-                views = parse_stat("Views")
-                if views:
-                    extra["views"] = views
 
-                loves = parse_stat("Loves")
-                if loves:
-                    extra["loves"] = loves
+def _profile(page: str, user: str) -> dict:
+    extra: dict[str, str | bool | int] = {}
 
-                faved = parse_stat("Faved")
-                if faved:
-                    extra["faves"] = faved
+    # The masthead label names the account type ("AP Model", "AP Studio").
+    account_type = re.search(r'header-ctlabel"><i[^>]*></i>\s*([^<]+)<', page)
+    if account_type:
+        extra["type"] = _text(account_type.group(1))
 
-                if not extra.get("videos"):
-                    vid_match = re.search(r'<strong>(\d+)</strong>\s*Videos', response.text, re.IGNORECASE)
-                    if vid_match:
-                        extra["videos"] = vid_match.group(1)
+    name = re.search(r'<h1 class="page-modelname[^"]*"><span>([^<]+)</span>', page)
+    if name:
+        extra["name"] = _text(name.group(1))
 
-                photo_match = re.search(r'<strong>(\d+)</strong>\s*Photosets', response.text, re.IGNORECASE)
-                if photo_match:
-                    extra["photosets"] = photo_match.group(1)
+    creator_id = re.search(r'data-creator-id="(\d+)"', page)
+    if creator_id:
+        extra["creator_id"] = creator_id.group(1)
 
-                desc_match = re.search(
-                    r'<div class="text-medium[^"]*">\s*<p>([^<]+)</p>',
-                    response.text,
-                    re.IGNORECASE | re.DOTALL
-                )
-                if desc_match:
-                    extra["bio"] = html.unescape(desc_match.group(1)).strip()
+    bio = re.search(r'<div class="text-medium pb-2">(.*?)</div>', page, re.DOTALL)
+    if bio:
+        extra["bio"] = _text(bio.group(1))
 
-                return Result.taken(extra=extra)
+    for label, value in ABOUT_STAT.findall(page):
+        key = _text(label).lower().replace(" ", "_")
+        if key:
+            extra[key] = _text(value)
 
-        elif response.status_code == 404:
-            return Result.available()
+    # Section counts elsewhere on the page belong to fan-club upsells and other
+    # creators, so each is read from the heading that links to this profile.
+    for section in ("photosets", "bundles"):
+        count = re.search(
+            rf'<strong>([\d,]+)</strong>[^<]*<a href="/{re.escape(user)}/{section}"', page
+        )
+        if count:
+            extra[section] = count.group(1)
 
-        return Result.error(f"Unexpected response status: {response.status_code}")
+    categories = re.findall(r'class="profile-tag-link[^"]*"[^>]*>([^<]+)</a>', page)
+    if categories:
+        extra["categories"] = ", ".join(_text(x) for x in categories)
 
-    return generic_validate(url, process, headers=headers, http2=False, show_url=show_url, follow_redirects=True)
+    links = re.findall(
+        r'<a href="([^"]+)" target="_blank" class="btn btn-outline-dark btn-block"[^>]*>'
+        r'\s*<i[^>]*></i>\s*<span>([^<]*)</span>',
+        page,
+    )
+    if links:
+        extra["links"] = ", ".join(f"{_text(label)}: {href}" for href, label in links)
+
+    return extra
+
+
+def _media(page: str, user: str) -> dict:
+    media = {}
+    handle = re.escape(user)
+
+    avatar = re.search(rf'src="(/ui/img/model/{handle}/avatar/[^"]+)"', page)
+    if avatar:
+        media["avatar"] = BASE_URL + avatar.group(1)
+
+    banner = re.search(
+        rf'id="page-mast" style="background-image: url\(/?(ui/img/model/{handle}/header/[^)]+)\)',
+        page,
+    )
+    if banner:
+        media["banner"] = f"{BASE_URL}/{banner.group(1)}"
+
+    return media
+
+
+def _text(markup: str) -> str:
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", markup))).strip()
