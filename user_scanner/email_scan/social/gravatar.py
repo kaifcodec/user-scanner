@@ -1,6 +1,100 @@
 import hashlib
+import html
+import re
+
 import httpx
+
+from user_scanner.core.helpers import get_global_timeout
 from user_scanner.core.result import Result
+
+PROFILE_HOST = "https://gravatar.com"
+DEFAULT_TIMEOUT = 15.0
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
+
+# The public JSON APIs omit the profile's "Links" card, its interests and the
+# advanced-details panel; only the rendered profile page carries them.
+LINKS_SECTION_RE = re.compile(
+    r'g-profile__links".*?(?=<div class="g-profile__card|<button class="g-profile__adv-details-btn)',
+    re.S,
+)
+LINK_RE = re.compile(r'<a class="card-item__link"\s+href="([^"]+)"\s+title="([^"]*)"', re.S)
+INTERESTS_RE = re.compile(r'g-profile__interests-list">(.*?)</ul>', re.S)
+INTEREST_ITEM_RE = re.compile(r"<span>\s*([^<]+?)\s*</span>")
+ADV_DETAIL_RE = re.compile(
+    r"<span>\s*(Profile|Updated|Created|Languages|Verified connections|Time):\s*([^<]+?)\s*</span>"
+)
+TIMEZONE_RE = re.compile(r"\(([^)]+)\)")
+
+# The markdown export spells out what the profile page abbreviates: full
+# language names with primary/secondary, and an IANA zone instead of a
+# DST-dependent UTC offset.
+MARKDOWN_KEYS = {
+    "Languages": "languages",
+    "Timezone": "timezone",
+}
+
+ADV_DETAIL_KEYS = {
+    "Profile": "profile_type",
+    "Updated": "last_updated",
+    "Created": "created",
+    "Languages": "languages",
+    "Verified connections": "verified_connections",
+}
+
+
+async def validate_gravatar(email: str) -> Result:
+    email_clean = email.lower().strip()
+    timeout = get_global_timeout() or DEFAULT_TIMEOUT
+    # Older profiles are only addressable by the legacy MD5 hash.
+    hashes = [
+        hashlib.sha256(email_clean.encode("utf-8")).hexdigest(),
+        hashlib.md5(email_clean.encode("utf-8")).hexdigest(),
+    ]
+    try:
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            for email_hash in hashes:
+                response = await client.get(
+                    f"https://www.gravatar.com/avatar/{email_hash}?d=404", headers=HEADERS
+                )
+                if response.status_code == 200:
+                    extra = await _collect_profile(client, email_hash)
+                    return Result.taken(url=extra.get("profile_url", PROFILE_HOST), extra=extra)
+                if response.status_code != 404:
+                    return Result.error(f"HTTP {response.status_code}", url=PROFILE_HOST)
+            return Result.available(url=PROFILE_HOST)
+    except httpx.TimeoutException:
+        return Result.error("Connection timed out", url=PROFILE_HOST)
+    except Exception as e:
+        return Result.error(e, url=PROFILE_HOST)
+
+
+async def _collect_profile(client: httpx.AsyncClient, email_hash: str) -> dict:
+    extra: dict = {"avatar_url": f"https://www.gravatar.com/avatar/{email_hash}"}
+    try:
+        response = await client.get(f"https://en.gravatar.com/{email_hash}.json", headers=HEADERS)
+        if response.status_code == 200:
+            entries = response.json().get("entry") or []
+            if entries and isinstance(entries[0], dict):
+                _extract_profile_data(entries[0], extra)
+    except Exception:
+        pass
+    try:
+        response = await client.get(f"{PROFILE_HOST}/{email_hash}", headers=HEADERS)
+        if response.status_code == 200:
+            _extract_page_data(response.text, extra)
+    except Exception:
+        pass
+    try:
+        response = await client.get(f"{PROFILE_HOST}/{email_hash}.md", headers=HEADERS)
+        if response.status_code == 200:
+            _extract_markdown_data(response.text, extra)
+    except Exception:
+        pass
+    return extra
+
 
 def _extract_profile_data(entry: dict, extra: dict) -> None:
     if entry.get("preferredUsername"):
@@ -15,10 +109,16 @@ def _extract_profile_data(entry: dict, extra: dict) -> None:
         extra["bio"] = str(entry["aboutMe"]).strip()
     if entry.get("currentLocation"):
         extra["location"] = str(entry["currentLocation"]).strip()
-    if entry.get("jobTitle"):
-        extra["job_title"] = str(entry["jobTitle"]).strip()
+    # The legacy endpoint returns this as job_title; jobTitle is the v3 spelling.
+    job_title = entry.get("jobTitle") or entry.get("job_title")
+    if job_title:
+        extra["job_title"] = str(job_title).strip()
     if entry.get("company"):
         extra["company"] = str(entry["company"]).strip()
+    if entry.get("pronouns"):
+        extra["pronouns"] = str(entry["pronouns"]).strip()
+    if entry.get("pronunciation"):
+        extra["pronunciation"] = str(entry["pronunciation"]).strip()
 
     name_info = entry.get("name")
     if isinstance(name_info, dict) and name_info.get("formatted"):
@@ -58,6 +158,26 @@ def _extract_profile_data(entry: dict, extra: dict) -> None:
         if url_list:
             extra["websites"] = ", ".join(url_list)
 
+    contact_info = entry.get("contactInfo")
+    if isinstance(contact_info, list):
+        contact_list = [
+            f"{str(c.get('type', 'contact'))}: {str(c['value']).strip()}"
+            for c in contact_info
+            if isinstance(c, dict) and c.get("value") is not None and str(c["value"]).strip()
+        ]
+        if contact_list:
+            extra["contact_info"] = ", ".join(contact_list)
+
+    phones = entry.get("phoneNumbers")
+    if isinstance(phones, list):
+        phone_list = [
+            f"{str(p.get('type', 'phone'))}: {str(p['value']).strip()}"
+            for p in phones
+            if isinstance(p, dict) and p.get("value") is not None and str(p["value"]).strip()
+        ]
+        if phone_list:
+            extra["phone_numbers"] = ", ".join(phone_list)
+
     emails = entry.get("emails")
     if isinstance(emails, list):
         email_list = [
@@ -78,60 +198,54 @@ def _extract_profile_data(entry: dict, extra: dict) -> None:
         if crypto_list:
             extra["crypto_addresses"] = ", ".join(crypto_list)
 
-async def _check(email: str) -> Result:
-    show_url = "https://gravatar.com"
-    email_clean = email.lower().strip()
-    email_hash = hashlib.sha256(email_clean.encode("utf-8")).hexdigest()
-    url = f"https://www.gravatar.com/avatar/{email_hash}?d=404"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.get(url, headers=headers)
-            if response.status_code == 200:
-                extra = {"avatar_url": f"https://www.gravatar.com/avatar/{email_hash}"}
-                profile_url = f"https://en.gravatar.com/{email_hash}.json"
-                try:
-                    profile_resp = await client.get(profile_url, headers=headers, timeout=15.0)
-                    if profile_resp.status_code == 200:
-                        data = profile_resp.json()
-                        entries = data.get("entry", [])
-                        if entries and isinstance(entries, list):
-                            _extract_profile_data(entries[0], extra)
-                except Exception:
-                    pass
-                final_url = extra.get("profile_url", show_url)
-                return Result.taken(url=final_url, extra=extra)
-            elif response.status_code == 404:
-                # Also fall back to check MD5 since some older profiles might only map via MD5
-                email_md5 = hashlib.md5(email_clean.encode("utf-8")).hexdigest()
-                url_md5 = f"https://www.gravatar.com/avatar/{email_md5}?d=404"
-                
-                response_md5 = await client.get(url_md5, headers=headers)
-                if response_md5.status_code == 200:
-                    extra = {"avatar_url": f"https://www.gravatar.com/avatar/{email_md5}"}
-                    profile_url_md5 = f"https://en.gravatar.com/{email_md5}.json"
-                    try:
-                        profile_resp = await client.get(profile_url_md5, headers=headers, timeout=15.0)
-                        if profile_resp.status_code == 200:
-                            data = profile_resp.json()
-                            entries = data.get("entry", [])
-                            if entries and isinstance(entries, list):
-                                _extract_profile_data(entries[0], extra)
-                    except Exception:
-                        pass
-                    final_url = extra.get("profile_url", show_url)
-                    return Result.taken(url=final_url, extra=extra)
-                elif response_md5.status_code == 404:
-                    return Result.available(url=show_url)
-                else:
-                    return Result.error(f"HTTP MD5 {response_md5.status_code}", url=show_url)
-            return Result.error(f"HTTP {response.status_code}", url=show_url)
-    except httpx.TimeoutException:
-        return Result.error("Connection timed out", url=show_url)
-    except Exception as e:
-        return Result.error(e, url=show_url)
+    background = entry.get("profileBackground")
+    if isinstance(background, dict):
+        if background.get("url"):
+            extra["background_image"] = str(background["url"]).strip()
+        if background.get("color"):
+            extra["background_color"] = str(background["color"]).strip()
 
-async def validate_gravatar(email: str) -> Result:
-    return await _check(email)
+
+def _extract_page_data(page: str, extra: dict) -> None:
+    section = LINKS_SECTION_RE.search(page)
+    if section:
+        links = []
+        for url, title in LINK_RE.findall(section.group(0)):
+            url = html.unescape(url).strip()
+            title = html.unescape(title).strip()
+            if not url:
+                continue
+            links.append(f"{title}: {url}" if title and title != url else url)
+        if links:
+            extra["links"] = ", ".join(links)
+
+    interests = INTERESTS_RE.search(page)
+    if interests:
+        items = [html.unescape(i).strip() for i in INTEREST_ITEM_RE.findall(interests.group(1))]
+        items = [i for i in items if i]
+        if items:
+            extra["interests"] = ", ".join(items)
+
+    for label, value in ADV_DETAIL_RE.findall(page):
+        value = html.unescape(value).strip()
+        if not value or value == "-":
+            continue
+        if label == "Time":
+            zone = TIMEZONE_RE.search(value)
+            # Profiles with no timezone set render as UTC, so a bare "UTC" says
+            # nothing about the owner and is dropped.
+            if zone and zone.group(1).strip() != "UTC":
+                extra["timezone"] = zone.group(1).strip()
+            continue
+        extra[ADV_DETAIL_KEYS[label]] = value
+
+
+def _extract_markdown_data(page: str, extra: dict) -> None:
+    for label, key in MARKDOWN_KEYS.items():
+        match = re.search(rf"^- {label}: (.+)$", page, re.M)
+        if not match:
+            continue
+        # Markdown-escapes any punctuation, e.g. America/Sao\_Paulo.
+        value = re.sub(r"\\(.)", r"\1", match.group(1)).strip()
+        if value:
+            extra[key] = value
