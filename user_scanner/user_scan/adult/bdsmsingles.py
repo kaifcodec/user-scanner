@@ -4,7 +4,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_bdsmsingles(user):
     url = f"https://www.bdsmsingles.com/members/{user}/"
-    show_url = f"https://www.bdsmsingles.com/members/{user}/"
+    show_url = url
 
     def process(response):
         if response.status_code == 200 and "<title>Profile" in response.text:
@@ -62,9 +62,10 @@ def validate_bdsmsingles(user):
 
             return Result.taken(extra=extra, media=media, url=show_url)
 
-        if response.status_code == 302 or "BDSM Singles" in response.text:
-            return Result.available(url=show_url)
-
+        # No confirmed not-found marker exists: /members/ sits behind an active
+        # JS challenge, and the site name matches its own home page, its login
+        # redirect and the challenge page alike — keying a miss on any of them
+        # reports every handle as free.
         return Result.error("Unexpected response body, report it via GitHub issues.", url=show_url)
 
     return generic_validate(url, process, show_url=show_url)
