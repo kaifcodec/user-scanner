@@ -495,6 +495,11 @@ def generate_pdf_report(
     hits_with_meta = []
     for hit in hits:
         meta = clean_metadata(hit.get("extra"))
+        media = hit.get("media")
+        if media and isinstance(media, dict):
+            for k, v in media.items():
+                if v:
+                    meta.append((k, v))
         if meta:
             hits_with_meta.append((hit, meta))
 
