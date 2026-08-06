@@ -21,13 +21,14 @@ def validate_gravatar(user: str) -> Result:
         if response.status_code == 200:
             data = response.json()
             extra = {}
+            media = {}
             if "entry" in data and len(data["entry"]) > 0:
                 entry = data["entry"][0]
 
                 if entry.get("hash"):
                     extra["gravatar_id"] = entry["hash"]
                 if entry.get("thumbnailUrl"):
-                    extra["image"] = entry["thumbnailUrl"]
+                    media["avatar"] = entry["thumbnailUrl"]
                 if entry.get("preferredUsername"):
                     extra["username"] = entry["preferredUsername"]
                 if entry.get("name", {}).get("formatted"):
@@ -48,7 +49,7 @@ def validate_gravatar(user: str) -> Result:
                 if links:
                     extra["links"] = ", ".join(links)
 
-                return Result.taken(extra=extra, url=show_url)
+                return Result.taken(extra=extra, media=media, url=show_url)
 
         return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
     except Exception as e:

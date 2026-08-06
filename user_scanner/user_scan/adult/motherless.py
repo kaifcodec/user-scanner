@@ -24,7 +24,9 @@ def validate_motherless(user):
         if 'class="not-available"' in body:
             if "invalid" in body.lower():
                 return Result.error("Username rejected by Motherless", url=show_url)
-            return Result.taken(extra=_fetch_profile(show_url), url=show_url)
+
+            extra, media = _fetch_profile(show_url)
+            return Result.taken(extra=extra, media=media, url=show_url)
 
         if 'class="available"' in body:
             return Result.available(url=show_url)
@@ -36,20 +38,21 @@ def validate_motherless(user):
     )
 
 
-def _fetch_profile(profile_url: str) -> dict:
+def _fetch_profile(profile_url: str) -> tuple[dict, dict]:
     """The checkusername endpoint only reports availability, so pull the public
     member page for metadata. Best-effort: a failed fetch yields no extra."""
     try:
         response = make_request(profile_url)
         if response.status_code != 200:
-            return {}
+            return {}, {}
         return _extract_profile(response.text)
     except Exception:
-        return {}
+        return {}, {}
 
 
-def _extract_profile(html_text: str) -> dict:
+def _extract_profile(html_text: str) -> tuple[dict, dict]:
     extra = {}
+    media = {}
 
     # The public member page renders two field blocks: "profile-stats" rows
     # (<span>Label:</span> value) and "profile-member-info" rows
@@ -70,6 +73,6 @@ def _extract_profile(html_text: str) -> dict:
 
     avatar = re.search(r'og:image"\s+content="([^"]+)"', html_text, re.IGNORECASE)
     if avatar:
-        extra["avatar"] = avatar.group(1)
+        media["avatar"] = avatar.group(1)
 
-    return extra
+    return extra, media

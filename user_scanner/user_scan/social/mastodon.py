@@ -24,6 +24,7 @@ def validate_mastodon(user: str) -> Result:
             return Result.available()
         elif response.status_code == 200:
             extra = {}
+            media = {}
             try:
                 data = response.json()
                 if data.get("id"):
@@ -41,14 +42,13 @@ def validate_mastodon(user: str) -> Result:
                 if data.get("statuses_count") is not None:
                     extra["posts"] = data.get("statuses_count")
                 if data.get("avatar"):
-                    extra["avatar"] = data.get("avatar")
+                    media["avatar"] = data.get("avatar")
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
         else:
             return Result.error(f"HTTP {response.status_code}")
 
     return generic_validate(
         url, process, show_url=show_url, follow_redirects=True
     )
-

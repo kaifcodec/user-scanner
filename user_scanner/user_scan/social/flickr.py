@@ -15,6 +15,7 @@ def validate_flickr(user: str) -> Result:
 
         if r.status_code == 200:
             extra = {}
+            media = {}
             match = re.search(r"modelExport:\s*(.*?),\s*auth", r.text)
             if match:
                 try:
@@ -39,7 +40,7 @@ def validate_flickr(user: str) -> Result:
                     if avatar_retina:
                         if avatar_retina.startswith("//"):
                             avatar_retina = "https:" + avatar_retina
-                        extra["avatar_url"] = avatar_retina
+                        media["avatar"] = avatar_retina
 
                     if profile.get("photoCount") is not None:
                         extra["photos"] = int(profile.get("photoCount"))
@@ -51,7 +52,7 @@ def validate_flickr(user: str) -> Result:
                 except Exception:
                     pass
 
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         return Result.error(f"HTTP {r.status_code}")
 

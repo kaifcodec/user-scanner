@@ -354,10 +354,16 @@ def main():
                 )
 
     results = []
+    show_all = args.all
+    if args.module and not args.all:
+        raw_module_str = ",".join(args.module) if isinstance(args.module, list) else args.module
+        requested_modules = [m.strip() for m in raw_module_str.split(",") if m.strip()]
+        if len(requested_modules) <= 10:
+            show_all = True
 
     config = ScanConfig(
         allow_loud=args.allow_loud,
-        show_all=args.all,
+        show_all=show_all,
         no_nsfw=args.no_nsfw,
         verbose=args.verbose,
         timeout=args.timeout,
@@ -521,7 +527,7 @@ def main():
     total_found = len([r for r in results if r.is_found()])
     total_skipped = len([r for r in results if r.status == Status.SKIPPED])
 
-    if not config.show_all and total_found == 0:
+    if not config.show_all and total_found == 0 and total_skipped == 0:
         print(f"\n{R}[✘] No results found for the given target(s).{X}")
     else:
         print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")

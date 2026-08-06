@@ -12,20 +12,21 @@ def validate_buymeacoffee(user):
         response = make_request(url, headers=headers, follow_redirects=True)
         if response.status_code == 200:
             extra = {}
-            
+            media = {}
+
             # Extract Name (from og:title or title)
             n = re.search(r'<meta property="og:title" content="([^"]+)"', response.text)
             if not n: n = re.search(r'<title[^>]*>([^<]+?)(?:\s*-\s*Buymeacoffee)?</title>', response.text, re.IGNORECASE)
             if n: extra['name'] = n.group(1).strip()
-            
+
             m = re.search(r'<meta name="description" content="([^"]+)"', response.text)
             if not m: m = re.search(r'<meta property="og:description" content="([^"]+)"', response.text)
             if m: extra['bio'] = m.group(1).strip()
-            
+
             img = re.search(r'<meta property="og:image" content="([^"]+)"', response.text)
-            if img: extra['avatar'] = img.group(1)
-            
-            return Result.taken(extra=extra, url=show_url)
+            if img: media['avatar'] = img.group(1)
+
+            return Result.taken(extra=extra, media=media, url=show_url)
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:

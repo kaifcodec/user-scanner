@@ -34,7 +34,9 @@ def validate_osta(user: str) -> Result:
                 about_url = f"{BASE_URL}/en?fuseaction=listing.aboutseller&user={user_id}"
                 if (about := _fetch(about_url, _extract_about)) is not None:
                     extra.update(about)
-            return Result.taken(extra=extra, url=profile_url)
+
+            media = {"avatar": extra.pop("avatar")} if "avatar" in extra else {}
+            return Result.taken(extra=extra, media=media, url=profile_url)
 
         return Result.error(f"Unexpected response status: {response.status_code}")
 

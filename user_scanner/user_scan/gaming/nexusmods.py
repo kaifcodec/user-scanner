@@ -25,12 +25,13 @@ def validate_nexusmods(user: str) -> Result:
             return Result.error("Profile response did not match the requested username")
 
         extra = {}
+        media = {}
         avatar = re.search(
             r'<meta property="og:image" content="([^"]+)"', response.text
         )
         if avatar:
-            extra["avatar"] = html.unescape(avatar.group(1))
-            user_id = re.search(r"/(\d+)/100$", extra["avatar"])
+            media["avatar"] = html.unescape(avatar.group(1))
+            user_id = re.search(r"/(\d+)/100$", media["avatar"])
             if user_id:
                 extra["user_id"] = int(user_id.group(1))
 
@@ -81,6 +82,6 @@ def validate_nexusmods(user: str) -> Result:
         except (AttributeError, ValueError, json.JSONDecodeError):
             pass
 
-        return Result.taken(extra=extra)
+        return Result.taken(extra=extra, media=media)
 
     return impersonate_validate(url, process, show_url=url, allow_redirects=True)

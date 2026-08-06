@@ -15,6 +15,7 @@ def validate_boosty(user: str) -> Result:
                 # If it's a valid blog, it contains a unique ID or title
                 if "title" in data:
                     extra = {}
+                    media = {}
                     if data.get("title"):
                         extra["display_name"] = data.get("title")
 
@@ -26,7 +27,7 @@ def validate_boosty(user: str) -> Result:
 
                     owner = data.get("owner", {})
                     if owner.get("avatarUrl"):
-                        extra["avatar_url"] = owner.get("avatarUrl")
+                        media["avatar"] = owner.get("avatarUrl")
                     if owner.get("name") and owner.get("name") != data.get("title"):
                         extra["owner_name"] = owner.get("name")
 
@@ -38,7 +39,7 @@ def validate_boosty(user: str) -> Result:
                     if links:
                         extra["links"] = links
 
-                    return Result.taken(extra=extra)
+                    return Result.taken(extra=extra, media=media)
             except Exception:
                 pass
 

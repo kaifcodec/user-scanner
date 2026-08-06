@@ -41,33 +41,36 @@ def validate_xnxx(user: str) -> Result:
         if "already exists" not in message.lower():
             return Result.error(message or "Name check gave no verdict", url=show_url)
 
-        return Result.taken(extra=_public_profile(user), url=show_url)
+
+        extra, media = _public_profile(user)
+        return Result.taken(extra=extra, media=media, url=show_url)
 
     return impersonate_validate(
         CHECK_URL, process, show_url=show_url, params={"profile": user}, headers=HEADERS
     )
 
 
-def _public_profile(user: str) -> dict:
+def _public_profile(user: str) -> tuple[dict, dict]:
     """Registered names only get a public page when they are a model or an
     uploader; plain members have none. Best-effort: a miss just means the
     account exists without anything public to show."""
     try:
         response = impersonate_request(f"{BASE_URL}/pornstar/{user}", allow_redirects=True)
         if response.status_code != 200:
-            return {"type": "member"}
+            return {"type": "member"}, {}
     except Exception:
-        return {"type": "member"}
+        return {"type": "member"}, {}
 
     user_obj = _user_object(response.text)
     if user_obj.get("username", "").lower() != user.lower():
-        return {"type": "member"}
+        return {"type": "member"}, {}
 
     return _extract_profile(response.text, user_obj)
 
 
-def _extract_profile(html_text: str, user_obj: dict) -> dict:
+def _extract_profile(html_text: str, user_obj: dict) -> tuple[dict, dict]:
     extra = {}
+    media = {}
 
     namespace = re.match(r"/([^/]+)/", user_obj.get("url") or "")
     if namespace:
@@ -81,13 +84,13 @@ def _extract_profile(html_text: str, user_obj: dict) -> dict:
         extra["gender"] = user_obj["sex"]
     avatar = user_obj.get("profile_picture") or user_obj.get("profile_picture_small")
     if avatar:
-        extra["avatar"] = avatar
+        media["avatar"] = avatar
 
     aliases = _aliases(html_text, user_obj.get("display", ""))
     if aliases:
         extra["aliases"] = ", ".join(aliases)
 
-    return extra
+    return extra, media
 
 
 def _user_object(html_text: str) -> dict:

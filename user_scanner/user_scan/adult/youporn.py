@@ -30,8 +30,9 @@ def validate_youporn(user: str) -> Result:
         # Only a real profile echoes the requested handle in its canonical link;
         # the host varies because YouPorn geo-redirects (e.g. br.youporn.com).
         if response.status_code == 200 and _canonical_profile(response.text, path) == user.lower():
-            extra = {"type": account_type, **_extract_profile(response.text)}
-            return Result.taken(extra=extra, url=url)
+            extra, media = _extract_profile(response.text)
+            extra = {"type": account_type, **extra}
+            return Result.taken(extra=extra, media=media, url=url)
 
         # A genuinely missing handle 404s with the dedicated not-found template;
         # require its title so a blocked or transient 404 isn't read as free.
@@ -97,8 +98,9 @@ def _canonical_profile(html_text: str, path: str) -> str | None:
     return match.group(1).lower() if match else None
 
 
-def _extract_profile(html_text: str) -> dict:
+def _extract_profile(html_text: str) -> tuple[dict, dict]:
     extra = {}
+    media = {}
 
     name = re.search(r'<h1 class="name-title">\s*(.*?)\s*</h1>', html_text, re.DOTALL)
     if name:
@@ -121,9 +123,9 @@ def _extract_profile(html_text: str) -> dict:
     avatar = re.search(
         r'<div class="avatar-wrapper">.*?\bdata-src="([^"]+)"', html_text, re.DOTALL | re.IGNORECASE)
     if avatar:
-        extra["avatar"] = html.unescape(avatar.group(1))
+        media["avatar"] = html.unescape(avatar.group(1))
 
-    return extra
+    return extra, media
 
 
 def _title(html_text: str) -> str:

@@ -8,6 +8,8 @@ def validate_discogs(user):
     def process(response):
         if response.status_code == 200 and "\"id\":" in response.text:
             extra = {}
+            media = {}
+
             try:
                 data = response.json()
                 if data.get("id"):
@@ -33,10 +35,10 @@ def validate_discogs(user):
                 if data.get("home_page"):
                     extra["website"] = data.get("home_page").strip()
                 if data.get("avatar_url"):
-                    extra["avatar"] = data.get("avatar_url")
+                    media["avatar"] = data.get("avatar_url")
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         if response.status_code == 404 or "\"message\": \"User does not exist or may have been deleted.\"" in response.text:
             return Result.available()
@@ -44,4 +46,3 @@ def validate_discogs(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     return generic_validate(url, process, show_url=show_url)
-

@@ -9,12 +9,13 @@ def validate_zmarsa(user):
     def process(response):
         if "Statystyki" in response.text:
             extra = {}
+            media = {}
 
             # Avatar image URL (if not default)
             avatar_match = re.search(
                 r'src="(https://zmarsa.com/storage/avatar/[^"]+)"', response.text)
             if avatar_match and "default.jpg" not in avatar_match.group(1):
-                extra["image"] = avatar_match.group(1)
+                media["image"] = avatar_match.group(1)
 
             # Date joined
             joined_match = re.search(
@@ -53,7 +54,7 @@ def validate_zmarsa(user):
             if comments_match:
                 extra["comments"] = comments_match.group(1).strip()
 
-            return Result.taken(extra=extra, url=show_url)
+            return Result.taken(extra=extra, media=media, url=show_url)
 
         if "<title>Error 404 - zMarsa.com<" in response.text:
             return Result.available(url=show_url)

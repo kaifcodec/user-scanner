@@ -22,6 +22,7 @@ def validate_lemmy(user: str) -> Result:
             return Result.available()
         if response.status_code == 200:
             extra = {}
+            media = {}
             try:
                 data = response.json()
                 person_view = data.get("person_view", {})
@@ -35,7 +36,7 @@ def validate_lemmy(user: str) -> Result:
                 if person.get("display_name"):
                     extra["display_name"] = person["display_name"]
                 if person.get("avatar"):
-                    extra["avatar"] = person["avatar"]
+                    media["avatar"] = person["avatar"]
                 if person.get("published"):
                     extra["joined"] = person["published"]
                 if "bot_account" in person:
@@ -48,7 +49,7 @@ def validate_lemmy(user: str) -> Result:
                     extra["comments"] = counts["comment_count"]
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
         return Result.error(f"Unexpected status code: {response.status_code}")
 
     return generic_validate(url, process, show_url=show_url, timeout=5.0)

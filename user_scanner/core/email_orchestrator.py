@@ -17,7 +17,7 @@ from user_scanner.core.helpers import (
     load_modules,
     get_global_timeout,
 )
-from user_scanner.core.result import Result, Status
+from user_scanner.core.result import Result
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
 
 # Monkey-patch httpx clients to automatically use proxies for email scans
@@ -81,10 +81,10 @@ async def _async_worker(
         if not func:
             return Result.error(
                 f"{site_name} has no validate_ function", **params
-            ).show(configs)
+            )
 
         if not configs.allow_loud and is_loud(site_name, is_email=True):
-            return Result.skipped().update(**params).show(configs)
+            return Result.skipped().update(**params)
 
         try:
             import inspect
@@ -95,17 +95,7 @@ async def _async_worker(
         except Exception as e:
             result = Result.error(e)
 
-        result.update(**params)
-
-        # Logic to print header dynamically for --show-all streaming
-        if not configs.show_all and result.status == Status.TAKEN:
-            if printed_cats is not None and actual_cat not in printed_cats:
-                print(
-                    f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}"
-                )
-                printed_cats.add(actual_cat)
-
-        return result.show(configs)
+        return result.update(**params)
 
 
 async def _run_batch(
@@ -144,6 +134,15 @@ async def _run_batch(
 
         for coro in asyncio.as_completed(tasks):
             result = await coro
+            actual_cat = result.category or "Unknown"
+            if not configs.show_all and result.is_visible(configs):
+                if printed_cats is not None and actual_cat not in printed_cats:
+                    print(
+                        f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}"
+                    )
+                    printed_cats.add(actual_cat)
+
+            result.show(configs)
             results.append(result)
             progress.advance(task_id)
 
@@ -233,6 +232,15 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
                 
             for coro in asyncio.as_completed(tasks):
                 result = await coro
+                if not configs.show_all and result.is_visible(configs):
+                    display_name = result.category or "Unknown"
+                    if display_name not in printed_cats:
+                        print(
+                            f"\n{Fore.MAGENTA}== {display_name.upper()} SITES =={Style.RESET_ALL}"
+                        )
+                        printed_cats.add(display_name)
+
+                result.show(configs)
                 all_results.append(result)
                 progress.advance(task_id)
 

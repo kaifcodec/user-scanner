@@ -22,8 +22,10 @@ def validate_bluesky(user):
             if data.get("postsCount") is not None:
                 extra["posts"] = data["postsCount"]
             if data.get("avatar"):
-                extra["avatar"] = data["avatar"]
-            return Result.taken(extra=extra)
+                media = {"avatar": data["avatar"]}
+            else:
+                media = {}
+            return Result.taken(extra=extra, media=media)
 
         if response.status_code == 400:
             message = response.json().get("message")

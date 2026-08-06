@@ -10,6 +10,7 @@ def validate_bdsmlr(user):
     def process(response):
         if response.status_code == 200 and "login" in response.text:
             extra = {}
+            media = {}
 
             # Extract blog title
             title_match = re.search(
@@ -25,7 +26,7 @@ def validate_bdsmlr(user):
             image_match = re.search(
                 r'<meta\s+property="og:image"\s+content="([^"]+)"', response.text, re.IGNORECASE)
             if image_match and "default_avatar" not in image_match.group(1):
-                extra["image"] = image_match.group(1).strip()
+                media["image"] = image_match.group(1).strip()
 
             # Extract description
             desc_match = re.search(
@@ -41,7 +42,7 @@ def validate_bdsmlr(user):
             if blog_id_match:
                 extra["blog_id"] = blog_id_match.group(1)
 
-            return Result.taken(extra=extra, url=show_url)
+            return Result.taken(extra=extra, media=media, url=show_url)
 
         if "This blog doesn't exist." in response.text or response.status_code == 404:
             return Result.available(url=show_url)

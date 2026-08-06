@@ -8,6 +8,8 @@ def validate_bandcamp(user):
     def process(response):
         if response.status_code == 200 and " collection | Bandcamp</title>" in response.text:
             extra = {}
+            media = {}
+
             try:
                 import re as local_re
                 import html as local_html
@@ -37,10 +39,10 @@ def validate_bandcamp(user):
                             extra["fav_genre"] = fan.get("fav_genre")
                         if fan.get("photo") and isinstance(fan["photo"], dict) and fan["photo"].get("image_id"):
                             img_id = fan["photo"]["image_id"]
-                            extra["avatar"] = f"https://f4.bcbits.com/img/00{img_id}_10.jpg"
+                            media["avatar"] = f"https://f4.bcbits.com/img/00{img_id}_10.jpg"
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         if response.status_code == 404 or "<h2>Sorry, that something isn’t here.</h2>" in response.text:
             return Result.available()
@@ -48,4 +50,3 @@ def validate_bandcamp(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     return generic_validate(url, process, show_url=show_url)
-

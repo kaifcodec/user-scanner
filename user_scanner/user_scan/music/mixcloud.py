@@ -14,13 +14,14 @@ def validate_mixcloud(user):
         response = make_request(api_url, headers=headers, follow_redirects=True)
         if response.status_code == 200:
             data = response.json()
-            
-            # If the user doesn't exist, mixcloud API typically returns 404, 
+
+            # If the user doesn't exist, mixcloud API typically returns 404,
             # but sometimes JSON contains an error key.
             if "error" in data:
                 return Result.available(url=show_url)
 
             extra = {}
+            media = {}
             if name := data.get("name"):
                 extra["name"] = name
             if follower_count := data.get("follower_count"):
@@ -30,14 +31,14 @@ def validate_mixcloud(user):
             if pictures := data.get("pictures", {}):
                 # Try large, fallback to thumbnail or small
                 if avatar := pictures.get("large") or pictures.get("thumbnail") or pictures.get("small"):
-                    extra["avatar"] = avatar
-                
-            return Result.taken(extra=extra, url=show_url)
-            
+                    media["avatar"] = avatar
+
+            return Result.taken(extra=extra, media=media, url=show_url)
+
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:
             return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
-            
+
     except Exception as e:
         return Result.error(e, url=show_url)

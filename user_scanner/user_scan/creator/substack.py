@@ -15,6 +15,7 @@ def validate_substack(user: str) -> Result:
                 # Claimed profile has an id and name
                 if "id" in data:
                     extra = {}
+                    media = {}
                     if data.get("name"):
                         extra["display_name"] = data.get("name")
                     if data.get("handle"):
@@ -22,7 +23,7 @@ def validate_substack(user: str) -> Result:
                     if data.get("bio"):
                         extra["bio"] = data.get("bio")
                     if data.get("photo_url"):
-                        extra["avatar_url"] = data.get("photo_url")
+                        media["avatar"] = data.get("photo_url")
 
                     # Extract publication info if they have one
                     primary_pub = data.get("primaryPublication") or {}
@@ -37,7 +38,7 @@ def validate_substack(user: str) -> Result:
                     if data.get("followerCount") is not None:
                         extra["followers"] = int(data.get("followerCount"))
 
-                    return Result.taken(extra=extra)
+                    return Result.taken(extra=extra, media=media)
             except Exception:
                 pass
 

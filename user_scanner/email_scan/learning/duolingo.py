@@ -1,22 +1,23 @@
 import httpx
+
 from user_scanner.core.result import Result
 
 
 async def _check(email: str) -> Result:
     show_url = "https://duolingo.com"
     headers = {
-        'authority': 'www.duolingo.com',
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'User-Agent': "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0",
-        'Referer': 'https://www.duolingo.com/',
+        "authority": "www.duolingo.com",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0",
+        "Referer": "https://www.duolingo.com/",
     }
 
     try:
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             response = await client.get(
                 f"https://www.duolingo.com/2017-06-30/users?email={email}",
-                headers=headers
+                headers=headers,
             )
 
             if response.status_code == 200:
@@ -25,7 +26,8 @@ async def _check(email: str) -> Result:
                 if data.get("users") and len(data["users"]) > 0:
                     user = data["users"][0]
                     extra = {}
-                    
+                    media = {}
+
                     if user.get("name"):
                         extra["name"] = user["name"]
                     if user.get("username"):
@@ -38,14 +40,14 @@ async def _check(email: str) -> Result:
                         extra["has_google_id"] = user["hasGoogleId"]
                     if "hasFacebookId" in user:
                         extra["has_facebook_id"] = user["hasFacebookId"]
-                    
+
                     pic = user.get("picture")
                     if pic:
                         if pic.startswith("//"):
                             pic = "https:" + pic
-                        extra["picture"] = pic
-                        
-                    return Result.taken(url=show_url, extra=extra)
+                        media["avatar"] = pic
+
+                    return Result.taken(extra=extra, media=media, url=show_url)
                 else:
                     return Result.available(url=show_url)
 

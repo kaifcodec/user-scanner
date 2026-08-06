@@ -12,6 +12,7 @@ def validate_jupyter_forum(user):
             u = data.get("user", {})
             if u:
                 extra = {}
+                media = {}
                 if u.get("id"): extra["id"] = u.get("id")
                 if u.get("name"): extra["name"] = u.get("name")
                 if u.get("username"): extra["username"] = u.get("username")
@@ -19,7 +20,7 @@ def validate_jupyter_forum(user):
                 if u.get("last_posted_at"): extra["last_posted"] = u.get("last_posted_at")
                 if u.get("last_seen_at"): extra["last_seen"] = u.get("last_seen_at")
                 if u.get("created_at"): extra["registered"] = u.get("created_at")
-                
+
                 # Resolve avatar
                 avatar = u.get("avatar_template")
                 if avatar:
@@ -27,9 +28,9 @@ def validate_jupyter_forum(user):
                         avatar = avatar.format(size=120)
                     if avatar.startswith("/"):
                         avatar = "https://discourse.jupyter.org" + avatar
-                    extra["avatar"] = avatar
-                    
-                return Result.taken(extra=extra, url=show_url)
+                    media["avatar"] = avatar
+
+                return Result.taken(extra=extra, media=media, url=show_url)
             return Result.available(url=show_url)
         elif response.status_code == 404:
             return Result.available(url=show_url)

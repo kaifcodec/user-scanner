@@ -60,8 +60,10 @@ async def validate_gravatar(email: str) -> Result:
                     f"https://www.gravatar.com/avatar/{email_hash}?d=404", headers=HEADERS
                 )
                 if response.status_code == 200:
-                    extra = await _collect_profile(client, email_hash)
-                    return Result.taken(url=extra.get("profile_url", PROFILE_HOST), extra=extra)
+                    extra, media = await _collect_profile(client, email_hash)
+                    return Result.taken(
+                        url=extra.get("profile_url", PROFILE_HOST), extra=extra, media=media
+                    )
                 if response.status_code != 404:
                     return Result.error(f"HTTP {response.status_code}", url=PROFILE_HOST)
             return Result.available(url=PROFILE_HOST)
@@ -71,14 +73,15 @@ async def validate_gravatar(email: str) -> Result:
         return Result.error(e, url=PROFILE_HOST)
 
 
-async def _collect_profile(client: httpx.AsyncClient, email_hash: str) -> dict:
-    extra: dict = {"avatar_url": f"https://www.gravatar.com/avatar/{email_hash}"}
+async def _collect_profile(client: httpx.AsyncClient, email_hash: str) -> tuple[dict, dict]:
+    extra: dict = {}
+    media: dict = {"avatar": f"https://www.gravatar.com/avatar/{email_hash}"}
     try:
         response = await client.get(f"https://en.gravatar.com/{email_hash}.json", headers=HEADERS)
         if response.status_code == 200:
             entries = response.json().get("entry") or []
             if entries and isinstance(entries[0], dict):
-                _extract_profile_data(entries[0], extra)
+                _extract_profile_data(entries[0], extra, media)
     except Exception:
         pass
     try:
@@ -93,10 +96,10 @@ async def _collect_profile(client: httpx.AsyncClient, email_hash: str) -> dict:
             _extract_markdown_data(response.text, extra)
     except Exception:
         pass
-    return extra
+    return extra, media
 
 
-def _extract_profile_data(entry: dict, extra: dict) -> None:
+def _extract_profile_data(entry: dict, extra: dict, media: dict) -> None:
     if entry.get("preferredUsername"):
         extra["username"] = str(entry["preferredUsername"]).strip()
     if entry.get("displayName"):
@@ -104,7 +107,7 @@ def _extract_profile_data(entry: dict, extra: dict) -> None:
     if entry.get("profileUrl"):
         extra["profile_url"] = str(entry["profileUrl"]).strip()
     if entry.get("thumbnailUrl"):
-        extra["thumbnail_url"] = str(entry["thumbnailUrl"]).strip()
+        media["thumbnail_url"] = str(entry["thumbnailUrl"]).strip()
     if entry.get("aboutMe"):
         extra["bio"] = str(entry["aboutMe"]).strip()
     if entry.get("currentLocation"):
@@ -132,7 +135,7 @@ def _extract_profile_data(entry: dict, extra: dict) -> None:
             if isinstance(p, dict) and p.get("value") is not None and str(p["value"]).strip()
         ]
         if photo_list:
-            extra["photos"] = ", ".join(photo_list)
+            media["photos"] = ", ".join(photo_list)
 
     accounts = entry.get("accounts")
     if isinstance(accounts, list):
@@ -201,7 +204,7 @@ def _extract_profile_data(entry: dict, extra: dict) -> None:
     background = entry.get("profileBackground")
     if isinstance(background, dict):
         if background.get("url"):
-            extra["background_image"] = str(background["url"]).strip()
+            media["background"] = str(background["url"]).strip()
         if background.get("color"):
             extra["background_color"] = str(background["color"]).strip()
 

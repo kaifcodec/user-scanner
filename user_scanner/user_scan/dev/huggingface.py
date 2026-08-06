@@ -10,6 +10,7 @@ def validate_huggingface(user):
             return Result.available()
         elif response.status_code == 200:
             extra = {}
+            media = {}
             try:
                 data = response.json()
                 if data.get("fullname"):
@@ -28,12 +29,11 @@ def validate_huggingface(user):
                     avatar = data.get("avatarUrl")
                     if avatar.startswith("/"):
                         avatar = "https://huggingface.co" + avatar
-                    extra["avatar"] = avatar
+                    media["avatar"] = avatar
             except Exception:
                 pass
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
         else:
             return Result.error(f"HTTP {response.status_code}")
 
     return generic_validate(url, process, show_url=show_url, follow_redirects=True)
-

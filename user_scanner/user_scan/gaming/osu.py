@@ -13,6 +13,7 @@ def validate_osu(user):
     def process(response):
         if response.status_code == 200:
             extra = {}
+            media = {}
             title_match = local_re.search(r'<meta property="og:title" content="([^"]+)"', response.text)
             if title_match:
                 title_val = title_match.group(1).replace("· player info", "").strip()
@@ -20,13 +21,13 @@ def validate_osu(user):
 
             avatar_match = local_re.search(r'<meta property="og:image" content="([^"]+)"', response.text)
             if avatar_match:
-                extra["avatar"] = avatar_match.group(1).strip()
+                media["avatar"] = avatar_match.group(1).strip()
 
             desc_match = local_re.search(r'<meta property="og:description" content="([^"]+)"', response.text)
             if desc_match:
                 extra["rank"] = desc_match.group(1).strip()
 
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         if response.status_code == 404:
             return Result.available()

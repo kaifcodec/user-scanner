@@ -17,13 +17,14 @@ def validate_adultism(user):
             )
             if is_taken:
                 extra = {}
+                media = {}
 
                 # Extract Avatar
                 avatar_match = re.search(r'<img[^>]+src="([^"]+)"[^>]*class="[^"]*profile-image', response.text, re.IGNORECASE) or \
                     re.search(
                         r'<img[^>]+class="[^"]*profile-image[^"]*"[^>]*src="([^"]+)"', response.text, re.IGNORECASE)
                 if avatar_match and "defaults/member" not in avatar_match.group(1):
-                    extra["image"] = avatar_match.group(1)
+                    media["image"] = avatar_match.group(1)
 
                 # Extract Channel ID
                 channel_match = re.search(
@@ -135,7 +136,7 @@ def validate_adultism(user):
                 except Exception:
                     pass  # Keep going if friends page request fails
 
-                return Result.taken(extra=extra, url=show_url)
+                return Result.taken(extra=extra, media=media, url=show_url)
 
         if response.status_code == 404 or "Page not found" in response.text:
             return Result.available(url=show_url)

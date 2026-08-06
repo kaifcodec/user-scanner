@@ -16,6 +16,7 @@ def validate_carrd(user: str) -> Result:
                 return Result.available()
 
             extra = {}
+            media = {}
 
             # Parse display name from h1
             h1_match = re.search(r"<h1[^>]*>([^<]+)</h1>", r.text)
@@ -37,7 +38,7 @@ def validate_carrd(user: str) -> Result:
                 img_src = img_match.group(1).strip()
                 if img_src.startswith("assets/"):
                     img_src = f"https://{user}.carrd.co/{img_src}"
-                extra["avatar_url"] = img_src
+                media["avatar_url"] = img_src
 
             # Extract social links from anchor tags
             links = []
@@ -47,7 +48,7 @@ def validate_carrd(user: str) -> Result:
             if links:
                 extra["links"] = list(set(links))
 
-            return Result.taken(extra=extra)
+            return Result.taken(extra=extra, media=media)
 
         return Result.error(f"HTTP {r.status_code}")
 

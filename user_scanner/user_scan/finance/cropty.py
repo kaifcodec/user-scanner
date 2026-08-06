@@ -25,13 +25,14 @@ def validate_cropty(user):
             if isinstance(data_json, dict) and "data" in data_json:
                 data = data_json["data"]
                 extra = {}
+                media = {}
                 if name := data.get("name"): extra["name"] = name
                 if nickname := data.get("nickname"): extra["nickname"] = nickname
                 if image := data.get("image"):
                     if "defaults" not in image:
-                        extra["avatar"] = image
+                        media["avatar"] = image
                 if ref_link := data.get("ref_link"): extra["referral_link"] = ref_link
-                return Result.taken(extra=extra)
+                return Result.taken(extra=extra, media=media)
             return Result.error("Unexpected 200 response shape (no 'data' or known error code)")
 
         if response.status_code == 404:

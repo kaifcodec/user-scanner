@@ -13,6 +13,7 @@ def validate_bentbox(user):
                     return Result.available(url=show_url)
 
                 extra = {}
+                media = {}
 
                 # Extract profile data from OpenGraph or Title tags
                 title_match = re.search(
@@ -48,7 +49,7 @@ def validate_bentbox(user):
                 image_match = re.search(
                     r'<meta\s+property="og:image"\s+content="([^"]+)"', response.text, re.IGNORECASE)
                 if image_match:
-                    extra["image"] = image_match.group(1).strip()
+                    media["image"] = image_match.group(1).strip()
 
                 # Extract Identifier / User ID
                 id_match = re.search(
@@ -84,7 +85,7 @@ def validate_bentbox(user):
                 if videos_match:
                     extra["videos"] = videos_match.group(1)
 
-                return Result.taken(extra=extra, url=show_url)
+                return Result.taken(extra=extra, media=media, url=show_url)
 
         if response.status_code in (403, 429):
             return Result.error(

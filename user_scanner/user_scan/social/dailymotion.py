@@ -14,7 +14,7 @@ def validate_dailymotion(user):
         response = make_request(api_url, headers=headers, follow_redirects=True)
         if response.status_code == 200:
             data = response.json()
-            
+
             if "error" in data:
                 # Dailymotion API can return 200 with an error object
                 if data["error"].get("code") == 404:
@@ -22,12 +22,14 @@ def validate_dailymotion(user):
                 return Result.error(data["error"].get("message", "Unknown error"), url=show_url)
 
             extra = {}
+            media = {}
+
             if screenname := data.get("screenname"):
                 extra["screenname"] = screenname
             if description := data.get("description"):
                 extra["description"] = description
             if avatar := data.get("avatar_720_url"):
-                extra["avatar"] = avatar
+                media["avatar"] = avatar
             if followers := data.get("followers_total"):
                 extra["followers"] = str(followers)
             if videos := data.get("videos_total"):
@@ -36,13 +38,13 @@ def validate_dailymotion(user):
                 extra["country"] = country
             if verified := data.get("verified"):
                 extra["verified"] = str(verified)
-                
-            return Result.taken(extra=extra, url=show_url)
-            
+
+            return Result.taken(extra=extra, media=media, url=show_url)
+
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:
             return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
-            
+
     except Exception as e:
         return Result.error(e, url=show_url)

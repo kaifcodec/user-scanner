@@ -11,21 +11,22 @@ def validate_tumblr(user):
         response = make_request(url, headers=headers)
         if response.status_code == 200:
             extra = {}
+            media = {}
             title = re.search(r'<title[^>]*>(.*?)</title>', response.text, re.IGNORECASE)
             if title:
                 extra["title"] = title.group(1).strip()
-            
+
             desc = re.search(r'<meta[^>]*name="description"[^>]*content="([^"]+)"', response.text, re.IGNORECASE)
             if not desc:
                 desc = re.search(r'<meta[^>]*property="og:description"[^>]*content="([^"]+)"', response.text, re.IGNORECASE)
             if desc:
                 extra["description"] = desc.group(1).strip()
-                
+
             img = re.search(r'<meta[^>]*property="og:image"[^>]*content="([^"]+)"', response.text, re.IGNORECASE)
             if img:
-                extra["avatar"] = img.group(1).strip()
-                
-            return Result.taken(extra=extra, url=show_url)
+                media["avatar"] = img.group(1).strip()
+
+            return Result.taken(extra=extra, media=media, url=show_url)
         elif response.status_code == 404:
             return Result.available(url=show_url)
         else:

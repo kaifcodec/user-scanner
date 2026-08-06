@@ -4,18 +4,19 @@ from user_scanner.core.orchestrator import Result, make_request
 def validate_vivino(user):
     api_url = f"https://api.vivino.com/users/{user}"
     show_url = f"https://www.vivino.com/users/{user}"
-    
+
     headers = {
         "User-Agent": get_random_user_agent(),
         "Accept": "application/json",
     }
-    
+
     resp = make_request(api_url, headers=headers, http2=True)
     if resp.status_code == 200:
         try:
             data = resp.json()
             if "id" in data:
                 extra = {}
+                media = {}
                 extra["id"] = data["id"]
                 if "alias" in data:
                     extra["alias"] = data["alias"]
@@ -27,10 +28,10 @@ def validate_vivino(user):
                     img = data["image"]["location"]
                     if img.startswith("//"):
                         img = "https:" + img
-                    extra["image"] = img
+                    media["image"] = img
                 if "language" in data:
                     extra["language"] = data["language"]
-                return Result.taken(extra=extra, url=show_url)
+                return Result.taken(extra=extra, media=media, url=show_url)
         except Exception:
             pass
     return Result.available(url=show_url)

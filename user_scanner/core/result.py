@@ -14,12 +14,13 @@ DEBUG_MSG = """Result {{
   category: "{category}",
   url: "{url}",
   extra: "{extra}",
+  media: "{media}",
   is_email: "{is_email}"
 }}"""
 
 
 # Added {url} to the CSV template
-CSV_FIELDS = ["username", "category", "site_name", "status", "url", "extra", "reason"]
+CSV_FIELDS = ["username", "category", "site_name", "status", "url", "extra", "media", "reason"]
 
 
 def _neutralize_csv_cell(value):
@@ -173,6 +174,7 @@ class Result:
             "category": self.category,
             "url": self.url,  # Added url to dictionary output
             "extra": self.extra,
+            "media": self.media,
             "is_email": self.is_email,
         }
 
@@ -193,18 +195,20 @@ class Result:
         return json.dumps(data, indent=4)
 
     def to_csv(self) -> str:
+        def flatten_dict(d):
+            result = ""
+            for key, value in d.items():
+                result += f"{key}: {value}; "
+            return result.rstrip("; ")
+
         # uses .as_dict() since header has "username"
         data = self.as_dict()
 
         # flatten multiline extra string parameters so it doesn't break row alignments
-        if data.get("extra"):
-            clean_extra = ""
-            for key, value in data["extra"].items():
-                clean_extra += f"{key}: {value}; "
+        data["extra"] = flatten_dict(data["extra"]) if data.get("extra") else ""
+        data["media"] = flatten_dict(data["media"]) if data.get("media") else ""
 
-            data["extra"] = clean_extra.rstrip("; ")
-        else:
-            data["extra"] = ""
+
 
         del data["is_email"]
 
@@ -263,8 +267,9 @@ class Result:
 
         # dynamic extra layout handling logic
         extra_display = ""
-        for i, (key, value) in enumerate(self.extra.items()):
-            connector = "└──" if i == len(self.extra) - 1 else "├──"
+        display_items = list(self.extra.items()) + list(self.media.items())
+        for i, (key, value) in enumerate(display_items):
+            connector = "└──" if i == len(display_items) - 1 else "├──"
 
             if isinstance(value, str) and len(value.splitlines()) > 1:
                 value = "\n" + indent_text(value, 12, False)
@@ -280,11 +285,17 @@ class Result:
         """Returns True if the target was found or registered (Status.TAKEN)"""
         return self.status == Status.TAKEN
 
+    def is_visible(self, configs: ScanConfig | None = None) -> bool:
+        """Returns True if the result should be printed under the current configuration.
+        By default (show_all=False), TAKEN and SKIPPED results are visible."""
+        if configs and configs.show_all:
+            return True
+        return self.status in (Status.TAKEN, Status.SKIPPED)
+
     def show(self, configs: ScanConfig):
         """Prints the console output and returns itself for chaining.
-        If show_all is False, only results with Status.TAKEN are printed."""
-        # Updated show() to accept and pass the show_url flag
-        if not configs.show_all and self.status != Status.TAKEN:
+        If show_all is False, TAKEN and SKIPPED results are printed."""
+        if not self.is_visible(configs):
             return self
         print(self.get_console_output(configs))
         return self
