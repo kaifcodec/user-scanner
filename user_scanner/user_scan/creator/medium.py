@@ -1,38 +1,69 @@
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import generic_validate
+import json
+import re
+
+from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
+
+# Medium answers unknown handles with HTTP 200 and renders its 404 view, so the
+# status code carries no verdict — only these body markers do.
+NOT_FOUND_MARKERS = (">PAGE NOT FOUND<", "Out of nothing, something.")
 
 
 def validate_medium(user):
     url = f"https://medium.com/@{user}"
-    show_url = f"https://medium.com/@{user}"
-
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-Encoding": "identity",
-        "upgrade-insecure-requests": "1",
-        "sec-fetch-site": "none",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-user": "?1",
-        "sec-fetch-dest": "document",
-        "sec-ch-ua": '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Linux"',
-        "accept-language": "en-US,en;q=0.9",
-        "priority": "u=0, i",
-    }
+    show_url = url
 
     def process(response):
-        if response.status_code == 200:
-            html_text = response.text
+        html = response.text
 
-            username_tag = f'property="profile:username" content="{user}"'
+        # Medium resolves handles case-insensitively but echoes the canonical
+        # casing here, so the served profile must be matched, not the request.
+        served = re.search(r'property="profile:username" content="([^"]*)"', html)
 
-            if username_tag in html_text:
-                return Result.taken()
-            else:
-                return Result.available()
-        return Result.error()
+        if served and served.group(1).lower() == user.lower():
+            extra = {}
+            media = {}
 
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+            person = _person_ld_json(html)
+            name = person.get("name")
+            if name:
+                extra["fullname"] = name
+
+            bio = person.get("description")
+            if bio:
+                extra["bio"] = bio
+
+            # Anchored to this profile's own followers link — the sidebar
+            # carries the same markup for recommended authors.
+            followers = re.search(
+                rf'href="/@{re.escape(served.group(1))}/followers[^"]*"[^>]*>([\d.,]+[KM]?)\s+followers',
+                html,
+            )
+            if followers:
+                extra["followers"] = followers.group(1)
+
+            avatar = re.search(r'property="og:image" content="([^"]+)"', html)
+            if avatar:
+                media["avatar"] = avatar.group(1)
+
+            return Result.taken(extra=extra, media=media)
+
+        if any(marker in html for marker in NOT_FOUND_MARKERS):
+            return Result.available()
+
+        return Result.error(f"Unexpected response body (HTTP {response.status_code})")
+
+    # Accounts with a custom subdomain 301 to {user}.medium.com; the profile
+    # markers only exist after that hop. Unknown handles never redirect.
+    return impersonate_validate(url, process, show_url=show_url, allow_redirects=True)
+
+
+def _person_ld_json(html: str) -> dict:
+    for block in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.DOTALL):
+        try:
+            data = json.loads(block)
+        except ValueError:
+            continue
+        if isinstance(data, dict) and data.get("@type") == "Person":
+            return data
+    return {}
