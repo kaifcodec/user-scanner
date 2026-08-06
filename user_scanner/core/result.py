@@ -208,13 +208,7 @@ class Result:
         data["extra"] = flatten_dict(data["extra"]) if data.get("extra") else ""
         data["media"] = flatten_dict(data["media"]) if data.get("media") else ""
 
-        if data.get("media"):
-            clean_media = ""
-            for key, value in data["media"].items():
-                clean_media += f"{key}: {value}; "
-            data["media"] = clean_media.rstrip("; ")
-        else:
-            data["media"] = ""
+
 
         del data["is_email"]
 
