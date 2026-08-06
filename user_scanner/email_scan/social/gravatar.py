@@ -93,18 +93,23 @@ async def _collect_profile(client: httpx.AsyncClient, email_hash: str) -> tuple[
                 _extract_profile_data(entries[0], extra, media)
     except Exception:
         pass
+    page_read = False
     try:
         response = await client.get(f"{PROFILE_HOST}/{email_hash}", headers=HEADERS)
         if response.status_code == 200:
             _extract_page_data(response.text, extra)
+            page_read = True
     except Exception:
         pass
-    try:
-        response = await client.get(f"{PROFILE_HOST}/{email_hash}.md", headers=HEADERS)
-        if response.status_code == 200:
-            _extract_markdown_data(response.text, extra)
-    except Exception:
-        pass
+    # The export only refines the two fields the page already reports, so it is
+    # worth a request only once one of them is known to be set.
+    if not page_read or any(key in extra for key in MARKDOWN_KEYS.values()):
+        try:
+            response = await client.get(f"{PROFILE_HOST}/{email_hash}.md", headers=HEADERS)
+            if response.status_code == 200:
+                _extract_markdown_data(response.text, extra)
+        except Exception:
+            pass
     return extra, media
 
 
