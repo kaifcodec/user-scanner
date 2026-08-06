@@ -14,12 +14,13 @@ DEBUG_MSG = """Result {{
   category: "{category}",
   url: "{url}",
   extra: "{extra}",
+  media: "{media}",
   is_email: "{is_email}"
 }}"""
 
 
 # Added {url} to the CSV template
-CSV_FIELDS = ["username", "category", "site_name", "status", "url", "extra", "reason"]
+CSV_FIELDS = ["username", "category", "site_name", "status", "url", "extra", "media", "reason"]
 
 
 def _neutralize_csv_cell(value):
@@ -173,6 +174,7 @@ class Result:
             "category": self.category,
             "url": self.url,  # Added url to dictionary output
             "extra": self.extra,
+            "media": self.media,
             "is_email": self.is_email,
         }
 
@@ -205,6 +207,14 @@ class Result:
             data["extra"] = clean_extra.rstrip("; ")
         else:
             data["extra"] = ""
+
+        if data.get("media"):
+            clean_media = ""
+            for key, value in data["media"].items():
+                clean_media += f"{key}: {value}; "
+            data["media"] = clean_media.rstrip("; ")
+        else:
+            data["media"] = ""
 
         del data["is_email"]
 
@@ -263,8 +273,9 @@ class Result:
 
         # dynamic extra layout handling logic
         extra_display = ""
-        for i, (key, value) in enumerate(self.extra.items()):
-            connector = "└──" if i == len(self.extra) - 1 else "├──"
+        display_items = list(self.extra.items()) + list(self.media.items())
+        for i, (key, value) in enumerate(display_items):
+            connector = "└──" if i == len(display_items) - 1 else "├──"
 
             if isinstance(value, str) and len(value.splitlines()) > 1:
                 value = "\n" + indent_text(value, 12, False)
