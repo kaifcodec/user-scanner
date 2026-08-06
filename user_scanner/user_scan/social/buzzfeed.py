@@ -1,67 +1,73 @@
 import json
 import re
-from datetime import datetime
-from user_scanner.core.orchestrator import generic_validate
+from datetime import datetime, timezone
+
+from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
 
 
 def validate_buzzfeed(user: str) -> Result:
     url = f"https://www.buzzfeed.com/{user}"
-    show_url = f"https://www.buzzfeed.com/{user}"
 
     def process(r):
         if r.status_code == 404:
             return Result.available()
 
-        if r.status_code == 200:
-            extra = {}
-            media = {}
-            match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', r.text)
-            if match:
-                try:
-                    data = json.loads(match.group(1))
-                    page_props = data.get("props", {}).get("pageProps", {})
-                    user_data = page_props.get("user", {})
+        if r.status_code != 200:
+            return Result.error(f"HTTP {r.status_code}")
 
-                    if user_data.get("displayName"):
-                        extra["display_name"] = user_data.get("displayName")
-                    if user_data.get("bio"):
-                        extra["bio"] = user_data.get("bio")
+        page_props = _page_props(r.text)
+        user_data = page_props.get("user") or {}
 
-                    if user_data.get("image"):
-                        img = user_data.get("image")
-                        if not img.startswith("http"):
-                            img = f"https://img.buzzfeed.com/buzzfeed-static{img}"
-                        media["avatar_url"] = img
+        # Section pages (/quizzes, /tasty, /search) answer 200 with the same
+        # shell and no user node, so a bare 200 is not an account.
+        if not user_data:
+            return Result.error("200 response with no profile data")
 
-                    if user_data.get("memberSince"):
-                        try:
-                            created_ts = int(user_data.get("memberSince"))
-                            extra["joined"] = datetime.utcfromtimestamp(created_ts).strftime("%Y-%m-%d")
-                        except Exception:
-                            pass
+        extra, media = _extract(page_props, user_data)
+        return Result.taken(extra=extra, media=media)
 
-                    if page_props.get("points") is not None:
-                        extra["points"] = int(page_props.get("points"))
-                    if page_props.get("buzz_count") is not None:
-                        extra["posts"] = int(page_props.get("buzz_count"))
+    return impersonate_validate(url, process, allow_redirects=True)
 
-                    # Parse social links
-                    links = []
-                    for s in user_data.get("social", []):
-                        if s.get("url"):
-                            links.append(s.get("url"))
-                    if links:
-                        extra["links"] = links
 
-                    return Result.taken(extra=extra, media=media)
-                except Exception:
-                    pass
+def _page_props(text: str) -> dict:
+    match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', text, re.DOTALL)
+    if not match:
+        return {}
+    try:
+        return json.loads(match.group(1)).get("props", {}).get("pageProps", {})
+    except json.JSONDecodeError:
+        return {}
 
-            return Result.taken()
 
-        return Result.error(f"HTTP {r.status_code}")
+def _extract(page_props: dict, user_data: dict) -> tuple[dict, dict]:
+    extra: dict = {}
+    media: dict = {}
 
-    return generic_validate(
-        url, process, show_url=show_url, follow_redirects=True
-    )
+    if display_name := user_data.get("displayName"):
+        extra["display_name"] = display_name
+    if bio := user_data.get("bio"):
+        extra["bio"] = bio
+
+    if img := user_data.get("image"):
+        if not img.startswith("http"):
+            img = f"https://img.buzzfeed.com/buzzfeed-static{img}"
+        media["avatar_url"] = img
+
+    if member_since := user_data.get("memberSince"):
+        try:
+            joined = datetime.fromtimestamp(int(member_since), tz=timezone.utc)
+            extra["joined"] = joined.strftime("%Y-%m-%d")
+        except (TypeError, ValueError, OSError):
+            pass
+
+    if page_props.get("points") is not None:
+        extra["points"] = int(page_props["points"])
+    if page_props.get("buzz_count") is not None:
+        extra["posts"] = int(page_props["buzz_count"])
+
+    links = [s["url"] for s in user_data.get("social", []) if s.get("url")]
+    if links:
+        extra["links"] = links
+
+    return extra, media
