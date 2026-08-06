@@ -1,6 +1,8 @@
 import html
 import json
 import re
+import threading
+import time
 from datetime import datetime, timezone
 
 from user_scanner.core.impersonate import impersonate_request
@@ -20,6 +22,14 @@ CHALLENGE_TITLE = "Prove your humanity"
 CHALLENGE_SEED_RE = re.compile(r'\(async e=>e\+e\)\("([0-9a-f]+)"\)')
 CHALLENGE_TOKEN_RE = re.compile(r'name="token" value="([0-9a-f]+)"')
 CHALLENGE_ATTEMPTS = 3
+VERDICT_ATTEMPTS = 3
+RETRY_BACKOFF = 0.5
+
+# Clearance lives on the shared curl_cffi session, which outlives a single
+# lookup, so re-probing the homepage per handle downloads ~530KB to learn
+# nothing. The lock keeps concurrent lookups (-C) from each paying that cost.
+_cleared = False
+_clear_lock = threading.Lock()
 
 BOOLEAN_FLAGS = {
     "is_employee": "employee",
@@ -57,16 +67,24 @@ def validate_reddit(user: str) -> Result:
 
 def _clear_bot_wall() -> None:
     """Walk the interstitial chain until the shared session holds a clearance
-    cookie. A session that is already cleared answers with the real homepage on
-    the first hit, so this costs one request per scan after the first module."""
-    for _ in range(CHALLENGE_ATTEMPTS):
-        response = impersonate_request(f"{BASE_URL}/", allow_redirects=True)
-        params = _challenge_params(response.text)
-        if params:
-            impersonate_request(f"{BASE_URL}/", params=params, allow_redirects=True)
+    cookie, once per process. Later lookups reuse that session, so they skip
+    this entirely."""
+    global _cleared
+
+    with _clear_lock:
+        if _cleared:
             return
-        if CHALLENGE_TITLE not in response.text:
-            return
+
+        for _ in range(CHALLENGE_ATTEMPTS):
+            response = impersonate_request(f"{BASE_URL}/", allow_redirects=True)
+            params = _challenge_params(response.text)
+            if params:
+                impersonate_request(f"{BASE_URL}/", params=params, allow_redirects=True)
+                _cleared = True
+                return
+            if CHALLENGE_TITLE not in response.text:
+                _cleared = True
+                return
 
 
 def _challenge_params(page: str) -> dict[str, str] | None:
@@ -85,16 +103,31 @@ def _challenge_params(page: str) -> dict[str, str] | None:
 def _name_available(user: str) -> bool | None:
     """Ask the signup check whether the handle is free. Returns None when the
     endpoint rejects the name as malformed (`BAD_USERNAME`) or answers
-    unreadably — neither is a verdict about an account existing."""
-    response = impersonate_request(
-        AVAILABLE_URL, params={"user": user}, allow_redirects=True)
-    if response.status_code != 200:
-        return None
-    try:
-        verdict = json.loads(response.text)
-    except json.JSONDecodeError:
-        return None
-    return verdict if isinstance(verdict, bool) else None
+    unreadably — neither is a verdict about an account existing.
+
+    Under burst load Reddit sheds requests with an empty 404 rather than a 429,
+    which is indistinguishable from a real answer only by its empty body, so a
+    non-verdict is retried before it is believed.
+    """
+    for attempt in range(VERDICT_ATTEMPTS):
+        if attempt:
+            time.sleep(RETRY_BACKOFF * attempt)
+
+        response = impersonate_request(
+            AVAILABLE_URL, params={"user": user}, allow_redirects=True)
+        if response.status_code == 200:
+            try:
+                verdict = json.loads(response.text)
+            except json.JSONDecodeError:
+                return None
+            return verdict if isinstance(verdict, bool) else None
+
+        # A populated body is Reddit answering (e.g. BAD_USERNAME); only an
+        # empty one means the request was dropped and is worth repeating.
+        if response.text.strip():
+            return None
+
+    return None
 
 
 def _profile(user: str) -> tuple[dict, dict]:
