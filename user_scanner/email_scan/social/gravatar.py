@@ -38,14 +38,6 @@ VERIFIED_ITEM_RE = re.compile(
 )
 TIMEZONE_RE = re.compile(r"\(([^)]+)\)")
 
-# The markdown export spells out what the profile page abbreviates: full
-# language names with primary/secondary, and an IANA zone instead of a
-# DST-dependent UTC offset.
-MARKDOWN_KEYS = {
-    "Languages": "languages",
-    "Timezone": "timezone",
-}
-
 ADV_DETAIL_KEYS = {
     "Profile": "profile_type",
     "Updated": "last_updated",
@@ -93,23 +85,12 @@ async def _collect_profile(client: httpx.AsyncClient, email_hash: str) -> tuple[
                 _extract_profile_data(entries[0], extra, media)
     except Exception:
         pass
-    page_read = False
     try:
         response = await client.get(f"{PROFILE_HOST}/{email_hash}", headers=HEADERS)
         if response.status_code == 200:
             _extract_page_data(response.text, extra)
-            page_read = True
     except Exception:
         pass
-    # The export only refines the two fields the page already reports, so it is
-    # worth a request only once one of them is known to be set.
-    if not page_read or any(key in extra for key in MARKDOWN_KEYS.values()):
-        try:
-            response = await client.get(f"{PROFILE_HOST}/{email_hash}.md", headers=HEADERS)
-            if response.status_code == 200:
-                _extract_markdown_data(response.text, extra)
-        except Exception:
-            pass
     return extra, media
 
 
@@ -275,17 +256,6 @@ def _merge_verified_accounts(page: str, extra: dict) -> None:
         existing.append(f"{label or 'Account'}: {url} (verified)")
     if existing:
         extra["verified_accounts"] = ", ".join(existing)
-
-
-def _extract_markdown_data(page: str, extra: dict) -> None:
-    for label, key in MARKDOWN_KEYS.items():
-        match = re.search(rf"^- {label}: (.+)$", page, re.M)
-        if not match:
-            continue
-        # Markdown-escapes any punctuation, e.g. America/Sao\_Paulo.
-        value = re.sub(r"\\(.)", r"\1", match.group(1)).strip()
-        if value:
-            extra[key] = value
 
 
 def _normalize_url(value: str) -> str:
