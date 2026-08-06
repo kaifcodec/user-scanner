@@ -149,7 +149,7 @@ def test_output_formats():
 
     assert (
         res.to_csv()
-        == "testuser,Tech,Example,Found,https://example.com/user,additional_info: smth,"
+        == "testuser,Tech,Example,Found,https://example.com/user,additional_info: smth,,"
     )
 
     json_std = res.to_json()
