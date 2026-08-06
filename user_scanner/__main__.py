@@ -521,7 +521,7 @@ def main():
     total_found = len([r for r in results if r.is_found()])
     total_skipped = len([r for r in results if r.status == Status.SKIPPED])
 
-    if not config.show_all and total_found == 0:
+    if not config.show_all and total_found == 0 and total_skipped == 0:
         print(f"\n{R}[✘] No results found for the given target(s).{X}")
     else:
         print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")
