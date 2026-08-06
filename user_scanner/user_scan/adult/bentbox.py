@@ -1,106 +1,81 @@
+import json
 import re
 
 from user_scanner.core.orchestrator import Result, generic_validate
 
+# Served instead of an avatar when the creator uploaded none.
+PLACEHOLDER_AVATAR = "/img/Icon_BentBox"
+
 
 def validate_bentbox(user):
     url = f"https://bentbox.co/{user}"
-    show_url = f"https://bentbox.co/{user}"
+    show_url = url
 
     def process(response):
-        if "<h3>User not found</h3>" in response.text:
+        html = response.text
+
+        person = _profile_person(html)
+        if person:
+            return Result.taken(extra=_extra(person, html), media=_media(html), url=show_url)
+
+        if "User not found" in html:
             return Result.available(url=show_url)
-
-        if response.status_code == 200:
-            username_match = re.search(
-                r'"alternateName":\s*"([^"]+)"', response.text, re.IGNORECASE
-            ) or re.search(
-                r'<meta\s+property="profile:username"\s+content="([^"]+)"',
-                response.text,
-                re.IGNORECASE,
-            )
-            if (
-                username_match
-                and username_match.group(1).strip().casefold() == user.casefold()
-            ):
-
-                extra = {}
-                media = {}
-
-                # Extract profile data from OpenGraph or Title tags
-                title_match = re.search(
-                    r'<meta\s+property="og:title"\s+content="([^"]+)"', response.text, re.IGNORECASE)
-                if title_match:
-                    fullname = title_match.group(1).replace(
-                        "- BentBox Profile", "").replace("- BentBox", "").replace("on BentBox", "").strip()
-                    extra["fullname"] = re.sub(
-                        r'\(@[a-zA-Z0-9_-]+\)', '', fullname).strip()
-                else:
-                    t_tag = re.search(r"<title>(.*?)</title>",
-                                      response.text, re.IGNORECASE)
-                    if t_tag:
-                        fullname = t_tag.group(1).replace(
-                            "- BentBox Profile", "").replace("- BentBox", "").replace("on BentBox", "").strip()
-                        extra["fullname"] = re.sub(
-                            r'\(@[a-zA-Z0-9_-]+\)', '', fullname).strip()
-
-                # Extract Alternate Name / Username
-                extra["username"] = username_match.group(1).strip()
-
-                # Extract Bio
-                desc_match = re.search(
-                    r'<meta\s+property="og:description"\s+content="([^"]+)"', response.text, re.IGNORECASE)
-                if desc_match:
-                    extra["bio"] = desc_match.group(1).strip()
-
-                # Extract Avatar
-                image_match = re.search(
-                    r'<meta\s+property="og:image"\s+content="([^"]+)"', response.text, re.IGNORECASE)
-                if image_match:
-                    media["image"] = image_match.group(1).strip()
-
-                # Extract Identifier / User ID
-                id_match = re.search(
-                    r'"identifier":\s*"([^"]+)"', response.text, re.IGNORECASE)
-                if id_match:
-                    extra["profile_id"] = id_match.group(1).strip()
-
-                # Extract Followers
-                followers_match = re.search(
-                    r'(\d+)\s+Followers', response.text, re.IGNORECASE)
-                if not followers_match:
-                    follow_action = re.search(
-                        r'FollowAction".*?"userInteractionCount":\s*"(\d+)"', response.text, re.DOTALL | re.IGNORECASE)
-                    if follow_action:
-                        extra["followers"] = follow_action.group(1)
-                else:
-                    extra["followers"] = followers_match.group(1)
-
-                # Extract Boxes (Posts)
-                boxes_match = re.search(
-                    r'<span class="stat-value">(\d+)</span>\s*<span class="stat-label">Boxes</span>', response.text, re.DOTALL | re.IGNORECASE)
-                if not boxes_match:
-                    write_action = re.search(
-                        r'WriteAction".*?"userInteractionCount":\s*"(\d+)"', response.text, re.DOTALL | re.IGNORECASE)
-                    if write_action:
-                        extra["boxes"] = write_action.group(1)
-                else:
-                    extra["boxes"] = boxes_match.group(1)
-
-                # Extract Videos
-                videos_match = re.search(
-                    r'<span class="stat-value">(\d+)</span>\s*<span class="stat-label">Video[s]?</span>', response.text, re.DOTALL | re.IGNORECASE)
-                if videos_match:
-                    extra["videos"] = videos_match.group(1)
-
-                return Result.taken(extra=extra, media=media, url=show_url)
 
         if response.status_code in (403, 429):
             return Result.error(
-                f"Rate limit / Cloudflare protection block (HTTP {response.status_code}). Run with residential proxy or active session cookies.",
-                url=show_url
+                f"Rate limit / Cloudflare protection block (HTTP {response.status_code}). "
+                "Run with residential proxy or active session cookies.",
+                url=show_url,
             )
 
-        return Result.error(f"Unexpected response code/body: {response.status_code}", url=show_url)
+        return Result.error(f"Unexpected response body (HTTP {response.status_code})", url=show_url)
 
     return generic_validate(url, process, show_url=show_url)
+
+
+def _profile_person(html: str) -> dict:
+    """The Person node of the ProfilePage JSON-LD, which only real profiles carry."""
+    for block in re.findall(r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>', html, re.DOTALL):
+        try:
+            data = json.loads(block)
+        except ValueError:
+            continue
+        if data.get("@type") != "ProfilePage":
+            continue
+        person = data.get("mainEntity")
+        if isinstance(person, dict):
+            return person
+    return {}
+
+
+def _extra(person: dict, html: str) -> dict:
+    # og:title, og:url, profile:username and alternateName all echo the casing
+    # from the request, so only these server-derived values are trustworthy.
+    extra = {
+        "fullname": (person.get("name") or "").strip(),
+        "profile_id": person.get("identifier"),
+    }
+
+    bio = re.search(r'<p class="fs-lg mb-0"[^>]*>(.*?)</p>', html, re.DOTALL)
+    if bio:
+        text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", bio.group(1))).strip()
+        if text:
+            extra["bio"] = text
+
+    for counter in person.get("interactionStatistic") or []:
+        if counter.get("interactionType", "").endswith("/FollowAction"):
+            extra["followers"] = counter.get("userInteractionCount")
+
+    for value, label in re.findall(
+        r'<span class="stat-value">(\d+)</span>\s*<span class="stat-label">(\w+)</span>', html
+    ):
+        extra[label.lower()] = value
+
+    return extra
+
+
+def _media(html: str) -> dict:
+    avatar = re.search(r'property="og:image" content="([^"]+)"', html)
+    if not avatar or PLACEHOLDER_AVATAR in avatar.group(1):
+        return {}
+    return {"avatar": avatar.group(1)}
