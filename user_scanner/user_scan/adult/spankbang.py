@@ -5,11 +5,19 @@ from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
 
 
+# Cloudflare serves a managed challenge to the Chrome fingerprint on every
+# path of this domain; the Firefox one is let through.
+IMPERSONATE = "firefox133"
+
+
 def validate_spankbang(user):
     url = f"https://spankbang.com/profile/{user}"
     show_url = url
 
     def process(response):
+        if response.headers.get("cf-mitigated") == "challenge":
+            return Result.error("Cloudflare challenge, cannot be solved without a browser", url=show_url)
+
         if response.status_code == 404:
             return Result.available(url=show_url)
 
@@ -24,7 +32,7 @@ def validate_spankbang(user):
 
         return Result.error("Profile confirmation not found", url=show_url)
 
-    return impersonate_validate(url, process, show_url=show_url)
+    return impersonate_validate(url, process, impersonate=IMPERSONATE, show_url=show_url)
 
 
 def _is_profile(html_text: str, user: str) -> bool:

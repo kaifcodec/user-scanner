@@ -1,73 +1,78 @@
 import hashlib
 import re
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, make_request
+from typing import Optional
+
+from user_scanner.core.impersonate import impersonate_request
+from user_scanner.core.result import Result
+
+BASE_URL = "https://www.defensivecarry.com"
+
+CHALLENGE_RE = re.compile(r"(\w+):'([^']*)'")
+CHALLENGE_KEYS = (
+    "challenge_nonce",
+    "challenge_hmac",
+    "difficulty",
+    "difficulty_char",
+    "issued_at",
+)
+NOT_FOUND_MARKER = "The specified member cannot be found"
+PROFILE_PATH_RE = re.compile(r"/members/([^/]+)\.(\d+)/?$")
+
 
 def validate_defensivecarry(user: str) -> Result:
-    url = f"https://www.defensivecarry.com/members/?username={user}"
-    
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-    }
-    
+    url = f"{BASE_URL}/members/?username={user}"
+
     try:
-        response = make_request(url, follow_redirects=False, http2=False, headers=headers)
-        
+        response = impersonate_request(url)
+
+        # The site answers 202 with a JavaScript proof-of-work page; solving it
+        # and replaying with the pow_bypass cookie returns the real response.
         if response.status_code == 202:
-            html_text = response.text
-            nonce_match = re.search(r"challenge_nonce:'([^']+)'", html_text)
-            hmac_match = re.search(r"challenge_hmac:'([^']+)'", html_text)
-            diff_match = re.search(r"difficulty:'([^']+)'", html_text)
-            char_match = re.search(r"difficulty_char:'([^']+)'", html_text)
-            issued_match = re.search(r"issued_at:'([^']+)'", html_text)
-            
-            if (
-                nonce_match is None or
-                hmac_match is None or
-                diff_match is None or
-                char_match is None or
-                issued_match is None
-            ):
-                return Result.error("Failed to parse PoW challenge parameters", url=url)
-                
-            nonce = nonce_match.group(1)
-            hmac = hmac_match.group(1)
-            diff = int(diff_match.group(1))
-            char = char_match.group(1)
-            issued = issued_match.group(1)
-            
-            target_prefix = char * diff
-            prefix_str = nonce + issued
-            
-            pow_bypass = None
-            for i in range(1, 10000000):
-                u = str(i)
-                data = (prefix_str + u).encode('utf-8')
-                hash_hex = hashlib.sha256(data).hexdigest()
-                
-                if hash_hex.startswith(target_prefix):
-                    pow_bypass = f"{nonce}|{issued}|{u}|{hash_hex}|{hmac}"
-                    break
-                    
-            if pow_bypass:
-                response = make_request(
-                    url, 
-                    follow_redirects=False, 
-                    http2=False,
-                    headers=headers,
-                    cookies={"pow_bypass": pow_bypass}
-                )
-            else:
+            cookie = _solve_challenge(response.text)
+            if not cookie:
                 return Result.error("Failed to solve PoW challenge", url=url)
-                
-        if response.status_code in [301, 302, 303]:
-            return Result.taken(url=url)
-        elif response.status_code == 200 or response.status_code == 404:
-            return Result.available(url=url)
-            
-        return Result.error(f"Unexpected status code: {response.status_code}", url=url)
-        
+            response = impersonate_request(url, cookies={"pow_bypass": cookie})
     except Exception as e:
         return Result.error(e, url=url)
+
+    # A hit redirects to /members/<slug>.<id>/; a miss re-renders the search page.
+    if response.status_code in (301, 302, 303):
+        location = response.headers.get("location", "")
+        match = PROFILE_PATH_RE.search(location.split("?")[0])
+        if not match:
+            return Result.error(f"Unexpected redirect target: {location}", url=url)
+
+        profile_url = location if location.startswith("http") else f"{BASE_URL}{location}"
+        return Result.taken(
+            extra={"handle": match.group(1), "user_id": match.group(2)},
+            url=profile_url,
+        )
+
+    if response.status_code == 200 and NOT_FOUND_MARKER in response.text:
+        return Result.available(url=url)
+
+    return Result.error(f"Unexpected status code: {response.status_code}", url=url)
+
+
+def _solve_challenge(html_text: str) -> Optional[str]:
+    data = dict(CHALLENGE_RE.findall(html_text))
+    if any(key not in data for key in CHALLENGE_KEYS):
+        return None
+
+    try:
+        difficulty = int(data["difficulty"])
+    except ValueError:
+        return None
+
+    target = data["difficulty_char"] * difficulty
+    prefix = data["challenge_nonce"] + data["issued_at"]
+
+    for i in range(1, 10000000):
+        digest = hashlib.sha256(f"{prefix}{i}".encode()).hexdigest()
+        if digest.startswith(target):
+            return (
+                f"{data['challenge_nonce']}|{data['issued_at']}|{i}"
+                f"|{digest}|{data['challenge_hmac']}"
+            )
+
+    return None
