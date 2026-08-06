@@ -1,6 +1,7 @@
 import hashlib
 import html
 import re
+from collections.abc import Iterator
 
 import httpx
 
@@ -16,26 +17,21 @@ HEADERS = {
 
 # The public JSON APIs omit the profile's "Links" card, its interests and the
 # advanced-details panel; only the rendered profile page carries them.
-LINKS_SECTION_RE = re.compile(
-    r'g-profile__links".*?(?=<div class="g-profile__card|<button class="g-profile__adv-details-btn)',
-    re.S,
-)
-LINK_RE = re.compile(r'<a class="card-item__link"\s+href="([^"]+)"\s+title="([^"]*)"', re.S)
-INTERESTS_RE = re.compile(r'g-profile__interests-list">(.*?)</ul>', re.S)
+INTERESTS_RE = re.compile(r"<h2[^>]*>\s*Interests\s*</h2>.*?<ul[^>]*>(.*?)</ul>", re.S)
 INTEREST_ITEM_RE = re.compile(r"<span>\s*([^<]+?)\s*</span>")
+TITLE_RE = re.compile(r'title="([^"]*)"')
 ADV_DETAIL_RE = re.compile(
     r"<span>\s*(Profile|Updated|Created|Languages|Time):\s*([^<]+?)\s*</span>"
 )
 # Both JSON APIs list only the providers their schema knows about — a YouTube
 # connection is absent from each yet rendered on the page, so the card is the
-# only complete source.
-VERIFIED_SECTION_RE = re.compile(
-    r'g-profile__card is-verified-accounts".*?(?=<div class="g-profile__card|\Z)', re.S
-)
-VERIFIED_ITEM_RE = re.compile(
-    r'card-item__label-text">\s*([^<]+?)\s*</span>.*?class="card-item__link"\s+href="([^"]+)"',
-    re.S,
-)
+# only complete source. Each entry is anchored on its checkmark's help link and
+# the rel="me" of the account anchor rather than on styling hooks.
+VERIFIED_MARKER = "support.gravatar.com/profiles/verified-accounts"
+VERIFIED_LABEL_RE = re.compile(r">\s*([^<>]{1,60}?)\s*</span>\s*<a[^>]*$", re.S)
+ANCHOR_RE = re.compile(r"<a\b[^>]*>", re.S)
+REL_ME_RE = re.compile(r'rel="[^"]*\bme\b[^"]*"')
+HREF_RE = re.compile(r'href="([^"]+)"')
 TIMEZONE_RE = re.compile(r"\(([^)]+)\)")
 
 ADV_DETAIL_KEYS = {
@@ -139,10 +135,16 @@ def _extract_profile_data(entry: dict, extra: dict, media: dict) -> None:
             if not isinstance(acc, dict):
                 continue
             acc_name = str(acc.get("name") or acc.get("shortname") or "Account")
-            acc_url = acc.get("url") or acc.get("display") or acc.get("username")
-            if acc_url is not None and str(acc_url).strip():
-                status = " (verified)" if acc.get("verified") else ""
-                acc_list.append(f"{acc_name}: {str(acc_url).strip()}{status}")
+            acc_url = str(acc.get("url") or acc.get("display") or acc.get("username") or "").strip()
+            status = " (verified)" if acc.get("verified") else ""
+            # Providers that forbid public profile links (Facebook) are stored
+            # pointing at Gravatar's help page, which says nothing about the user.
+            if VERIFIED_MARKER in acc_url:
+                acc_url = ""
+            if acc_url:
+                acc_list.append(f"{acc_name}: {acc_url}{status}")
+            elif acc.get("verified"):
+                acc_list.append(f"{acc_name}{status}")
         if acc_list:
             extra["verified_accounts"] = ", ".join(acc_list)
 
@@ -207,17 +209,13 @@ def _extract_profile_data(entry: dict, extra: dict, media: dict) -> None:
 def _extract_page_data(page: str, extra: dict) -> None:
     _merge_verified_accounts(page, extra)
 
-    section = LINKS_SECTION_RE.search(page)
-    if section:
-        links = []
-        for url, title in LINK_RE.findall(section.group(0)):
-            url = html.unescape(url).strip()
-            title = html.unescape(title).strip()
-            if not url:
-                continue
-            links.append(f"{title}: {url}" if title and title != url else url)
-        if links:
-            extra["links"] = ", ".join(links)
+    links = []
+    for title, url in _iter_links(page):
+        entry = f"{title}: {url}"
+        if entry not in links:
+            links.append(entry)
+    if links:
+        extra["links"] = ", ".join(links)
 
     interests = INTERESTS_RE.search(page)
     if interests:
@@ -241,21 +239,56 @@ def _extract_page_data(page: str, extra: dict) -> None:
 
 
 def _merge_verified_accounts(page: str, extra: dict) -> None:
-    section = VERIFIED_SECTION_RE.search(page)
-    if not section:
-        return
-
     existing = [e for e in str(extra.get("verified_accounts", "")).split(", ") if e]
-    known = {_normalize_url(e.rsplit(": ", 1)[-1]) for e in existing}
-    for label, url in VERIFIED_ITEM_RE.findall(section.group(0)):
-        label = html.unescape(label).strip()
-        url = html.unescape(url).strip()
-        if not url or _normalize_url(url) in known:
+    known_urls = {_normalize_url(e.rsplit(": ", 1)[-1]) for e in existing}
+    # The same account can carry different URLs in each source — the JSON keeps
+    # whatever the owner entered, the page renders a canonical one — so the
+    # service name is what identifies a duplicate.
+    known_services = {e.split(":", 1)[0].removesuffix(" (verified)").strip().lower() for e in existing}
+    for label, url in _iter_verified_accounts(page):
+        if _normalize_url(url) in known_urls or label.lower() in known_services:
             continue
-        known.add(_normalize_url(url))
+        known_urls.add(_normalize_url(url))
+        known_services.add(label.lower())
         existing.append(f"{label or 'Account'}: {url} (verified)")
     if existing:
         extra["verified_accounts"] = ", ".join(existing)
+
+
+def _iter_verified_accounts(page: str) -> Iterator[tuple[str, str]]:
+    markers = [m.start() for m in re.finditer(re.escape(VERIFIED_MARKER), page)]
+    for index, start in enumerate(markers):
+        # The account anchor sits between this checkmark and the next entry's.
+        end = markers[index + 1] if index + 1 < len(markers) else len(page)
+        url = ""
+        for tag in ANCHOR_RE.finditer(page, start, end):
+            href = HREF_RE.search(tag.group(0))
+            if href and REL_ME_RE.search(tag.group(0)):
+                url = html.unescape(href.group(1)).strip()
+                break
+        # A help-page URL is the placeholder for providers that forbid public
+        # links, and it also matches the marker, so it seeds phantom entries.
+        if not url or VERIFIED_MARKER in url:
+            continue
+        label = VERIFIED_LABEL_RE.search(page, max(0, start - 300), start)
+        yield (html.unescape(label.group(1)).strip() if label else ""), url
+
+
+def _iter_links(page: str) -> Iterator[tuple[str, str]]:
+    # A personal link carries the owner's own caption; every other rel="me"
+    # anchor on the page — the icon row and the verified cards — repeats its own
+    # URL as the title.
+    for tag in ANCHOR_RE.finditer(page):
+        if not REL_ME_RE.search(tag.group(0)):
+            continue
+        href = HREF_RE.search(tag.group(0))
+        title = TITLE_RE.search(tag.group(0))
+        if not href or not title:
+            continue
+        url = html.unescape(href.group(1)).strip()
+        caption = html.unescape(title.group(1)).strip()
+        if url and caption and caption != url:
+            yield caption, url
 
 
 def _normalize_url(value: str) -> str:
