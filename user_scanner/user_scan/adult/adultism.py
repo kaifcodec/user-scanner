@@ -1,146 +1,123 @@
+import html
 import re
-from user_scanner.core.orchestrator import generic_validate, Result, make_request
+
+from user_scanner.core.impersonate import impersonate_request, impersonate_validate
+from user_scanner.core.result import Result
+
+BASE_URL = "https://www.adultism.com"
 
 
-def validate_adultism(user):
-    url = f"https://www.adultism.com/profile/{user}"
-    show_url = f"https://www.adultism.com/profile/{user}"
+def validate_adultism(user: str) -> Result:
+    url = f"{BASE_URL}/profile/{user}"
 
     def process(response):
-        if response.status_code == 200:
-            is_taken = (
-                re.search(r'itemprop="name">\s*' + re.escape(user) + r'\s*</h1>', response.text, re.IGNORECASE) or
-                re.search(r'<title>\s*' + re.escape(user) + r'\s*-\s*Adultism</title>', response.text, re.IGNORECASE) or
-                re.search(r'title="' + re.escape(user) + r'"', response.text, re.IGNORECASE) or
-                re.search(r'alt="' + re.escape(user) + r'"',
-                          response.text, re.IGNORECASE)
-            )
-            if is_taken:
-                extra = {}
-                media = {}
+        if response.status_code == 404:
+            if "No such member" in response.text:
+                return Result.available(url=url)
+            return Result.error("Unexpected 404 (not the not-found page)", url=url)
 
-                # Extract Avatar
-                avatar_match = re.search(r'<img[^>]+src="([^"]+)"[^>]*class="[^"]*profile-image', response.text, re.IGNORECASE) or \
-                    re.search(
-                        r'<img[^>]+class="[^"]*profile-image[^"]*"[^>]*src="([^"]+)"', response.text, re.IGNORECASE)
-                if avatar_match and "defaults/member" not in avatar_match.group(1):
-                    media["image"] = avatar_match.group(1)
+        if response.status_code != 200:
+            return Result.error(f"Unexpected status: {response.status_code}", url=url)
 
-                # Extract Channel ID
-                channel_match = re.search(
-                    r'data-channel-id="(\d+)"', response.text, re.IGNORECASE)
-                if channel_match:
-                    extra["channel_id"] = channel_match.group(1)
+        profile = _profile_section(response.text)
+        if profile is None:
+            return Result.error("Profile confirmation not found", url=url)
 
-                # Extract Birth date
-                birthdate_match = re.search(
-                    r'<meta[^>]+itemprop="birthDate"[^>]+content="([^"]+)"', response.text, re.IGNORECASE)
-                if birthdate_match:
-                    extra["birthdate"] = birthdate_match.group(1)
+        # Lookups are case-insensitive and the heading carries the canonical
+        # spelling, so it is what ties the page to the requested handle.
+        nick = _nick(profile)
+        if nick.lower() != user.lower():
+            return Result.error("Profile heading does not match the handle", url=url)
 
-                # Extract Gender/Sex
-                sex_match = re.search(
-                    r'Sex:.*?<span[^>]*>\s*(.*?)\s*</span>', response.text, re.DOTALL | re.IGNORECASE)
-                if sex_match:
-                    cleaned_sex = re.sub(
-                        r"\s+", " ", sex_match.group(1)).replace("&nbsp;", " ").strip()
-                    extra["gender"] = cleaned_sex
-                else:
-                    gender_meta = re.search(
-                        r'<meta[^>]+itemprop="gender"[^>]+content="([^"]+)"', response.text, re.IGNORECASE)
-                    if gender_meta and gender_meta.group(1).strip():
-                        extra["gender"] = gender_meta.group(1).strip()
+        extra, media = _extract_profile(profile, nick)
+        extra.update(_fetch_friends_count(user))
+        return Result.taken(extra=extra, media=media, url=url)
 
-                # Extract Age
-                age_match = re.search(
-                    r'Age:.*?<span[^>]*>\s*(.*?)\s*</span>', response.text, re.DOTALL | re.IGNORECASE)
-                if age_match:
-                    extra["age"] = re.sub(
-                        r"\s+", " ", age_match.group(1)).strip()
+    return impersonate_validate(url, process, show_url=url)
 
-                # Extract Location
-                loc_match = re.search(
-                    r'Location:.*?<span[^>]*>\s*(.*?)\s*</span>', response.text, re.DOTALL | re.IGNORECASE)
-                if loc_match:
-                    extra["location"] = re.sub(
-                        r"\s+", " ", loc_match.group(1)).strip()
-                else:
-                    loc_meta = re.search(
-                        r'<meta[^>]+itemprop="homeLocation"[^>]+content="([^"]+)"', response.text, re.IGNORECASE)
-                    if loc_meta:
-                        extra["location"] = loc_meta.group(1).strip()
 
-                # Extract Last login
-                login_match = re.search(
-                    r'Last login:.*?<span[^>]*>(.*?)</span[^>]*>', response.text, re.DOTALL | re.IGNORECASE)
-                if login_match:
-                    val = login_match.group(1)
-                    val = re.sub(r'<[^>]+>', '', val)
-                    extra["last_login"] = re.sub(r"\s+", " ", val).strip()
+def _profile_section(html_text: str) -> str | None:
+    match = re.search(
+        r'(<section id="spr".*?itemtype="http://schema\.org/Person">.*)', html_text, re.DOTALL
+    )
+    return match.group(1) if match else None
 
-                # Extract Registration date
-                joined_match = re.search(
-                    r'Member since:.*?<span[^>]*>\s*(.*?)\s*</span>', response.text, re.DOTALL | re.IGNORECASE)
-                if joined_match:
-                    extra["joined"] = re.sub(
-                        r"\s+", " ", joined_match.group(1)).strip()
 
-                # Extract Subscriber count (checking data-canonical first, then quantity)
-                sub_match = re.search(
-                    r'class="[^"]*subscriber-count[^"]*"[^>]*data-canonical="(\d+)"', response.text, re.IGNORECASE)
-                if sub_match:
-                    extra["subscribers"] = sub_match.group(1)
-                else:
-                    quantity_match = re.search(
-                        r'subscriber-count.*?<span[^>]*class="[^"]*(?:quantity|value)[^"]*"[^>]*>([^<]+)</span>', response.text, re.DOTALL | re.IGNORECASE)
-                    if quantity_match:
-                        extra["subscribers"] = quantity_match.group(1).strip()
-                    else:
-                        sub_span = re.search(
-                            r'subscriber-count.*?<span[^>]*>([^<]+)</span>', response.text, re.DOTALL | re.IGNORECASE)
-                        if sub_span:
-                            extra["subscribers"] = sub_span.group(1).strip()
+def _nick(profile: str) -> str:
+    match = re.search(r'<h1 class="nick" itemprop="name">(.*?)</h1>', profile, re.DOTALL)
+    return _text(match.group(1)) if match else ""
 
-                # Extract Badges (Verified/Premium)
-                if "pc-verified" in response.text:
-                    extra["verified"] = "True"
-                if "pc-premium" in response.text:
-                    extra["premium"] = "True"
 
-                # Extract Description/Interests
-                interests_match = re.search(
-                    r'<div[^>]+itemprop="description"[^>]*>\s*(.*?)\s*</div>', response.text, re.DOTALL | re.IGNORECASE)
-                if interests_match:
-                    cleaned_interests = re.sub(
-                        r"\s+", " ", interests_match.group(1)).strip()
-                    extra["interests"] = cleaned_interests
+def _extract_profile(profile: str, nick: str) -> tuple[dict, dict]:
+    extra: dict = {"name": nick}
+    media: dict = {}
 
-                # Extract Comments
-                comments_match = re.search(
-                    r'<div class="comments">\s*<div[^>]*>Comments:</div>\s*(.*?)\s*</div>', response.text, re.DOTALL | re.IGNORECASE)
-                if comments_match:
-                    cleaned_comments = re.sub(
-                        r"\s+", " ", comments_match.group(1)).strip()
-                    extra["comments"] = cleaned_comments
+    channel_id = re.search(r'<section id="spr" data-channel-id="(\d+)"', profile)
+    if channel_id:
+        extra["channel_id"] = channel_id.group(1)
 
-                # Step 2: Fetch the friends page sequentially to extract exact friends count
-                try:
-                    friends_url = f"https://www.adultism.com/profile/{user}/friends"
-                    friends_resp = make_request(friends_url, timeout=5.0)
-                    if friends_resp.status_code == 200:
-                        friends_count_match = re.search(
-                            r'<li class="page item-count">(\d+)\s+items</li>', friends_resp.text, re.IGNORECASE)
-                        if friends_count_match:
-                            extra["friends_count"] = friends_count_match.group(
-                                1)
-                except Exception:
-                    pass  # Keep going if friends page request fails
+    # The badge row renders the visible count rounded ("5.5k"); data-canonical
+    # holds the exact figure.
+    subscribers = re.search(
+        r'class="cm-value subscriber-count"[^>]*data-canonical="(\d+)"', profile
+    )
+    if subscribers:
+        extra["subscribers"] = subscribers.group(1)
 
-                return Result.taken(extra=extra, media=media, url=show_url)
+    badges = re.findall(r'class="pc-badge pc-[^"]*"\s*title="([^"]+)"', profile)
+    if badges:
+        extra["badges"] = ", ".join(badges)
 
-        if response.status_code == 404 or "Page not found" in response.text:
-            return Result.available(url=show_url)
+    for key, prop in (("birthdate", "birthDate"), ("gender", "gender")):
+        meta = re.search(rf'<meta itemprop="{prop}" content="([^"]*)"', profile)
+        if meta:
+            extra[key] = meta.group(1)
 
-        return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
+    for label, value in re.findall(
+        r'<div class="row">\s*<span class="label">(.*?)</span>\s*<span class="value[^"]*">(.*?)</span>',
+        profile,
+        re.DOTALL,
+    ):
+        extra[_text(label)] = _text(value)
 
-    return generic_validate(url, process, show_url=show_url)
+    interests = re.search(r'<div itemprop="description">(.*?)</div>', profile, re.DOTALL)
+    if interests:
+        extra["interests"] = _text(interests.group(1))
+
+    comments = re.search(
+        r'<div class="section-title">Comments:</div>(.*?)</div>', profile, re.DOTALL
+    )
+    if comments:
+        extra["comments"] = _text(comments.group(1))
+
+    avatar = re.search(
+        r'<a href="([^"]+)">\s*<div class="profile-image-wrapper">\s*'
+        r'<img src="([^"]+)"[^>]*class="profile-image"',
+        profile,
+        re.DOTALL,
+    )
+    if avatar:
+        media["avatar"] = avatar.group(2)
+        media["avatar_full"] = avatar.group(1)
+
+    return extra, media
+
+
+def _fetch_friends_count(user: str) -> dict:
+    """The friends tab is the only page exposing the exact friend total."""
+    try:
+        response = impersonate_request(f"{BASE_URL}/profile/{user}/friends")
+    except Exception:
+        return {}
+
+    if response.status_code != 200:
+        return {}
+
+    count = re.search(r'<li class="page item-count">(\d+)\s+items</li>', response.text)
+    return {"friends": count.group(1)} if count else {}
+
+
+def _text(html_fragment: str) -> str:
+    return re.sub(
+        r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", html_fragment)).replace("\xa0", " ")
+    ).strip()
