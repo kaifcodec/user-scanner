@@ -60,8 +60,12 @@ def validate_tumblr(user: str) -> Result:
 
     # The <user>.tumblr.com host answers every request with Tumblr's own
     # "Checking your browser..." interstitial, which no HTTP client clears;
-    # the www route serves the blog payload directly.
-    return impersonate_validate(show_url, process, show_url=show_url)
+    # the www route serves the blog payload directly. Redirects must stay
+    # unfollowed: the hop to /login_required/<user> is the only signal that
+    # separates a login-walled blog from a free name.
+    return impersonate_validate(
+        show_url, process, show_url=show_url, allow_redirects=False
+    )
 
 
 def _find_blog(html: str, user: str) -> dict | None:
