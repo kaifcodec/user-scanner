@@ -1,10 +1,11 @@
 import re
-from user_scanner.core.orchestrator import generic_validate, Result
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
 def validate_babepedia(user):
     url = f"https://www.babepedia.com/user/{user}"
-    show_url = f"https://www.babepedia.com/user/{user}"
+    show_url = url
 
     def process(response):
         if response.status_code == 200 and "'s Profile</title>" in response.text:
@@ -38,9 +39,9 @@ def validate_babepedia(user):
 
             return Result.taken(extra=extra, url=show_url)
 
-        if response.status_code == 404 or "Profile not found" in response.text:
+        if "Profile not found" in response.text:
             return Result.available(url=show_url)
 
         return Result.error("Unexpected response body, report it via GitHub issues", url=show_url)
 
-    return generic_validate(url, process, show_url=show_url)
+    return impersonate_validate(url, process, show_url=show_url)
