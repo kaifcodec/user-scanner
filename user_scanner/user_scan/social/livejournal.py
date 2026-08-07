@@ -27,7 +27,7 @@ def validate_livejournal(user: str) -> Result:
 
         # Guard against the generic profile shell: only the requested journal's
         # own page echoes its username back.
-        if str(journal.get("display_username", "")).lower() != user.lower():
+        if _canonical(journal.get("display_username", "")) != _canonical(user):
             return Result.error("200 response for a different journal")
 
         return Result.taken(extra=_extract(journal), media=_media(journal))
@@ -35,6 +35,12 @@ def validate_livejournal(user: str) -> Result:
     return impersonate_validate(
         PROFILE_URL, process, params={"user": user}, show_url=show_url
     )
+
+
+def _canonical(username) -> str:
+    # LiveJournal usernames are case-insensitive and treat "-" and "_" as the
+    # same character, so james-nicoll and JAMES_NICOLL are one journal.
+    return str(username).lower().replace("-", "_")
 
 
 def _journal(body: str) -> dict:

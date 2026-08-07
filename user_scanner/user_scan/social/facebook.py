@@ -10,7 +10,7 @@ PROFILE_URL_RE = re.compile(
 )
 DESCRIPTION_RE = re.compile(r'<meta property="og:description" content="([^"]*)"')
 COUNTS_RE = re.compile(
-    r"^(?P<name>.*?)\.\s*(?P<likes>[\d,.]+) likes"
+    r"^.*?\.\s*(?P<likes>[\d,.]+) likes"
     r"(?:\s*&#xb7;\s*(?P<talking>[\d,.]+) talking about this)?\.\s*(?P<bio>.*)$",
     re.DOTALL,
 )

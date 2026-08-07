@@ -6,8 +6,8 @@ from user_scanner.core.result import Result
 
 
 # Cloudflare serves a managed challenge to the Chrome fingerprint on every
-# path of this domain; the Firefox one is let through.
-IMPERSONATE = "firefox133"
+# path of this domain; the Safari one is let through.
+IMPERSONATE = "safari17_0"
 
 
 def validate_spankbang(user):
