@@ -4,6 +4,8 @@ import re
 from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
 
+PROFILE_TITLE_RE = re.compile(r"<title>([^<]+?)(?:&#x27;s|&#39;s|'s) profile")
+
 
 def validate_producthunt(user: str) -> Result:
     if not (2 <= len(user) <= 32):
@@ -26,6 +28,12 @@ def validate_producthunt(user: str) -> Result:
 
         if response.status_code != 200:
             return Result.error(f"Unexpected status: {response.status_code}")
+
+        # A profile page is confirmed by the possessive title Product Hunt
+        # renders server-side; nothing else under /@ carries it, so a 200
+        # without it is an interstitial rather than a hit.
+        if not PROFILE_TITLE_RE.search(response.text):
+            return Result.error("200 without a profile title, cannot confirm the handle")
 
         return Result.taken(extra=_extract(response.text))
 
@@ -51,7 +59,7 @@ def _extract(body: str) -> dict:
     if "name" in extra:
         return extra
 
-    title = re.search(r"<title>([^<]+?)(?:&#x27;s|'s) profile", body)
+    title = PROFILE_TITLE_RE.search(body)
     if title:
         extra["name"] = title.group(1).strip()
         return extra
