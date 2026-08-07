@@ -9,7 +9,13 @@ SEARCH_API = "https://api.github.com/search/users"
 SIGNUP_URL = "https://github.com/signup"
 VALIDITY_URL = "https://github.com/email_validity_checks"
 
-CSRF_RE = re.compile(r'data-csrf="true"\s+value="([^"]+)"')
+# The signup form carries one CSRF token per auto-check endpoint and emits the
+# value before the data-csrf marker, so the token has to be taken from inside
+# the email_validity_checks block rather than from the first match on the page.
+CSRF_RE = re.compile(
+    r'<auto-check[^>]*src="/email_validity_checks"'
+    r'[\s\S]*?<input[^>]*value="([^"]+)"[^>]*data-csrf="true"'
+)
 
 
 async def _check(email: str) -> Result:

@@ -70,6 +70,14 @@ async def _check(email: str) -> Result:
         if "delivery issues" in error_msg:
             return Result.error(url=SHOW_URL, reason="The email is experiencing email delivery issues")
 
+        # Pornhub refuses to check some providers at all (proton.me, zoho.com),
+        # which is a rule about the domain rather than a verdict on the address.
+        if "is not allowed" in error_msg:
+            return Result.error(
+                url=SHOW_URL,
+                reason=f"Pornhub does not accept registrations from '{domain}'",
+            )
+
         # Sub-addressing is only accepted for mailboxes that actually resolve,
         # so an unusable alias says nothing about the address it derives from.
         if "invalid or cannot be used" in error_msg:
