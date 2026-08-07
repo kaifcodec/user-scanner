@@ -1,4 +1,4 @@
-import httpx
+from user_scanner.core.impersonate import impersonate_request_async
 from user_scanner.core.result import Result
 
 
@@ -16,40 +16,53 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            await client.get(home_url, headers={'User-Agent': headers['User-Agent']})
-            csrf_token = client.cookies.get("com.xk72.webparts.csrf")
+        init = await impersonate_request_async(
+            home_url,
+            headers={'User-Agent': headers['User-Agent']},
+            allow_redirects=True,
+        )
+        csrf_token = init.cookies.get("com.xk72.webparts.csrf")
 
-            if not csrf_token:
-                return Result.error("Could not extract Letterboxd CSRF token")
+        if not csrf_token:
+            return Result.error("Could not extract Letterboxd CSRF token")
 
-            payload = {
-                '__csrf': csrf_token,
-                'token': "",
-                'emailAddress': email,
-                'username': "th3_t3erminal_w0rri0r",
-                'password': "n3v3r_F3lt_softn3ss",
-                'termsAndAge': "true",
-                'g-recaptcha-response': "",
-                'h-captcha-response': ""
-            }
+        payload = {
+            '__csrf': csrf_token,
+            'token': "",
+            'emailAddress': email,
+            'username': "th3_t3erminal_w0rri0r",
+            'password': "n3v3r_F3lt_softn3ss",
+            'termsAndAge': "true",
+            'g-recaptcha-response': "",
+            'h-captcha-response': ""
+        }
 
-            response = await client.post(register_url, data=payload, headers=headers)
+        response = await impersonate_request_async(
+            register_url, "POST", data=payload, headers=headers
+        )
+
+        try:
             data = response.json()
+        except ValueError:
+            # Letterboxd fronts the form endpoints with a Cloudflare managed
+            # challenge, which answers HTML where the form expects JSON.
+            return Result.error(
+                f"Non-JSON response (HTTP {response.status_code}), likely a bot challenge"
+            )
 
-            messages = data.get("messages", [])
-            error_fields = data.get("errorFields", [])
+        messages = data.get("messages", [])
+        error_fields = data.get("errorFields", [])
 
-            is_taken = any(
-                "already associated with an account" in msg for msg in messages)
+        is_taken = any(
+            "already associated with an account" in msg for msg in messages)
 
-            if is_taken or "emailAddress" in error_fields:
-                return Result.taken(url=show_url)
+        if is_taken or "emailAddress" in error_fields:
+            return Result.taken(url=show_url)
 
-            if "result" in data and not is_taken:
-                return Result.available(url=show_url)
+        if "result" in data and not is_taken:
+            return Result.available(url=show_url)
 
-            return Result.error("Unexpected response structure")
+        return Result.error("Unexpected response structure")
 
     except Exception as e:
         return Result.error(e)
