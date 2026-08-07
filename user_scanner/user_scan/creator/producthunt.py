@@ -1,6 +1,8 @@
-import re
 import json
-from user_scanner.core.orchestrator import Result, make_request
+import re
+
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
 def validate_producthunt(user: str) -> Result:
@@ -12,45 +14,50 @@ def validate_producthunt(user: str) -> Result:
         return Result.error("Only use letters, numbers, and underscores.")
 
     url = f"https://www.producthunt.com/@{user}"
-    show_url = f"https://www.producthunt.com/@{user}"
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cache-Control": "max-age=0",
-        "Upgrade-Insecure-Requests": "1",
-    }
+    def process(response):
+        # Cloudflare serves a managed challenge on every path of this domain in
+        # some regions; no HTTP client can clear it, so never call it a verdict.
+        if response.headers.get("cf-mitigated") == "challenge":
+            return Result.error("Cloudflare challenge, cannot be solved without a browser")
 
-    try:
-        response = make_request(url, headers=headers, follow_redirects=True)
-        if response.status_code == 200:
-            html = response.text
-            extra = {}
-            
-            ld = re.search(r'<script type=\"application/ld\+json\">(.*?)</script>', html, re.DOTALL)
-            if ld:
-                try:
-                    data = json.loads(ld.group(1))
-                    if isinstance(data, list): data = data[0]
-                    if name := data.get("name"): extra["name"] = name
-                    if curl := data.get("url"): extra["url"] = curl
-                except Exception:
-                    pass
-                    
-            if "name" not in extra:
-                title_match = re.search(r'<title>([^<]+?)(?:&#x27;s|\'s) profile', html)
-                if title_match:
-                    extra["name"] = title_match.group(1).strip()
-                else:
-                    meta = re.search(r'See what kind of products\s+([^\(]+)', html)
-                    if meta:
-                        extra["name"] = meta.group(1).strip()
-                        
-            return Result.taken(extra=extra, url=show_url)
-        elif response.status_code == 404:
-            return Result.available(url=show_url)
-        else:
-            return Result.error(f"Unexpected status: {response.status_code}", url=show_url)
-    except Exception as e:
-        return Result.error(e, url=show_url)
+        if response.status_code == 404:
+            return Result.available()
+
+        if response.status_code != 200:
+            return Result.error(f"Unexpected status: {response.status_code}")
+
+        return Result.taken(extra=_extract(response.text))
+
+    return impersonate_validate(url, process, show_url=url, allow_redirects=True)
+
+
+def _extract(body: str) -> dict:
+    extra = {}
+
+    ld = re.search(r'<script type="application/ld\+json">(.*?)</script>', body, re.DOTALL)
+    if ld:
+        try:
+            data = json.loads(ld.group(1))
+            if isinstance(data, list):
+                data = data[0]
+            if name := data.get("name"):
+                extra["name"] = name
+            if profile_url := data.get("url"):
+                extra["url"] = profile_url
+        except (json.JSONDecodeError, AttributeError, IndexError, KeyError):
+            pass
+
+    if "name" in extra:
+        return extra
+
+    title = re.search(r"<title>([^<]+?)(?:&#x27;s|'s) profile", body)
+    if title:
+        extra["name"] = title.group(1).strip()
+        return extra
+
+    meta = re.search(r"See what kind of products\s+([^\(]+)", body)
+    if meta:
+        extra["name"] = meta.group(1).strip()
+
+    return extra
