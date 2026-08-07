@@ -1,3 +1,4 @@
+import asyncio
 import threading
 from typing import Callable, Literal, Optional
 
@@ -55,6 +56,27 @@ def impersonate_request(
     kwargs.setdefault("timeout", _timeout())
     kwargs.setdefault("allow_redirects", False)
     return session.request(method, url, **kwargs)
+
+
+async def impersonate_request_async(
+    url: str,
+    method: Literal["GET", "POST"] = "GET",
+    warmup_url: Optional[str] = None,
+    impersonate: str = DEFAULT_IMPERSONATE,
+    **kwargs,
+) -> cffi.Response:
+    """``impersonate_request`` for the async email modules. curl_cffi's session
+    API is blocking, so it runs in a worker thread; the session cache is shared
+    with the synchronous username modules, so cookies carry over either way.
+    """
+    return await asyncio.to_thread(
+        impersonate_request,
+        url,
+        method,
+        warmup_url=warmup_url,
+        impersonate=impersonate,
+        **kwargs,
+    )
 
 
 def _get_warm_session(
