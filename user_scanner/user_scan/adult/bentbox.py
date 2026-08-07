@@ -21,14 +21,25 @@ def validate_bentbox(user):
         if "User not found" in html:
             return Result.available(url=show_url)
 
+        # Reserved routes (/login, /explore) and whitespace normalisation both
+        # redirect. Redirects are not followed, so the body carries no verdict.
+        if 300 <= response.status_code < 400:
+            target = response.headers.get("location") or "an unnamed target"
+            return Result.error(
+                f"Redirected to {target}; the response carries no verdict", url=show_url
+            )
+
         if response.status_code in (403, 429):
             return Result.error(
-                f"Rate limit / Cloudflare protection block (HTTP {response.status_code}). "
-                "Run with residential proxy or active session cookies.",
+                f"Rate limit / bot protection block (HTTP {response.status_code}). "
+                "Retry with a proxy or lower concurrency.",
                 url=show_url,
             )
 
-        return Result.error(f"Unexpected response body (HTTP {response.status_code})", url=show_url)
+        return Result.error(
+            f"Neither a profile nor the not-found marker (HTTP {response.status_code})",
+            url=show_url,
+        )
 
     return generic_validate(url, process, show_url=show_url)
 
