@@ -10,6 +10,11 @@ PROFILE_URL = "https://www.livejournal.com/profile/"
 JOURNAL_RE = re.compile(r"Site\.journal\s*=\s*(\{.+?\});")
 NOT_FOUND_MARKER = "The page was not found!"
 
+# A purged journal frees its username for re-registration ("You can rename your
+# account with this username"); a suspended one keeps it.
+PURGED_MARKER = "This journal has been deleted and purged"
+SUSPENDED_MARKER = "This journal has been suspended"
+
 
 def validate_livejournal(user: str) -> Result:
     show_url = f"https://{user}.livejournal.com"
@@ -17,6 +22,12 @@ def validate_livejournal(user: str) -> Result:
     def process(response):
         if response.status_code == 404 and NOT_FOUND_MARKER in response.text:
             return Result.available()
+
+        if response.status_code == 410 and PURGED_MARKER in response.text:
+            return Result.available()
+
+        if response.status_code == 403 and SUSPENDED_MARKER in response.text:
+            return Result.taken(extra={"status": "suspended"})
 
         if response.status_code != 200:
             return Result.error(f"Unexpected status: {response.status_code}")
