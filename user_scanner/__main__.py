@@ -433,6 +433,7 @@ def main():
 
         if args.module:
             fn = run_email_module_batch if is_email else run_user_module
+            modules_to_run = []
             for module in validated_modules:
                 site_name = get_site_name(module)
                 if not config.allow_loud and is_loud(site_name, is_email):
@@ -449,7 +450,10 @@ def main():
                     per_module_config = replace(config, allow_loud=True)
                     results.extend(fn(module, target, per_module_config))
                 else:
-                    results.extend(fn(module, target, config))
+                    modules_to_run.append(module)
+
+            if modules_to_run:
+                results.extend(fn(modules_to_run, target, config))
 
         elif args.category:
             fn = run_email_category_batch if is_email else run_user_category

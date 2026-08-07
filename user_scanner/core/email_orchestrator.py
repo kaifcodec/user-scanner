@@ -2,7 +2,7 @@ import asyncio
 import httpx
 from pathlib import Path
 from types import ModuleType
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Union
 
 from colorama import Fore, Style
 
@@ -150,12 +150,14 @@ async def _run_batch(
 
 
 async def _run_email_module_batch_async(
-    module: ModuleType, email: str, configs: ScanConfig
+    module: Union[ModuleType, List[ModuleType]], email: str, configs: ScanConfig
 ) -> List[Result]:
-    return await _run_batch([module], email, configs)
+    modules = [module] if isinstance(module, ModuleType) else list(module)
+    return await _run_batch(modules, email, configs)
+
 
 def run_email_module_batch(
-    module: ModuleType, email: str, configs: ScanConfig
+    module: Union[ModuleType, List[ModuleType]], email: str, configs: ScanConfig
 ) -> List[Result]:
     return asyncio.run(_run_email_module_batch_async(module, email, configs))
 
