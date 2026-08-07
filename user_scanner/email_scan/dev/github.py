@@ -1,74 +1,101 @@
-import httpx
 import re
+from urllib.parse import quote
+
+from user_scanner.core.impersonate import impersonate_request_async
 from user_scanner.core.result import Result
+
+SHOW_URL = "https://github.com"
+SEARCH_API = "https://api.github.com/search/users"
+SIGNUP_URL = "https://github.com/signup"
+VALIDITY_URL = "https://github.com/email_validity_checks"
+
+# The signup form carries one CSRF token per auto-check endpoint and emits the
+# value before the data-csrf marker, so the token has to be taken from inside
+# the email_validity_checks block rather than from the first match on the page.
+CSRF_RE = re.compile(
+    r'<auto-check[^>]*src="/email_validity_checks"'
+    r'[\s\S]*?<input[^>]*value="([^"]+)"[^>]*data-csrf="true"'
+)
 
 
 async def _check(email: str) -> Result:
-    show_url = "https://github.com"
-    async with httpx.AsyncClient(timeout=15.0, http2=True, follow_redirects=True) as client:
-        try:
-            url1 = "https://github.com/signup"
-            headers1 = {
-                'host': 'github.com',
-                'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Linux"',
-                'upgrade-insecure-requests': '1',
-                'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
-                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                'sec-fetch-site': 'cross-site',
-                'sec-fetch-mode': 'navigate',
-                'sec-fetch-user': '?1',
-                'sec-fetch-dest': 'document',
-                'referer': 'https://www.google.com/',
-                'accept-encoding': 'gzip, deflate, br, zstd',
-                'accept-language': 'en-US,en;q=0.9',
-                'priority': 'u=0, i'
-            }
+    # The search API confirms a hit outright and costs one request, so it runs
+    # before the signup probe. It only sees accounts that publish the address
+    # on their profile, so a miss still has to fall through.
+    found = await _search_public_profiles(email)
+    if found is not None:
+        return found
 
-            res1 = await client.get(url1, headers=headers1)
-            html = res1.text
+    return await _check_signup_availability(email)
 
-            csrf_match = re.search(r'data-csrf="true"\s+value="([^"]+)"', html)
 
-            if not csrf_match:
-                return Result.error("Failed to extract GitHub authenticity_token")
+async def _search_public_profiles(email: str) -> Result | None:
+    try:
+        response = await impersonate_request_async(
+            f"{SEARCH_API}?q={quote(email)}+in:email",
+            headers={"accept": "application/vnd.github+json"},
+        )
+    except Exception:
+        return None
 
-            csrf_token = csrf_match.group(1)
+    if response.status_code != 200:
+        return None
 
-            url2 = "https://github.com/email_validity_checks"
-            payload = {
-                'authenticity_token': csrf_token,
-                'value': email
-            }
+    items = response.json().get("items") or []
+    if not items:
+        return None
 
-            headers2 = {
-                'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-                'Accept-Encoding': "gzip, deflate, br, zstd",
-                'sec-ch-ua-platform': '"Linux"',
-                'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
-                'sec-ch-ua-mobile': "?0",
-                'origin': "https://github.com",
-                'sec-fetch-site': "same-origin",
-                'sec-fetch-mode': "cors",
-                'sec-fetch-dest': "empty",
-                'referer': "https://github.com/signup",
-                'accept-language': "en-US,en;q=0.9",
-                'priority': "u=1, i"
-            }
+    user = items[0]
+    return Result.taken(
+        url=SHOW_URL,
+        extra={
+            "login": user.get("login"),
+            "user_id": user.get("id"),
+            "profile": user.get("html_url"),
+            "account_type": user.get("type"),
+            "matched_by": "public profile email",
+        },
+        media={"avatar": user.get("avatar_url")},
+    )
 
-            response = await client.post(url2, data=payload, headers=headers2)
-            body = response.text
 
-            if "already associated with an account" in body:
-                return Result.taken(url=show_url)
-            elif response.status_code == 200 and "Email is available" in body:
-                return Result.available(url=show_url)
-            else:
-                return Result.error(f"Unexpected status code: {response.status_code}, report this via GitHub issues")
+async def _check_signup_availability(email: str) -> Result:
+    try:
+        signup = await impersonate_request_async(SIGNUP_URL, allow_redirects=True)
+        csrf_match = CSRF_RE.search(signup.text)
 
-        except Exception as e:
-            return Result.error(f"unexpected exception: {e}")
+        if not csrf_match:
+            # GitHub fronts /signup with DataDome, whose interstitial no HTTP
+            # client can clear; the address may still be registered privately.
+            return Result.error(
+                "GitHub's signup form is behind a bot challenge, and the address "
+                "is not on any public profile"
+            )
+
+        response = await impersonate_request_async(
+            VALIDITY_URL,
+            "POST",
+            data={"authenticity_token": csrf_match.group(1), "value": email},
+            headers={
+                "origin": SHOW_URL,
+                "referer": SIGNUP_URL,
+                "accept": "*/*",
+            },
+        )
+        body = response.text
+
+        if "already associated with an account" in body:
+            return Result.taken(url=SHOW_URL)
+
+        if response.status_code == 200 and "Email is available" in body:
+            return Result.available(url=SHOW_URL)
+
+        return Result.error(
+            f"Unexpected status code: {response.status_code}, report this via GitHub issues"
+        )
+
+    except Exception as e:
+        return Result.error(f"unexpected exception: {e}")
 
 
 async def validate_github(email: str) -> Result:
