@@ -8,6 +8,9 @@ from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
 
+GEO_BLOCK_MARKER = "configured to block access from your country"
+
+
 def validate_yaga_co_za(user: str) -> Result:
     user = user.lower()
     url = f"https://www.yaga.co.za/{quote(user, safe='')}"
@@ -23,6 +26,11 @@ def validate_yaga_co_za(user: str) -> Result:
             return Result.available()
 
         if response.status_code != 200:
+            # CloudFront fronts this shop and refuses whole countries outright;
+            # that 403 says nothing about the handle.
+            if response.status_code == 403 and GEO_BLOCK_MARKER in response.text:
+                return Result.error("CloudFront blocks this country, the site is unreachable from here")
+
             return Result.error(
                 f"Unexpected response status: {response.status_code}",
             )
