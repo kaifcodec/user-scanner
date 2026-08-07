@@ -3,7 +3,7 @@ import inspect
 import concurrent.futures
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, Dict, Optional, Set
+from typing import Callable, List, Dict, Optional, Set, Union
 import threading
 
 import httpx
@@ -118,9 +118,10 @@ async def _run_batch(
 
 
 def run_user_module(
-    module: ModuleType, username: str, configs: ScanConfig
+    module: Union[ModuleType, List[ModuleType]], username: str, configs: ScanConfig
 ) -> List[Result]:
-    return asyncio.run(_run_batch([module], username, configs))
+    modules = [module] if isinstance(module, ModuleType) else list(module)
+    return asyncio.run(_run_batch(modules, username, configs))
 
 
 def run_user_category(
