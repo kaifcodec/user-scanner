@@ -75,12 +75,26 @@ async def _check(email: str) -> Result:
                 return Result.error(f"API acted up: {response.status_code}")
 
             res_data = response.json()
-            further_action = res_data.get("data", {}).get("further_action", "")
+            data = res_data.get("data", {})
+            further_action = data.get("further_action", "")
 
             # If it says show-login, they have an account. If show-register, they don't.
             if further_action == "show-login":
                 return Result.taken(url=show_url)
-            elif further_action == "show-register":
+
+            # An account whose only sign-in method is a social provider gets the
+            # welcome-back screen instead of the password prompt.
+            if further_action == "show-welcome-back":
+                return Result.taken(
+                    url=show_url,
+                    extra={
+                        "login_method": "SSO",
+                        "sso_provider": data.get("provider"),
+                        "sso_methods": data.get("ssoMethodsCount"),
+                    },
+                )
+
+            if further_action == "show-register":
                 return Result.available(url=show_url)
 
             return Result.error(f"Got an weird action: {further_action}")
