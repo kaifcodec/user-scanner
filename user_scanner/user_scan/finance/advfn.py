@@ -1,4 +1,5 @@
-from user_scanner.core.orchestrator import generic_validate, Result
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 import re as local_re
 
@@ -52,4 +53,4 @@ def validate_advfn(user):
 
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
-    return generic_validate(url, process, show_url=show_url)
+    return impersonate_validate(url, process, show_url=show_url)
