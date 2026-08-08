@@ -176,6 +176,18 @@ def main():
         help="Check for infostealer intelligence using Hudson Rock's API",
     )
 
+    parser.add_argument(
+        "--cross", "--cross-scan",
+        action="store_true",
+        dest="cross_scan",
+        help="Automatically extract and prompt to cross-scan found targets (Username <-> Email)",
+    )
+
+    parser.add_argument(
+        "--cross-auto",
+        action="store_true",
+        help="Automatically run cross-scans on all extracted targets without prompting",
+    )
 
     parser.add_argument("--version", action="store_true", help="Print version")
 
@@ -469,6 +481,82 @@ def main():
             fn = run_email_full_batch if is_email else run_user_full
             results.extend(fn(target, config))
 
+
+    if args.cross_scan:
+        from user_scanner.core.cross_scanner import extract_emails, extract_usernames, prompt_target_selection
+
+        cross_targets = []
+        target_type = ""
+        cross_is_email = False
+
+        if is_email:
+            cross_is_email = False
+            target_type = "username"
+            cross_targets = extract_usernames(results, targets[0] if targets else "")
+        else:
+            cross_is_email = True
+            target_type = "email"
+            cross_targets = extract_emails(results)
+
+        selected_targets = prompt_target_selection(cross_targets, target_type, args.cross_auto)
+
+        cross_results = []
+        if selected_targets:
+            cross_fn = run_email_full_batch if cross_is_email else run_user_full
+            
+            for cross_target in selected_targets:
+                if cross_is_email:
+                    print(f"\n{Fore.CYAN} Cross-checking email: {cross_target}{Style.RESET_ALL}")
+                else:
+                    print(f"\n{Fore.CYAN} Cross-checking username: {cross_target}{Style.RESET_ALL}")
+                
+                cross_results.extend(cross_fn(cross_target, config))
+
+            if args.output:
+                base, ext = os.path.splitext(args.output)
+                # Clean targets for filename
+                clean_targets = "_".join("".join(c if c.isalnum() else "_" for c in t) for t in selected_targets)
+                # Truncate if too long
+                if len(clean_targets) > 50:
+                    clean_targets = clean_targets[:47] + "..."
+                    
+                cross_output = f"{base}_{clean_targets}_{target_type}_cross{ext}"
+                
+                # Check for PDF output support
+                if ext.lower() == ".pdf":
+                    try:
+                        from user_scanner.core.formatter import into_pdf
+                        cross_content = into_pdf(
+                            results=cross_results,
+                            target=", ".join(selected_targets),
+                            scan_type="Email" if cross_is_email else "Username",
+                            total_modules=len(load_modules(load_categories(cross_is_email, args.no_nsfw))), # approximate module count
+                            include_media=True,
+                            version=load_local_version()[0]
+                        )
+                        with open(cross_output, "wb") as f:
+                            f.write(cross_content)
+                        print(f"{Fore.GREEN}\n[+] Cross-scan results saved to {cross_output}{Style.RESET_ALL}")
+                    except ImportError:
+                        print(f"{Fore.YELLOW}[i] PDF export requires reportlab. Skipping cross-scan PDF export.{Style.RESET_ALL}")
+                else:
+                    cross_content = (
+                        formatter.into_csv(cross_results)
+                        if args.format == "csv"
+                        else formatter.into_json(cross_results)
+                    )
+                    
+                    if args.format == "json":
+                        cross_items = formatter.get_json_data(cross_results)
+                        with open(cross_output, "w", encoding="utf-8") as f:
+                            json.dump(cross_items, f, indent=2, ensure_ascii=False)
+                    elif args.format == "csv":
+                        with open(cross_output, "w", encoding="utf-8") as f:
+                            f.write(cross_content)
+                            
+                    print(f"{Fore.GREEN}\n[+] Cross-scan results saved to {cross_output}{Style.RESET_ALL}")
+            
+            results.extend(cross_results)
 
     if args.hudson_scan:
         sys.exit(0)
