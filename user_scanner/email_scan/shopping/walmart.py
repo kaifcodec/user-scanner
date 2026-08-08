@@ -95,8 +95,11 @@ async def _check(email: str) -> Result:
         if response.status_code == 429:
             return Result.error("Rate limited")
 
+        # Walmart answers 412 with a PerimeterX block payload whenever it
+        # refuses the request — an unaccepted session, a flagged IP, a blocked
+        # region — so the status alone does not name which one.
         if response.status_code == 412:
-            return Result.error("Precondition Failed (412) - Walmart detected session mismatch")
+            return Result.error("Blocked by Walmart bot protection (412)")
 
         if response.status_code != 200:
             return Result.error(f"HTTP Error: {response.status_code}")
