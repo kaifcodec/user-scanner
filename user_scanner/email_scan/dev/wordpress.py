@@ -34,14 +34,24 @@ async def _check(email: str) -> Result:
 
             inner_code = data.get("code")
             body = data.get("body", {})
+            inner_error = body.get("error")
 
             if inner_code == 200:
                 return Result.taken(url=show_url)
-            elif inner_code == 404 and body.get("error") == "unknown_user":
+
+            # WordPress.com answers 403 email_login_not_allowed only for an
+            # address that maps to a real account whose owner must sign in with
+            # their username; an unknown address 404s instead.
+            if inner_code == 403 and inner_error == "email_login_not_allowed":
+                return Result.taken(
+                    url=show_url, extra={"login_method": "username only"}
+                )
+
+            if inner_code == 404 and inner_error == "unknown_user":
                 return Result.available(url=show_url)
-            else:
-                error_msg = body.get("message", "Unknown API response")
-                return Result.error(f"WordPress Error: {error_msg}")
+
+            error_msg = body.get("message", "Unknown API response")
+            return Result.error(f"WordPress Error: {error_msg}")
 
     except httpx.TimeoutException:
         return Result.error("Connection timed out")
