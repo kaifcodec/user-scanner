@@ -186,7 +186,8 @@ def main():
     parser.add_argument(
         "--cross-scan",
         action="store_true",
-        help="After the scan, follow the usernames and links its results expose and scan those too",
+        help="After the scan, follow the usernames, links and email addresses its "
+        "results expose and scan those too",
     )
 
     parser.add_argument(
@@ -220,9 +221,10 @@ def main():
         type=int,
         default=DEFAULT_SWEEP,
         metavar="N",
-        help="Usernames a cross-scan sweeps against every module, across all rounds. "
-        "0 disables sweeping, leaving only the sites a pivot named — fewer accounts, "
-        f"but no handle collisions (default: {DEFAULT_SWEEP})",
+        help="Targets — usernames and addresses together — a cross-scan sweeps against "
+        "every module of their kind, across all rounds. 0 disables sweeping, leaving only "
+        "the sites a pivot named — fewer accounts, but no handle collisions "
+        f"(default: {DEFAULT_SWEEP})",
     )
 
     parser.add_argument("-U", "--update", action="store_true", help="Update the tool")
