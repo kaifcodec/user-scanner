@@ -4,13 +4,18 @@ An email scan answers *does an account exist here*. It almost never learns the
 account's **name**, so it can only ever reach the sites that expose an email
 check. A username scan reaches far more sites, but needs a handle to start from.
 
-`--cross-scan` bridges the two: it runs the email scan, mines the metadata the
-results carry for usernames, and scans those usernames across every username
-module.
+`--cross-scan` bridges the two: it runs the scan, mines the metadata the results
+carry for usernames, and scans those usernames across every username module.
 
 ```
 user-scanner -e target@example.com --cross-scan
+user-scanner -u target --cross-scan
 ```
+
+A username pass can be the source as well as the destination — its profiles
+advertise the person's *other* handles, which is exactly what a pivot consumes.
+Its own target starts out marked as swept, since that pass already ran every
+module against it.
 
 ---
 
