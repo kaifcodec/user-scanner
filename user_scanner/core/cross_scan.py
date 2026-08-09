@@ -196,16 +196,22 @@ def _named_targets(
     A swept username already ran against every module, so only the pivots left
     over need their one named site checked.
     """
+    # Grouped case-insensitively, matching how `swept` and `checked` compare:
+    # two profiles can link the same account in different cases, and scanning it
+    # once per casing is a duplicate request for one account. Pivots arrive
+    # best-vouched first, so the first casing seen is the one worth reporting.
     sites_by_username: Dict[str, Set[str]] = {}
+    casing: Dict[str, str] = {}
     for pivot in pivots:
-        if not pivot.site or pivot.username.lower() in swept:
+        key = pivot.username.lower()
+        if not pivot.site or key in swept or (pivot.site, key) in checked:
             continue
-        if (pivot.site, pivot.username.lower()) in checked:
-            continue
-        sites_by_username.setdefault(pivot.username, set()).add(pivot.site)
+        casing.setdefault(key, pivot.username)
+        sites_by_username.setdefault(key, set()).add(pivot.site)
 
     targets: Dict[str, List[ModuleType]] = {}
-    for username, sites in sites_by_username.items():
+    for key, sites in sites_by_username.items():
+        username = casing[key]
         modules = [
             module
             for site in sorted(sites)

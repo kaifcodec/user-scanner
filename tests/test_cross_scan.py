@@ -1,4 +1,5 @@
-from user_scanner.core.cross_scan import _followable, _fresh_pivots
+from user_scanner.core.cross_scan import _followable, _fresh_pivots, _named_targets
+from user_scanner.core.helpers import ScanConfig
 from user_scanner.core.pivots import PivotKind
 from user_scanner.core.result import Result
 
@@ -43,3 +44,24 @@ def test_only_non_conflicting_hits_are_followed():
     ]
 
     assert [r.site_name for r in _followable(hits)] == ["Github", "Roblox"]
+
+
+def test_the_same_account_linked_twice_is_checked_once():
+    """Two profiles linking one account — in any casing — is one request."""
+    pivots = _fresh_pivots(
+        [
+            Result.taken(extra={"verified_accounts": "X: https://x.com/JohnDoe2 (verified)"})
+            .update(site_name="Gravatar", is_email=True),
+            Result.taken(extra={"links": "https://twitter.com/johndoe2"})
+            .update(site_name="Linktree", is_email=True),
+        ],
+        "all",
+        swept=set(),
+        checked=set(),
+    )
+    targets = _named_targets(pivots, swept=set(), checked=set(), configs=ScanConfig())
+
+    assert len(pivots) == 2
+    assert [m.__name__ for mods in targets.values() for m in mods] == ["x"]
+    # The best-vouched pivot supplies the casing that gets scanned.
+    assert list(targets) == ["JohnDoe2"]
