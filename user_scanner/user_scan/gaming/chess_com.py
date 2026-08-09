@@ -17,7 +17,9 @@ def validate_chess_com(user: str) -> Result:
     if not (user[0].isalnum() and user[-1].isalnum()):
         return Result.available("Username must start and end with a letter or number")
 
-    url = f"https://api.chess.com/pub/player/{user}"
+    # The API 301-redirects any non-lowercase handle to its lowercase form, so
+    # request the canonical form directly and keep 3xx meaningful as an error.
+    url = f"https://api.chess.com/pub/player/{user.lower()}"
     show_url = f"https://www.chess.com/member/{user}"
 
     headers = {
