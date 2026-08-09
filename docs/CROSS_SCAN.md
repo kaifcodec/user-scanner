@@ -5,17 +5,26 @@ account's **name**, so it can only ever reach the sites that expose an email
 check. A username scan reaches far more sites, but needs a handle to start from.
 
 `--cross-scan` bridges the two: it runs the scan, mines the metadata the results
-carry for usernames, and scans those usernames across every username module.
+carry for usernames **and email addresses**, and scans each against the modules
+for its own kind.
 
 ```
 user-scanner -e target@example.com --cross-scan
 user-scanner -u target --cross-scan
 ```
 
-A username pass can be the source as well as the destination — its profiles
-advertise the person's *other* handles, which is exactly what a pivot consumes.
-Its own target starts out marked as swept, since that pass already ran every
-module against it.
+Either pass can be the source as well as the destination, so all four directions
+work off one mechanism:
+
+| Direction | What it mines |
+| --- | --- |
+| `-e` → username | a handle the email's profile reports, or a link it carries |
+| `-u` → username | the person's *other* handles, advertised on the profiles found |
+| `-u` → email | an address published on a profile the username pass found |
+| `-e` → email | a second address exposed by the first one's profiles |
+
+A pass's own target starts out excluded — a `-u` handle as already swept, a `-e`
+address as already scanned — since that pass ran every module against it.
 
 ---
 
@@ -64,6 +73,45 @@ platform's verification handshake for an account they do not control.
 
 ---
 
+## Email classes
+
+Addresses are classified the same way, by how the source presented them:
+
+| Class | Meaning | Example |
+| --- | --- | --- |
+| `field` | The site published it in its own email field for the account | GitHub's `email`, Gravatar's `emails` |
+| `text` | An address read out of prose, where nothing says whose mailbox it is | an address inside a `bio` |
+
+`--cross-emails` picks which may be scanned:
+
+| Value | Uses |
+| --- | --- |
+| `all` | both classes |
+| `verified` (default) | `field` only |
+| `none` | nothing — no address is scanned |
+
+It defaults tighter than `--cross-links` because the cost of being wrong is not
+symmetric. A stray username pivot wastes a request; a stray address puts a third
+party into the report, and hands their mailbox to modules that can write to it.
+
+Two traps this classification exists to avoid:
+
+- **An email field is not a guarantee of ownership.** `verified` says the site
+  published the address, not that the site was right about whose it is. PyPI
+  fills its `email` from a package's author/maintainer metadata, so a hit there
+  can carry a co-maintainer's address or a mailing list. Keys that name the
+  third party outright (`author_email`, `maintainer_email`) are read as `text`,
+  but a module that folds them into `email` defeats that.
+- **Some addresses reach nobody.** Role mailboxes (`noreply@`, `postmaster@`),
+  RFC 2606 placeholders (`@example.com`), reserved TLDs and GitHub's
+  `@users.noreply.github.com` relay are dropped outright. `hello@` and
+  `contact@` are *not* — that is how a freelancer takes mail.
+
+`none` means none, unlike its `--cross-links` namesake, which still yields
+handle pivots. A handle is not a link; every email class is an address.
+
+---
+
 ## The sweep, and why hits are not equal
 
 Two very different things produce a hit:
@@ -79,6 +127,24 @@ identification.
 
 `--cross-sweep 0` turns the sweep off and runs only the named checks. Far fewer
 accounts, zero collisions.
+
+### Usernames and addresses share the budget
+
+`--cross-sweep` counts *targets*, not usernames: sweeping either kind costs one
+full pass over its scan type (227 username modules, 153 email ones). Half the
+budget is offered to addresses, rounded down, and whatever one kind cannot use
+falls to the other:
+
+| Budget | Usernames available | Addresses available | Spent on |
+| --- | --- | --- | --- |
+| 3 | 5 | 2 | 2 usernames, 1 address |
+| 3 | 0 | 2 | 2 addresses |
+| 3 | 5 | 0 | 3 usernames |
+| 1 | 2 | 2 | 1 username |
+
+A budget of 1 still goes to a username, which is what it did before addresses
+existed. `--cross-sweep 0` leaves only named checks, so no address is scanned —
+an address has no named-site equivalent to fall back on.
 
 ---
 
@@ -120,6 +186,28 @@ Scoring runs after the pass finishes, because the anchors come from that same
 pass's confirmed hits. Ratings therefore appear in the export and the closing
 summary, not on the per-result lines as they stream past.
 
+### Addresses are rated before they are scanned
+
+An address is rated on how independently it was reported, and the accounts it
+finds inherit that rating — an account is only as well tied to the target as the
+address that led to it:
+
+| Rating | Earned by |
+| --- | --- |
+| `confirmed` | two or more sites published it in their own email field |
+| `likely` | one site published it in an email field, or it sits on a domain the target links to |
+| `candidate` | prose only, with nothing tying it back |
+
+Independent agreement is the strongest signal available without sending mail, so
+it outranks a single site saying it once. `conflicting` is never used: an
+address carries no name to disagree with, and inferring a mismatch from the
+local part would mislabel every shared mailbox.
+
+The rating deliberately ignores the anchor *emails* and *domains* — those are
+harvested from the very profiles being rated, so consulting them would promote
+every address on the strength of its own appearance. Only domains the target was
+seen to **link** to count.
+
 ### What confidence does not do
 
 - **A `candidate` is not a negative.** Most hits land there simply because the
@@ -144,9 +232,20 @@ restricted run stays restricted:
 Both the sweep and the named checks honour it, so a pivot naming a site outside
 the restriction is not checked either. Names are re-resolved against `user_scan`,
 because an email run's `-m` names *email* modules while the sweep needs the
-username module of the same site. A restriction naming no username module at all
-(`-e … -c news`, which exists only in `email_scan`) leaves nothing to cross-scan,
-and the run says so.
+username module of the same site.
+
+Addresses resolve the same name against `email_scan`, so `-m github` narrows the
+sweep to `user_scan/dev/github.py` and any address scan to
+`email_scan/dev/github.py`. Only a restriction that names **neither** a username
+nor an email module leaves nothing to cross-scan, and the run says so.
+
+### Loud modules are skipped, not prompted
+
+23 email modules notify the address they are given — a password reset or a
+verification mail. In a first pass that address is the one you typed, so
+`--allow-loud` and a per-module prompt are the right bar. In a cross-scan it
+came off somebody else's profile, so those modules are dropped without asking.
+`--allow-loud` puts them back for a caller who has accepted that.
 
 ---
 
@@ -185,12 +284,13 @@ Two rules keep extra rounds from wandering:
 
 ## Cost
 
-A sweep runs **every** username module, so each swept username costs roughly one
-full `-u` scan. `--cross-sweep` is that budget: it caps how many usernames get
-the treatment (default 3) **across all rounds**, and `0` turns sweeping off
-altogether. Raising `--cross-depth` never multiplies the bill on its own — a
-deeper run with the default budget spends it in round 1 and reaches later rounds
-with named checks only. Raise both together.
+A sweep runs **every** module of its kind, so each swept username costs roughly
+one full `-u` scan and each scanned address roughly one full `-e` scan.
+`--cross-sweep` is that shared budget: it caps how many targets get the
+treatment (default 3) **across all rounds and both kinds**, and `0` turns
+sweeping off altogether. Raising `--cross-depth` never multiplies the bill on
+its own — a deeper run with the default budget spends it in round 1 and reaches
+later rounds with named checks only. Raise both together.
 
 Usernames are ranked `handle` → `verified` → `link`, then by how many pivots
 mention them. Those past the budget are named in the output rather than dropped
@@ -207,8 +307,24 @@ drop to `--cross-sweep 0`, when a run is full of them.
 
 ## Reading the output
 
-Cross-scan hits carry `pivot_source` (why the username was scanned) and
-`confidence` (how well the account is tied to the target):
+Cross-scan hits carry `pivot_source` (why the target was scanned) and
+`confidence` (how well the account is tied to the target). An account reached
+through an address records which profile published it:
+
+```json
+{
+  "status": "Found",
+  "username": "john@acme.dev",
+  "site_name": "Spotify",
+  "is_email": true,
+  "extra": {
+    "pivot_source": "address from Github (email), Gravatar (emails)",
+    "confidence": "confirmed"
+  }
+}
+```
+
+and one reached through a handle records the pivot class:
 
 ```json
 {

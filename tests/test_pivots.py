@@ -3,14 +3,17 @@ from pathlib import Path
 import pytest
 
 from user_scanner.core.pivots import (
+    EmailKind,
     _HOST_ROUTES,
     _SUBDOMAIN_ROUTES,
     Pivot,
     PivotKind,
+    extract_email_pivots,
     extract_pivots,
     is_platform_host,
     rank_usernames,
     resolve_url,
+    select_email_pivots,
     select_pivots,
 )
 from user_scanner.core.result import Result
@@ -139,3 +142,105 @@ def test_rank_usernames_prefers_the_best_vouched_casing():
 )
 def test_every_route_names_a_live_user_scan_module(module):
     assert list(USER_SCAN_ROOT.glob(f"*/{module}.py")), f"no user_scan module named {module}"
+
+
+def user_result(site_name, **extra):
+    return Result.taken(extra=extra).update(site_name=site_name, username="johndoe")
+
+
+def test_a_dedicated_email_field_outranks_one_scraped_from_prose():
+    pivots = extract_email_pivots(
+        [user_result("GitHub", email="john@acme.dev", bio="or try other@acme.dev")]
+    )
+
+    assert [(p.email, p.kind) for p in pivots] == [
+        ("john@acme.dev", EmailKind.FIELD),
+        ("other@acme.dev", EmailKind.TEXT),
+    ]
+
+
+def test_package_metadata_is_not_the_account_holders_address():
+    """author_email/maintainer_email name whoever published a release, so they
+    stay out of the trusted tier that --cross-emails verified keeps."""
+    pivots = extract_email_pivots([user_result("PyPI", author_email="maint@pkg.org")])
+
+    assert [p.kind for p in pivots] == [EmailKind.TEXT]
+    assert select_email_pivots(pivots, "verified") == []
+
+
+def test_the_same_address_from_two_sites_is_kept_once_per_site():
+    """Frequency is the ranking signal, so per-site pivots must survive dedupe."""
+    pivots = extract_email_pivots(
+        [user_result("GitHub", email="john@acme.dev"), user_result("Gravatar", emails="john@acme.dev")]
+    )
+
+    assert [p.source_site for p in pivots] == ["GitHub", "Gravatar"]
+
+
+def test_casing_is_normalised_so_one_mailbox_is_one_target():
+    pivots = extract_email_pivots([user_result("GitHub", email="John.Doe@Acme.DEV")])
+
+    assert [p.email for p in pivots] == ["john.doe@acme.dev"]
+
+
+@pytest.mark.parametrize(
+    "address",
+    [
+        "noreply@acme.dev",
+        "postmaster@acme.dev",
+        "12345+johndoe@users.noreply.github.com",
+        "someone@example.com",
+        "someone@yourdomain.com",
+        "someone@acme.test",
+        "not-an-address",
+    ],
+)
+def test_addresses_that_reach_nobody_are_dropped(address):
+    assert extract_email_pivots([user_result("GitHub", email=address)]) == []
+
+
+def test_a_role_lookalike_that_is_a_real_mailbox_survives():
+    """hello@ and contact@ are how freelancers take mail, so they stay in."""
+    pivots = extract_email_pivots([user_result("GitHub", email="hello@acme.dev")])
+
+    assert [p.email for p in pivots] == ["hello@acme.dev"]
+
+
+def test_an_avatar_url_is_never_mined_for_an_address():
+    assert extract_email_pivots([user_result("GitHub", avatar_url="https://x.dev/a@b.png")]) == []
+
+
+def test_none_keeps_nothing_unlike_its_links_namesake():
+    """--cross-links none still yields handle pivots because a handle is not a
+    link; every email tier is an address, so none means none."""
+    pivots = extract_email_pivots([user_result("GitHub", email="john@acme.dev")])
+
+    assert select_email_pivots(pivots, "all")
+    assert select_email_pivots(pivots, "verified")
+    assert select_email_pivots(pivots, "none") == []
+
+
+def test_a_profile_link_is_not_an_address():
+    """tiktok.com/@jane.doe is a legal dot-atom address whose local part is
+    the host and path. Links already arrive as username pivots."""
+    pivots = extract_email_pivots(
+        [user_result("Cam4", social_links="https://www.tiktok.com/@jane.doe")]
+    )
+
+    assert pivots == []
+
+
+def test_a_fediverse_handle_is_not_a_mailbox():
+    pivots = extract_email_pivots(
+        [user_result("Sourceforge", social_networks="Mastodon: @johndoe@mastodon.social")]
+    )
+
+    assert pivots == []
+
+
+def test_an_address_beside_a_link_still_survives():
+    pivots = extract_email_pivots(
+        [user_result("Reddit", bio="site https://acme.dev/@notme and mail john@acme.dev")]
+    )
+
+    assert [p.email for p in pivots] == ["john@acme.dev"]

@@ -13,6 +13,7 @@ from user_scanner.core import formatter
 from user_scanner.core.cross_scan import (
     DEFAULT_DEPTH,
     DEFAULT_SWEEP,
+    EMAIL_CHOICES,
     LINK_CHOICES,
     CrossScanConfig,
     run_cross_scan,
@@ -194,6 +195,16 @@ def main():
         default="all",
         help="Which links a cross-scan may pivot from: all, verified "
         "(platform-proven connections only), or none (site-reported handles only)",
+    )
+
+    parser.add_argument(
+        "--cross-emails",
+        choices=list(EMAIL_CHOICES),
+        default="verified",
+        help="Which addresses found in scan metadata a cross-scan may scan as emails: "
+        "all (including ones scraped from bio text), verified (only addresses a site "
+        "published in its own email field), or none. Loud email modules are skipped "
+        "unless --allow-loud (default: verified)",
     )
 
     parser.add_argument(
@@ -530,6 +541,7 @@ def main():
                 config,
                 CrossScanConfig(
                     links=args.cross_links,
+                    emails=args.cross_emails,
                     sweep=args.cross_sweep,
                     depth=args.cross_depth,
                     modules=_csv_names(args.module),

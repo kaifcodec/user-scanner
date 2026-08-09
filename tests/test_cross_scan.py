@@ -1,12 +1,18 @@
+import pytest
+
 from user_scanner.core.cross_scan import (
     CrossScanConfig,
+    _already_scanned,
     _already_swept,
+    _email_scope,
+    _fresh_emails,
     _followable,
     _fresh_pivots,
     _named_targets,
     _scope,
+    _split_budget,
 )
-from user_scanner.core.helpers import ScanConfig
+from user_scanner.core.helpers import ScanConfig, get_site_name, is_loud
 from user_scanner.core.pivots import PivotKind
 from user_scanner.core.result import Result
 
@@ -127,3 +133,61 @@ def test_named_checks_stay_inside_the_scope():
     targets = _named_targets(pivots, set(), set(), ScanConfig(), scope)
 
     assert [m.__name__ for mods in targets.values() for m in mods] == ["github"]
+
+
+def user_hit(site_name, **extra):
+    return Result.taken(extra=extra).update(site_name=site_name, username="johndoe")
+
+
+def test_an_email_pass_does_not_rescan_its_own_target():
+    prior = [Result.taken().update(site_name="Spotify", username="John@Acme.dev", is_email=True)]
+
+    assert _already_scanned(prior) == {"john@acme.dev"}
+    assert _fresh_emails(prior, "all", _already_scanned(prior)) == []
+
+
+def test_a_username_pass_seeds_no_scanned_address():
+    assert _already_scanned([user_hit("Github", email="john@acme.dev")]) == set()
+
+
+def test_verified_is_the_default_and_drops_prose_addresses():
+    source = [user_hit("Github", email="john@acme.dev", bio="also loose@random.net")]
+
+    assert [e.email for e in _fresh_emails(source, "verified", set())] == ["john@acme.dev"]
+    assert len(_fresh_emails(source, "all", set())) == 2
+    assert _fresh_emails(source, "none", set()) == []
+
+
+@pytest.mark.parametrize(
+    "budget,usernames,emails,expected",
+    [
+        (3, 5, 2, (2, 1)),
+        (3, 0, 2, (0, 2)),   # nothing to sweep, addresses take the lot
+        (3, 5, 0, (3, 0)),   # no addresses, usernames keep the pre-existing budget
+        (1, 2, 2, (1, 0)),   # a budget of 1 still sweeps a username first
+        (2, 1, 3, (1, 1)),
+        (0, 5, 5, (0, 0)),
+    ],
+)
+def test_neither_target_kind_starves_the_other(budget, usernames, emails, expected):
+    assert _split_budget(budget, usernames, emails) == expected
+
+
+def test_loud_email_modules_are_skipped_rather_than_prompted():
+    """The addresses reaching a cross-scan came off somebody else's profile, so
+    mailing them is not a decision this pass gets to make."""
+    quiet = _email_scope(CrossScanConfig(), ScanConfig())
+    loud_names = {m.__name__ for m in quiet if is_loud(get_site_name(m), is_email=True)}
+
+    assert loud_names == set()
+    assert _email_scope(CrossScanConfig(), ScanConfig(allow_loud=True)) is None
+
+
+def test_a_module_restriction_resolves_against_email_scan():
+    scope = _email_scope(CrossScanConfig(modules=("github",)), ScanConfig())
+
+    assert [m.__name__ for m in scope] == ["github"]
+
+
+def test_emails_none_loads_no_module_at_all():
+    assert _email_scope(CrossScanConfig(emails="none"), ScanConfig()) == []

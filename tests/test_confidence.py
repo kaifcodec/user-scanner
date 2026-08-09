@@ -1,4 +1,5 @@
-from user_scanner.core.confidence import Confidence, build_anchors, score
+from user_scanner.core.confidence import Confidence, build_anchors, rank_emails, score
+from user_scanner.core.pivots import extract_email_pivots, select_email_pivots
 from user_scanner.core.result import Result
 
 def hit(site_name, username="johndoe", **extra):
@@ -141,3 +142,72 @@ def test_nothing_conflicts_when_there_is_no_confirmed_account_to_conflict_with()
     rating = score(hit("Chess.com", name="Other Person"), anchors_from(emails=()))
 
     assert rating is Confidence.CANDIDATE
+
+
+def emails_from(*results, mode="all"):
+    return select_email_pivots(extract_email_pivots(results), mode)
+
+
+def rate(*results, mode="all"):
+    pivots = emails_from(*results, mode=mode)
+    ranked = rank_emails(pivots, build_anchors(confirmed=results))
+    return {entry.email: entry.confidence for entry in ranked}
+
+
+def test_two_sites_publishing_one_address_confirm_it():
+    """Independent agreement is the strongest tie available without mailing it."""
+    ratings = rate(
+        hit("Github", email="john@acme.dev"),
+        hit("Gravatar", emails="john@acme.dev"),
+    )
+
+    assert ratings == {"john@acme.dev": Confidence.CONFIRMED}
+
+
+def test_a_single_email_field_is_only_likely():
+    assert rate(hit("Github", email="john@acme.dev")) == {"john@acme.dev": Confidence.LIKELY}
+
+
+def test_an_address_scraped_from_prose_is_a_candidate():
+    assert rate(hit("Reddit", bio="mail loose@random.net")) == {
+        "loose@random.net": Confidence.CANDIDATE
+    }
+
+
+def test_an_address_on_a_linked_domain_is_likely():
+    ratings = rate(hit("Github", website="https://acme.dev", bio="me@acme.dev, other@elsewhere.io"))
+
+    assert ratings["me@acme.dev"] is Confidence.LIKELY
+    assert ratings["other@elsewhere.io"] is Confidence.CANDIDATE
+
+
+def test_an_address_does_not_vouch_for_itself():
+    """build_anchors mines these same profiles for addresses and their domains,
+    so rating against either would promote every hit on its own appearance."""
+    ratings = rate(hit("Reddit", bio="only@nowhere-else.example.dev"))
+
+    assert ratings == {"only@nowhere-else.example.dev": Confidence.CANDIDATE}
+
+
+def test_best_tied_addresses_come_first():
+    ranked = rank_emails(
+        emails_from(
+            hit("Reddit", bio="loose@random.net"),
+            hit("Github", email="john@acme.dev"),
+            hit("Gravatar", emails="john@acme.dev"),
+        ),
+        build_anchors(confirmed=()),
+    )
+
+    assert [e.email for e in ranked] == ["john@acme.dev", "loose@random.net"]
+
+
+def test_an_address_is_never_rated_conflicting():
+    """An address carries no name to disagree with, so inventing a mismatch
+    from the local part would mislabel every shared mailbox."""
+    ratings = rate(
+        hit("Github", name="Johnathan Doe", email="john@acme.dev"),
+        hit("Reddit", name="Other Person", bio="someone@elsewhere.io"),
+    )
+
+    assert Confidence.CONFLICTING not in ratings.values()

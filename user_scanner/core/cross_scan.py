@@ -15,14 +15,31 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from colorama import Fore, Style
 
-from user_scanner.core.confidence import ORDER, Confidence, build_anchors, score
-from user_scanner.core.helpers import ScanConfig, find_module, load_categories, load_modules
+from user_scanner.core.confidence import (
+    ORDER,
+    Confidence,
+    RankedEmail,
+    build_anchors,
+    rank_emails,
+    score,
+)
+from user_scanner.core.email_orchestrator import run_email_full_batch, run_email_module_batch
+from user_scanner.core.helpers import (
+    ScanConfig,
+    find_module,
+    get_site_name,
+    is_loud,
+    load_categories,
+    load_modules,
+)
 from user_scanner.core.orchestrator import run_user_full, run_user_module
 from user_scanner.core.pivots import (
     Pivot,
+    extract_email_pivots,
     extract_pivots,
     module_stem,
     rank_usernames,
+    select_email_pivots,
     select_pivots,
 )
 from user_scanner.core.result import Result
@@ -30,6 +47,7 @@ from user_scanner.core.result import Result
 DEFAULT_SWEEP = 3
 DEFAULT_DEPTH = 1
 LINK_CHOICES = ("all", "verified", "none")
+EMAIL_CHOICES = ("all", "verified", "none")
 
 _CONFIDENCE_COLOR = {
     Confidence.CONFIRMED: Fore.GREEN,
@@ -48,8 +66,15 @@ class CrossScanConfig:
     # module of the same site.
     modules: Tuple[str, ...] = ()
     categories: Tuple[str, ...] = ()
-    # How many usernames may be swept against every module, across all rounds.
-    # Zero turns sweeping off entirely, leaving only the sites a pivot named.
+    # Which addresses found in scan metadata may be scanned as emails. Defaults
+    # tighter than `links` because the cost of being wrong is higher: a stray
+    # username pivot wastes a request, a stray address puts a third party in the
+    # report and can hand them to a module that mails them.
+    emails: str = "verified"
+    # How many targets may be swept against every module, across all rounds —
+    # usernames and addresses draw on the same budget, since sweeping either one
+    # costs a full pass over that scan type. Zero turns sweeping off entirely,
+    # leaving only the sites a pivot named.
     sweep: int = DEFAULT_SWEEP
     depth: int = DEFAULT_DEPTH
 
@@ -67,10 +92,13 @@ def run_cross_scan(
     print(f"\n{Fore.MAGENTA}== CROSS-SCAN =={Style.RESET_ALL}")
 
     scope = _scope(cross_configs, configs)
-    if scope is not None and not scope:
+    email_modules = _email_scope(cross_configs, configs)
+    # Either half alone is a usable pass, so this only gives up when the
+    # restriction leaves neither a username module nor an email module.
+    if scope is not None and not scope and email_modules is not None and not email_modules:
         print(
-            f"{Fore.YELLOW}[!] The -m/-c restriction names no username module, so "
-            f"there is nothing to cross-scan.{Style.RESET_ALL}"
+            f"{Fore.YELLOW}[!] The -m/-c restriction names no username or email "
+            f"module, so there is nothing to cross-scan.{Style.RESET_ALL}"
         )
         return []
 
@@ -80,25 +108,39 @@ def run_cross_scan(
     cross_results: List[Result] = []
     swept: Set[str] = _already_swept(results)
     checked: Set[Tuple[str, str]] = set()
+    scanned_emails: Set[str] = _already_scanned(results)
+    email_ratings: Dict[str, Confidence] = {}
     source: List[Result] = list(results)
 
     for round_number in range(1, depth + 1):
         pivots = _fresh_pivots(source, cross_configs.links, swept, checked)
-        if not pivots:
+        ranked = _fresh_emails(source, cross_configs.emails, scanned_emails)
+        if not pivots and not ranked:
             if round_number == 1:
-                print(f"{Fore.YELLOW}[!] No usernames or links to pivot from.{Style.RESET_ALL}")
+                print(
+                    f"{Fore.YELLOW}[!] No usernames, links or addresses to pivot "
+                    f"from.{Style.RESET_ALL}"
+                )
                 return []
             print(f"\n{Fore.CYAN}[i] Round {round_number}: nothing new to follow.{Style.RESET_ALL}")
             break
 
         if depth > 1:
             print(f"\n{Fore.MAGENTA}-- round {round_number} of {depth} --{Style.RESET_ALL}")
-        _print_pivots(pivots)
+        if pivots:
+            _print_pivots(pivots)
+        if ranked:
+            _print_emails(ranked)
         all_pivots.extend(pivots)
 
-        usernames = _sweep_targets(pivots, budget)
-        budget -= len(usernames)
+        sweepable = 0 if scope is not None and not scope else len(rank_usernames(pivots))
+        for_usernames, for_emails = _split_budget(budget, sweepable, len(ranked))
+        usernames = _sweep_targets(pivots, for_usernames)
+        to_scan = _email_targets(ranked, for_emails, email_modules)
+        budget -= len(usernames) + len(to_scan)
         swept.update(username.lower() for username in usernames)
+        scanned_emails.update(entry.email for entry in to_scan)
+        email_ratings.update({entry.email: entry.confidence for entry in to_scan})
 
         round_results: List[Result] = []
         for username in usernames:
@@ -121,14 +163,23 @@ def run_cross_scan(
                 _tag(run_user_module(modules, username, configs), all_pivots, username)
             )
 
+        for entry in to_scan:
+            print(f"\n{Fore.CYAN}[+] Scanning email: {entry.email}{Style.RESET_ALL}")
+            email_results = (
+                run_email_full_batch(entry.email, configs)
+                if email_modules is None
+                else run_email_module_batch(email_modules, entry.email, configs)
+            )
+            round_results.extend(_tag_emails(email_results, entry))
+
         checked.update((p.site, p.username.lower()) for p in pivots if p.site)
         cross_results.extend(round_results)
 
         if round_number < depth:
-            _apply_confidence(results, cross_results, all_pivots)
+            _apply_confidence(results, cross_results, all_pivots, email_ratings)
             source = _followable(round_results)
 
-    _apply_confidence(results, cross_results, all_pivots)
+    _apply_confidence(results, cross_results, all_pivots, email_ratings)
     _print_summary(results, cross_results)
     return cross_results
 
@@ -154,6 +205,50 @@ def _scope(
             for module in load_modules(paths[name])
         ]
     return None
+
+
+def _email_scope(
+    cross_configs: CrossScanConfig, configs: ScanConfig
+) -> Optional[List[ModuleType]]:
+    """The email_scan modules this run may touch, or None for all of them.
+
+    Loud modules are dropped rather than prompted for. The addresses reaching
+    here came off somebody else's profile, and mailing a third party is not a
+    decision a second scan pass should be making; ``--allow-loud`` puts them
+    back for a caller who has already accepted that.
+    """
+    if cross_configs.emails == "none":
+        return []
+
+    modules: Optional[List[ModuleType]] = None
+    if cross_configs.modules:
+        modules = [
+            module
+            for name in cross_configs.modules
+            for module in find_module(
+                name.replace(".", "_"), is_email=True, no_nsfw=configs.no_nsfw
+            )
+        ]
+    elif cross_configs.categories:
+        paths = load_categories(True, configs.no_nsfw)
+        modules = [
+            module
+            for name in cross_configs.categories
+            if name in paths
+            for module in load_modules(paths[name])
+        ]
+    elif configs.allow_loud:
+        return None
+    else:
+        modules = [
+            module
+            for path in load_categories(True, configs.no_nsfw).values()
+            for module in load_modules(path)
+        ]
+
+    if not configs.allow_loud:
+        modules = [m for m in modules if not is_loud(get_site_name(m), is_email=True)]
+    return modules
 
 
 def _already_swept(results: Iterable[Result]) -> Set[str]:
@@ -184,6 +279,28 @@ def _fresh_pivots(
     ]
 
 
+def _already_scanned(results: Iterable[Result]) -> Set[str]:
+    """Addresses the first pass already ran against every email module.
+
+    An email pass is itself a scan of its own target, and profiles routinely
+    report that address straight back, so without this it would rank first and
+    spend the budget repeating the scan that just finished.
+    """
+    return {str(r.username).lower() for r in results if r.is_email and r.username}
+
+
+def _fresh_emails(source: List[Result], emails: str, scanned: Set[str]) -> List[RankedEmail]:
+    """Addresses in ``source`` no earlier round has already scanned, best first."""
+    pivots = [
+        pivot
+        for pivot in select_email_pivots(extract_email_pivots(source), emails)
+        if pivot.email not in scanned
+    ]
+    if not pivots:
+        return []
+    return rank_emails(pivots, build_anchors(confirmed=_followable(source)))
+
+
 def _followable(round_results: List[Result]) -> List[Result]:
     """The hits a further round may pivot off.
 
@@ -196,6 +313,21 @@ def _followable(round_results: List[Result]) -> List[Result]:
         if result.is_found()
         and result.extra.get("confidence") != Confidence.CONFLICTING.value
     ]
+
+
+def _split_budget(budget: int, usernames: int, emails: int) -> Tuple[int, int]:
+    """Share one sweep budget between the two target kinds.
+
+    Half is offered to addresses, rounded down so a budget of 1 still sweeps a
+    username — the behaviour before addresses existed — and whatever one kind
+    cannot use falls to the other. Neither can starve the other outright: with
+    any budget at all, both get a slot as soon as there are two to give.
+    """
+    if budget <= 0:
+        return 0, 0
+    for_emails = min(budget // 2, emails)
+    for_usernames = min(budget - for_emails, usernames)
+    return for_usernames, min(budget - for_usernames, emails)
 
 
 def _sweep_targets(pivots: List[Pivot], budget: int) -> List[str]:
@@ -225,6 +357,46 @@ def _sweep_targets(pivots: List[Pivot], budget: int) -> List[str]:
             f"({', '.join(deferred)}) — raise --cross-sweep{Style.RESET_ALL}"
         )
     return usernames
+
+
+def _email_targets(
+    ranked: List[RankedEmail], budget: int, modules: Optional[List[ModuleType]]
+) -> List[RankedEmail]:
+    if modules is not None and not modules:
+        if ranked:
+            print(
+                f"{Fore.YELLOW}[!] The -m/-c restriction names no email module, so "
+                f"no address is scanned.{Style.RESET_ALL}"
+            )
+        return []
+
+    if budget <= 0:
+        if ranked:
+            print(
+                f"{Fore.YELLOW}[!] No sweep budget left for {len(ranked)} address(es) "
+                f"— raise --cross-sweep{Style.RESET_ALL}"
+            )
+        return []
+
+    taken = ranked[:budget]
+    deferred = ranked[len(taken) :]
+    if deferred:
+        print(
+            f"{Fore.YELLOW}[!] Not scanning {len(deferred)} address(es) "
+            f"({', '.join(entry.email for entry in deferred)}) — raise "
+            f"--cross-sweep{Style.RESET_ALL}"
+        )
+    return taken
+
+
+def _print_emails(ranked: List[RankedEmail]) -> None:
+    print(f"{Fore.GREEN}[+] {len(ranked)} address(es) extracted{Style.RESET_ALL}")
+    for entry in ranked:
+        color = _CONFIDENCE_COLOR[entry.confidence]
+        print(
+            f"  {color}{entry.confidence.value:<12}{Style.RESET_ALL}"
+            f"{entry.email:<32} {Fore.WHITE}{', '.join(entry.sources)}{Style.RESET_ALL}"
+        )
 
 
 def _print_pivots(pivots: List[Pivot]) -> None:
@@ -300,14 +472,31 @@ def _tag(results: List[Result], pivots: Iterable[Pivot], username: str) -> List[
     return results
 
 
+def _tag_emails(results: List[Result], entry: RankedEmail) -> List[Result]:
+    """Record on each hit which profile published the address that found it."""
+    label = f"address from {', '.join(entry.sources)}"
+    for result in results:
+        if result.is_found():
+            result.update(extra={"pivot_source": label})
+    return results
+
+
 def _apply_confidence(
-    prior: Iterable[Result], cross_results: Iterable[Result], pivots: Iterable[Pivot]
+    prior: Iterable[Result],
+    cross_results: Iterable[Result],
+    pivots: Iterable[Pivot],
+    email_ratings: Dict[str, Confidence],
 ) -> None:
     """Rate every hit, and record the rating on it.
 
     Scoring runs once the pass is over because the anchors come from its own
     confirmed hits — a sweep hit cannot be judged before the accounts it is
     judged against have been fetched.
+
+    An account reached by scanning an address inherits that address's rating
+    rather than being scored on its own metadata: the account is only as well
+    tied to the target as the address that led to it, and an email module's
+    verdict says nothing about who owns the mailbox.
     """
     named = {(p.site, p.username.lower()) for p in pivots if p.site}
     hits = [r for r in cross_results if r.is_found()]
@@ -318,7 +507,8 @@ def _apply_confidence(
     )
 
     for result in hits:
-        rating = score(result, anchors, confirmed=_is_named(result, named))
+        inherited = email_ratings.get(str(result.username or "").lower()) if result.is_email else None
+        rating = inherited or score(result, anchors, confirmed=_is_named(result, named))
         result.update(extra={"confidence": rating.value})
 
 
@@ -331,6 +521,10 @@ def _print_summary(prior: Iterable[Result], cross_results: Iterable[Result]) -> 
     hits = [r for r in cross_results if r.is_found()]
     print(f"\n{Fore.CYAN}[i] Cross-scan complete.{Style.RESET_ALL}")
     print(f"  Accounts found: {len(hits)}")
+
+    addresses = sorted({str(r.username) for r in hits if r.is_email and r.username})
+    if addresses:
+        print(f"  Reached via address: {', '.join(addresses)}")
 
     by_rating = {rating: _sites_rated(hits, rating) for rating in ORDER}
     for rating in ORDER:

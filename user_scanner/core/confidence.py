@@ -14,10 +14,18 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from enum import Enum
-from typing import FrozenSet, Iterable, List, Optional, Set, Tuple
+from typing import Dict, FrozenSet, Iterable, List, Optional, Set, Tuple
 from urllib.parse import urlsplit
 
-from user_scanner.core.pivots import is_media_key, is_platform_host, module_stem, resolve_url
+from user_scanner.core.helpers import EMAIL_RE
+from user_scanner.core.pivots import (
+    EmailKind,
+    EmailPivot,
+    is_media_key,
+    is_platform_host,
+    module_stem,
+    resolve_url,
+)
 from user_scanner.core.result import Result
 
 # Extra keys naming the account holder.
@@ -46,7 +54,6 @@ _GENERIC_HOSTS = frozenset(
     }
 )
 
-_EMAIL_RE = re.compile(r"[^\s,;<>()]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 _TOKEN_RE = re.compile(r"[A-Za-z]{2,}")
 
 
@@ -87,6 +94,20 @@ class Anchors:
     emails: FrozenSet[str]
     urls: FrozenSet[str]
     accounts: FrozenSet[Tuple[str, str]]
+    # Domains the target was seen to *link* to, without the ones inferred from
+    # harvested addresses. Judging an address by `domains` would be circular —
+    # its own domain lands there the moment it is harvested.
+    link_domains: FrozenSet[str]
+
+
+@dataclass(frozen=True)
+class RankedEmail:
+    """An address a cross-scan may follow, and how well it is tied to the target."""
+
+    email: str
+    confidence: Confidence
+    sources: Tuple[str, ...]
+    field: bool
 
 
 def build_anchors(
@@ -109,7 +130,7 @@ def build_anchors(
         for name in _informative_names(result):
             names.add(_normalize(name))
         for text in _texts(result):
-            email_set.update(match.group(0).lower() for match in _EMAIL_RE.finditer(text))
+            email_set.update(match.group(0).lower() for match in EMAIL_RE.finditer(text))
             for url in _urls_in(text):
                 url_set.add(_normalize_url(url))
                 host = _personal_host(url)
@@ -119,6 +140,7 @@ def build_anchors(
             url_set.add(_normalize_url(result.url))
 
     email_set.discard("")
+    link_domains = domains - _GENERIC_HOSTS
     domains.update(email.split("@", 1)[1] for email in email_set if "@" in email)
     domains -= _GENERIC_HOSTS
 
@@ -129,6 +151,7 @@ def build_anchors(
         emails=frozenset(email_set),
         urls=frozenset(url_set),
         accounts=frozenset(accounts),
+        link_domains=frozenset(link_domains),
     )
 
 
@@ -150,6 +173,54 @@ def score(result: Result, anchors: Anchors, confirmed: bool = False) -> Confiden
 
     if anchors.names and any(_is_person_name(name) for name in names):
         return Confidence.CONFLICTING
+
+    return Confidence.CANDIDATE
+
+
+def rank_emails(pivots: Iterable[EmailPivot], anchors: Anchors) -> List[RankedEmail]:
+    """Rate every extracted address, best-tied first.
+
+    One handle can belong to several people, so the addresses their profiles
+    carry are not equally likely to be the target's. Two independent sites
+    publishing the same address in their own email field is the strongest signal
+    available without sending mail, so it outranks a single site saying it once.
+
+    ``CONFLICTING`` is never returned: an address carries no name to disagree
+    with, and inventing a mismatch from the local part would mislabel every
+    shared mailbox.
+    """
+    by_email: Dict[str, List[EmailPivot]] = {}
+    for pivot in pivots:
+        by_email.setdefault(pivot.email, []).append(pivot)
+
+    ranked = [
+        RankedEmail(
+            email=email,
+            confidence=_rate_email(email, group, anchors),
+            sources=tuple(sorted({pivot.origin for pivot in group})),
+            field=any(pivot.kind is EmailKind.FIELD for pivot in group),
+        )
+        for email, group in by_email.items()
+    ]
+    return sorted(ranked, key=lambda r: (ORDER.index(r.confidence), -len(r.sources), r.email))
+
+
+def _rate_email(email: str, group: List[EmailPivot], anchors: Anchors) -> Confidence:
+    # Deliberately not consulting anchors.emails: build_anchors harvests
+    # addresses out of the very profiles being ranked here, so matching against
+    # it would promote every address on a confirmed profile to CONFIRMED on the
+    # strength of its own appearance.
+    fields = {pivot.source_site for pivot in group if pivot.kind is EmailKind.FIELD}
+    if len(fields) >= 2:
+        return Confidence.CONFIRMED
+    if fields:
+        return Confidence.LIKELY
+
+    # link_domains, not domains: the latter absorbs the domain of every address
+    # harvested from these same profiles, which would rate each one LIKELY on
+    # the strength of its own appearance.
+    if email.rpartition("@")[2] in anchors.link_domains:
+        return Confidence.LIKELY
 
     return Confidence.CANDIDATE
 

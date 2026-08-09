@@ -1,12 +1,15 @@
 """Turns finished scan metadata into new scan targets.
 
-A pivot is a username a scan implied but never tested: a handle a site reports
-for the scanned email, or one embedded in a link that profile carries. Nothing
-here makes a request — callers decide which pivots are worth one.
+A pivot is a target a scan implied but never tested: a handle a site reports
+for the scanned email, one embedded in a link that profile carries, or an email
+address the profile publishes. Nothing here makes a request — callers decide
+which pivots are worth one.
 
 Links are classified by how much the source platform vouches for them.
 A *verified* link required the owner to prove control of the far side (OAuth
 connection, rel="me" round-trip); a plain *link* is free text the owner typed.
+Email addresses carry the same distinction: one the site published in its own
+email field against one scraped out of prose the owner wrote.
 """
 
 import re
@@ -15,6 +18,7 @@ from enum import Enum
 from typing import Iterable, Iterator, List, Optional, Tuple
 from urllib.parse import unquote, urlsplit
 
+from user_scanner.core.helpers import EMAIL_RE, is_valid_email
 from user_scanner.core.result import Result
 
 # Extra keys whose value is the account's own handle on the reporting site.
@@ -35,6 +39,56 @@ HANDLE_KEYS = frozenset(
 
 # Extra keys whose links the platform itself verified.
 VERIFIED_KEYS = frozenset({"verified_accounts", "verified_links", "connected_accounts"})
+
+# Extra keys whose value is the account holder's own address. A key outside this
+# set may still carry an address, but only as free text — which is what keeps
+# package metadata (``author_email``, ``maintainer_email``) out of the trusted
+# tier, since those name whoever published a release rather than the account.
+EMAIL_KEYS = frozenset(
+    {
+        "email",
+        "emails",
+        "business_email",
+        "contact_email",
+        "public_email",
+        "paypal_email",
+        "verified_email",
+    }
+)
+
+# Local parts that address a role or a robot rather than a person. Kept to the
+# RFC 2142 mandated names and the no-reply family: a freelancer really does take
+# mail at ``hello@`` or ``contact@``, so those stay in.
+_ROLE_LOCAL_PARTS = frozenset(
+    {
+        "abuse",
+        "do-not-reply",
+        "donotreply",
+        "hostmaster",
+        "mailer-daemon",
+        "no-reply",
+        "noreply",
+        "postmaster",
+        "webmaster",
+    }
+)
+
+# Domains that hold no mailbox: RFC 2606 documentation placeholders, the
+# stand-ins people type into a bio, and the relay GitHub substitutes when an
+# account hides its address.
+_NON_MAILBOX_DOMAINS = frozenset(
+    {
+        "domain.com",
+        "email.com",
+        "example.com",
+        "example.net",
+        "example.org",
+        "users.noreply.github.com",
+        "yourdomain.com",
+    }
+)
+
+_NON_MAILBOX_TLDS = (".example", ".invalid", ".localhost", ".test")
 
 # Substrings marking a value as an image URL — never a pivot.
 _MEDIA_KEY_PARTS = (
@@ -228,6 +282,35 @@ class Pivot:
         return f"{self.source_site} ({self.source_key})"
 
 
+class EmailKind(Enum):
+    """How the source platform presented an address.
+
+    ``FIELD`` is the site's own email field for the account; ``TEXT`` is an
+    address read out of prose, where nothing says whose mailbox it is.
+    """
+
+    FIELD = "field"
+    TEXT = "text"
+
+    @property
+    def rank(self) -> int:
+        return 0 if self is EmailKind.FIELD else 1
+
+
+@dataclass(frozen=True)
+class EmailPivot:
+    """An address worth scanning, and where it came from."""
+
+    email: str
+    kind: EmailKind
+    source_site: str
+    source_key: str
+
+    @property
+    def origin(self) -> str:
+        return f"{self.source_site} ({self.source_key})"
+
+
 def extract_pivots(results: Iterable[Result]) -> List[Pivot]:
     """Collect every username a set of finished results implies.
 
@@ -261,6 +344,43 @@ def select_pivots(pivots: Iterable[Pivot], links: str = "all") -> List[Pivot]:
     if links == "none":
         return [p for p in pivots if p.kind is PivotKind.HANDLE]
     return list(pivots)
+
+
+def extract_email_pivots(results: Iterable[Result]) -> List[EmailPivot]:
+    """Collect every address a set of finished results exposes.
+
+    One pivot per address *per source site*, so a caller can tell an address two
+    profiles agree on from one only a single profile mentions.
+    """
+    pivots: List[EmailPivot] = []
+    seen = set()
+
+    for result in results:
+        if not result.is_found():
+            continue
+        for pivot in _email_pivots_from_result(result):
+            key = (pivot.email, pivot.source_site, pivot.kind)
+            if key in seen:
+                continue
+            seen.add(key)
+            pivots.append(pivot)
+
+    return sorted(pivots, key=lambda p: (p.kind.rank, p.source_site, p.email))
+
+
+def select_email_pivots(pivots: Iterable[EmailPivot], emails: str = "verified") -> List[EmailPivot]:
+    """Filter address pivots by how the source presented them.
+
+    ``all`` keeps addresses scraped from prose too, ``verified`` keeps only the
+    ones a site published in its own email field, and ``none`` keeps nothing —
+    unlike its ``--cross-links`` namesake, which still yields handle pivots
+    because a handle is not a link. Every tier here is an address.
+    """
+    if emails == "none":
+        return []
+    if emails == "all":
+        return list(pivots)
+    return [pivot for pivot in pivots if pivot.kind is EmailKind.FIELD]
 
 
 def rank_usernames(pivots: Iterable[Pivot]) -> List[str]:
@@ -356,6 +476,52 @@ def _pivots_from_result(result: Result) -> Iterator[Pivot]:
             continue
 
         yield from _pivots_from_links(value, key, source_site, own_module)
+
+
+def _email_pivots_from_result(result: Result) -> Iterator[EmailPivot]:
+    source_site = result.site_name or "Unknown"
+
+    for key, value in result.extra.items():
+        if not isinstance(value, str) or is_media_key(key):
+            continue
+        kind = EmailKind.FIELD if key in EMAIL_KEYS else EmailKind.TEXT
+        for candidate in _addresses_in(value):
+            address = _clean_email(candidate)
+            if address:
+                yield EmailPivot(address, kind, source_site, key)
+
+
+def _addresses_in(text: str) -> Iterator[str]:
+    """Addresses in a value, minus the two shapes that only look like one.
+
+    URLs are blanked first, because a profile link parses as a perfectly legal
+    address whose local part is the host and path — ``tiktok.com/@jane.doe``
+    yields ``//www.tiktok.com/@jane.doe``. Nothing is lost: links already
+    reach the scan as username pivots.
+
+    A match the text prefixes with a second ``@`` is a fediverse handle
+    (``@johndoe@mastodon.social``), which is an account name, not a mailbox.
+    """
+    masked = _URL_RE.sub(lambda m: " " * len(m.group(0)), text)
+    for match in EMAIL_RE.finditer(masked):
+        if match.start() and masked[match.start() - 1] == "@":
+            continue
+        yield match.group(0)
+
+
+def _clean_email(value: str) -> Optional[str]:
+    address = value.strip().strip(".,;:").lower()
+    if not is_valid_email(address):
+        return None
+
+    local, _, domain = address.rpartition("@")
+    if local in _ROLE_LOCAL_PARTS or domain in _NON_MAILBOX_DOMAINS:
+        return None
+    if domain.startswith("noreply.") or ".noreply." in domain:
+        return None
+    if domain.endswith(_NON_MAILBOX_TLDS):
+        return None
+    return address
 
 
 def _pivots_from_links(

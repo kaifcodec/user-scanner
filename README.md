@@ -50,7 +50,7 @@ The ultimate reconnaissance tool for hunting down targets using just an email or
 - ✅ **Modular & Extensible:** Built on a highly decoupled, modular architecture, adding new platform modules takes just a few lines of code.
 - ✅ **Mass Bulk Scanning:** High-throughput processing for bulk lists of usernames and emails via structured input files.
 - ✅ **Permutation Generator:** Wildcard-based username variation generation to catch typosquatting or alternative aliases.
-- ✅ **Cross-Scan Pivoting:** Turns any scan into the next one — mines the handles and profile links the results expose, classifies each link by whether the platform verified it, sweeps those usernames across every module, and scores every hit so a handle collision is never mistaken for the target.
+- ✅ **Cross-Scan Pivoting:** Turns any scan into the next one — mines the handles, profile links and email addresses the results expose, classifies each by how strongly the source vouches for it, scans them across every module of their kind, and scores every hit so a handle collision is never mistaken for the target.
 - ✅ **Multi-Format Export:** Clean console output paired with structured, automated exports to **PDF**, **JSON** and **CSV** for easy pipeline integration.
 - ✅ **Advanced Proxy Rotation:** Built-in proxy pivoting with automated rotation and pre-scan health checks to bypass strict rate-limiting.
 - ✅ **Smart Auto-Update System:** Keeps your signatures and modules fresh with interactive, seamless PyPI update prompts.
@@ -149,23 +149,34 @@ user-scanner -uf usernames.txt  # bulk username scan
 ### Cross-scan
 
 An email scan proves an account exists but rarely learns its name. `--cross-scan`
-mines the usernames and profile links the results expose, then scans those
-usernames across every username module — reaching sites no email check can see.
-It works from a username pass too, where profiles advertise the person's other
-handles.
+mines the usernames, profile links **and email addresses** the results expose,
+then scans each against the modules for its own kind — reaching sites no single
+pass can see. All four directions work off one mechanism:
+
+| Direction | Mines |
+| --- | --- |
+| `-e` → username | a handle the address's profile reports, or a link it carries |
+| `-u` → username | the person's other handles, advertised on the profiles found |
+| `-u` → email | an address published on a profile the username pass found |
+| `-e` → email | a second address exposed by the first one's profiles |
 
 ```bash
+user-scanner -u johndoe --cross-scan                                  # pivot from a username pass
 user-scanner -e johndoe@gmail.com --cross-scan                        # pivot on every link
 user-scanner -e johndoe@gmail.com --cross-scan --cross-links verified # only platform-verified links
+user-scanner -u johndoe --cross-scan --cross-emails all               # include addresses found in bio text
+user-scanner -u johndoe --cross-scan --cross-emails none              # never scan an extracted address
 user-scanner -e johndoe@gmail.com --cross-scan --cross-sweep 0        # only sites a link named
 user-scanner -e johndoe@gmail.com --cross-scan --cross-depth 2        # follow links a second hop
-user-scanner -u johndoe --cross-scan                                  # pivot from a username pass
 ```
 
 A common handle collides with other people, so every hit is rated `confirmed` /
 `likely` / `candidate` / `conflicting` against the profiles the target's own
-links confirmed. See [Cross-scan](docs/CROSS_SCAN.md) for the link classes,
-confidence rules and cost model.
+links confirmed. Addresses are rated the same way before being scanned, with two
+sites publishing the same one outranking a single mention — and the email
+modules that notify the address are skipped unless `--allow-loud`. See
+[Cross-scan](docs/CROSS_SCAN.md) for the classes, confidence rules and cost
+model.
 
 ### Pattern generation
 See [Pattern Syntax](docs/PATTERNS.md) for more details
