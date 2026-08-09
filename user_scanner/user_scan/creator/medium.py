@@ -34,13 +34,20 @@ def validate_medium(user: str) -> Result:
         try:
             result = view(user)
         except Exception as e:
-            failures.append(f"{label}: {e}")
+            err_msg = str(e).strip() or type(e).__name__
+            failures.append(f"{label}: {err_msg}")
             continue
         if result:
             return result.update(url=show_url)
 
     if failures:
-        return Result.error(failures[0], url=show_url)
+        first_err = failures[0].strip()
+        reason = (
+            first_err
+            if first_err and not first_err.endswith(":")
+            else "Profile view request failed"
+        )
+        return Result.error(reason, url=show_url)
 
     return Result.error("Every profile view was blocked before a verdict", url=show_url)
 
