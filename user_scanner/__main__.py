@@ -10,6 +10,13 @@ from dataclasses import replace
 
 from user_scanner.cli.banner import print_banner
 from user_scanner.core import formatter
+from user_scanner.core.cross_scan import (
+    DEFAULT_DEPTH,
+    DEFAULT_SWEEP,
+    LINK_CHOICES,
+    CrossScanConfig,
+    run_cross_scan,
+)
 from user_scanner.core.email_orchestrator import (
     run_email_category_batch,
     run_email_full_batch,
@@ -165,6 +172,38 @@ def main():
         "--no-nsfw",
         action="store_true",
         help="Disable NSFW site scanning",
+    )
+
+    parser.add_argument(
+        "--cross-scan",
+        action="store_true",
+        help="After an email scan, scan the usernames and links its results expose",
+    )
+
+    parser.add_argument(
+        "--cross-links",
+        choices=list(LINK_CHOICES),
+        default="all",
+        help="Which links a cross-scan may pivot from: all, verified "
+        "(platform-proven connections only), or none (site-reported handles only)",
+    )
+
+    parser.add_argument(
+        "--cross-depth",
+        type=int,
+        default=DEFAULT_DEPTH,
+        help="Rounds of link-following. Each round pivots off the accounts the previous "
+        f"one found, reaching handles only a chain of links names (default: {DEFAULT_DEPTH})",
+    )
+
+    parser.add_argument(
+        "--cross-sweep",
+        type=int,
+        default=DEFAULT_SWEEP,
+        metavar="N",
+        help="Usernames a cross-scan sweeps against every module, across all rounds. "
+        "0 disables sweeping, leaving only the sites a pivot named — fewer accounts, "
+        f"but no handle collisions (default: {DEFAULT_SWEEP})",
     )
 
     parser.add_argument("-U", "--update", action="store_true", help="Update the tool")
@@ -372,7 +411,14 @@ def main():
     validated_modules = []
     validated_categories = []
 
+    if args.cross_scan and not is_email:
+        print(f"{R}[✘] Error: --cross-scan needs an email scan to pivot from (-e / -ef).{X}")
+        sys.exit(1)
+
     if args.hudson_scan:
+        if args.cross_scan:
+            print(f"{R}[✘] Error: --cross-scan cannot be used with --hudson {X}")
+            sys.exit(1)
         if args.category or args.module:
             print(f"{R}[✘] Error: --hudson cannot be used with -m or -c {X}")
             print(f"{Y}[i] Use it independently{X}")
@@ -472,6 +518,19 @@ def main():
 
     if args.hudson_scan:
         sys.exit(0)
+
+    if args.cross_scan:
+        results.extend(
+            run_cross_scan(
+                results,
+                config,
+                CrossScanConfig(
+                    links=args.cross_links,
+                    sweep=args.cross_sweep,
+                    depth=args.cross_depth,
+                ),
+            )
+        )
 
     is_pdf_export = args.format == "pdf" or (args.output and args.output.lower().endswith(".pdf"))
 

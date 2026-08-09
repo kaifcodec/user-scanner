@@ -50,6 +50,7 @@ The ultimate reconnaissance tool for hunting down targets using just an email or
 - ✅ **Modular & Extensible:** Built on a highly decoupled, modular architecture, adding new platform modules takes just a few lines of code.
 - ✅ **Mass Bulk Scanning:** High-throughput processing for bulk lists of usernames and emails via structured input files.
 - ✅ **Permutation Generator:** Wildcard-based username variation generation to catch typosquatting or alternative aliases.
+- ✅ **Cross-Scan Pivoting:** Turns an email scan into a username scan — mines the handles and profile links the results expose, classifies each link by whether the platform verified it, sweeps those usernames across every module, and scores every hit so a handle collision is never mistaken for the target.
 - ✅ **Multi-Format Export:** Clean console output paired with structured, automated exports to **PDF**, **JSON** and **CSV** for easy pipeline integration.
 - ✅ **Advanced Proxy Rotation:** Built-in proxy pivoting with automated rotation and pre-scan health checks to bypass strict rate-limiting.
 - ✅ **Smart Auto-Update System:** Keeps your signatures and modules fresh with interactive, seamless PyPI update prompts.
@@ -144,6 +145,24 @@ Scan multiple emails/usernames from a file (one email/username per line):
 user-scanner -ef emails.txt     # bulk email scan
 user-scanner -uf usernames.txt  # bulk username scan
 ```
+
+### Cross-scan
+
+An email scan proves an account exists but rarely learns its name. `--cross-scan`
+mines the usernames and profile links the email results expose, then scans those
+usernames across every username module — reaching sites no email check can see.
+
+```bash
+user-scanner -e johndoe@gmail.com --cross-scan                        # pivot on every link
+user-scanner -e johndoe@gmail.com --cross-scan --cross-links verified # only platform-verified links
+user-scanner -e johndoe@gmail.com --cross-scan --cross-sweep 0        # only sites a link named
+user-scanner -e johndoe@gmail.com --cross-scan --cross-depth 2        # follow links a second hop
+```
+
+A common handle collides with other people, so every hit is rated `confirmed` /
+`likely` / `candidate` / `conflicting` against the profiles the target's own
+links confirmed. See [Cross-scan](docs/CROSS_SCAN.md) for the link classes,
+confidence rules and cost model.
 
 ### Pattern generation
 See [Pattern Syntax](docs/PATTERNS.md) for more details
