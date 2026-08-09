@@ -203,15 +203,80 @@ def main():
 
     if args.list_user or args.list_email:
         categories = load_categories(args.list_email, args.no_nsfw)
-        for cat_name, cat_path in categories.items():
-            modules = load_modules(cat_path)
-            print(Fore.MAGENTA + f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
-            for module in modules:
-                name = get_site_name(module)
-                loud = (
-                    f" {R}(loud){X}" if is_loud(name, is_email=args.list_email) else ""
+        sorted_cats = sorted(categories.items(), key=lambda x: x[0].lower())
+        try:
+            import math
+            from rich.console import Console
+            from rich.panel import Panel
+            from rich.table import Table
+            from rich import box
+
+            console = Console()
+            num_grid_cols = 3 if console.width >= 140 else 2
+
+            cat_panels = []
+            total_modules = 0
+
+            for cat_name, cat_path in sorted_cats:
+                modules = load_modules(cat_path)
+                sorted_mods = sorted(modules, key=lambda m: get_site_name(m).lower())
+                total = len(sorted_mods)
+                total_modules += total
+
+                num_internal_cols = 2 if total > 8 else 1
+
+                inner_table = Table.grid(expand=True, padding=(0, 1))
+                for _ in range(num_internal_cols):
+                    inner_table.add_column(ratio=1)
+
+                rows = math.ceil(total / num_internal_cols)
+                for r in range(rows):
+                    row_cells = []
+                    for c in range(num_internal_cols):
+                        idx = r + c * rows
+                        if idx < total:
+                            mod = sorted_mods[idx]
+                            name = get_site_name(mod)
+                            loud = " [bold red](loud)[/bold red]" if is_loud(name, is_email=args.list_email) else ""
+                            row_cells.append(f"[white]• {name}[/white]{loud}")
+                        else:
+                            row_cells.append("")
+                    inner_table.add_row(*row_cells)
+
+                p = Panel(
+                    inner_table,
+                    title=f"[bold magenta]== {cat_name.upper()} ({total}) ==[/bold magenta]",
+                    title_align="left",
+                    border_style="cyan",
+                    box=box.ROUNDED,
+                    padding=(0, 1),
                 )
-                print(f"  - {name}{loud}")
+                cat_panels.append(p)
+
+            scan_label = "Email" if args.list_email else "User"
+            console.print(f"\n[bold cyan]{scan_label} Modules & Categories[/bold cyan] [dim]({total_modules} modules across {len(categories)} categories)[/dim]\n")
+
+            grid = Table.grid(expand=True, padding=(0, 1))
+            for _ in range(num_grid_cols):
+                grid.add_column(ratio=1)
+
+            for i in range(0, len(cat_panels), num_grid_cols):
+                row_panels = [cat_panels[i + c] if i + c < len(cat_panels) else "" for c in range(num_grid_cols)]
+                grid.add_row(*row_panels)
+
+            console.print(grid)
+            console.print()
+        except ImportError:
+            for cat_name, cat_path in sorted_cats:
+                modules = load_modules(cat_path)
+                sorted_mods = sorted(modules, key=lambda m: get_site_name(m).lower())
+                print(Fore.MAGENTA + f"\n== {cat_name.upper()} SITES =={Style.RESET_ALL}")
+                for module in sorted_mods:
+                    name = get_site_name(module)
+                    loud = (
+                        f" {R}(loud){X}" if is_loud(name, is_email=args.list_email) else ""
+                    )
+                    print(f"  - {name}{loud}")
         return
 
     if not (args.username or args.email or args.username_file or args.email_file):
