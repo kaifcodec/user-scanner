@@ -32,6 +32,8 @@ def validate_gitlab(user):
                             extra["username"] = u_data.get("username").strip()
                         if u_data.get("state"):
                             extra["state"] = u_data.get("state")
+                        if public_email := u_data.get("public_email"):
+                            extra["email"] = public_email
 
                         avatar_url = u_data.get("avatar_url")
                         if avatar_url:
