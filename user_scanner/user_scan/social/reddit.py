@@ -35,7 +35,9 @@ BOOLEAN_FLAGS = {
     "is_employee": "employee",
     "is_mod": "moderator",
     "is_gold": "premium",
-    "has_verified_email": "verified_email",
+    # Keeps Reddit's own name: the value is a flag, and `verified_email` reads
+    # as a key holding the verified address.
+    "has_verified_email": "has_verified_email",
 }
 KARMA_FIELDS = {
     "total_karma": "karma_total",
