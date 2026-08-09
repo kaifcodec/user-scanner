@@ -11,12 +11,12 @@ taken. Every hit is scored so the difference survives into the report.
 
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Dict, Iterable, List, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from colorama import Fore, Style
 
 from user_scanner.core.confidence import ORDER, Confidence, build_anchors, score
-from user_scanner.core.helpers import ScanConfig, find_module
+from user_scanner.core.helpers import ScanConfig, find_module, load_categories, load_modules
 from user_scanner.core.orchestrator import run_user_full, run_user_module
 from user_scanner.core.pivots import (
     Pivot,
@@ -42,6 +42,12 @@ _CONFIDENCE_COLOR = {
 @dataclass(frozen=True)
 class CrossScanConfig:
     links: str = "all"
+    # Module and category names the run was restricted to, so -m and -c narrow
+    # this pass exactly as they narrowed the first one. Names, not modules: an
+    # email run's -m names email modules, and the sweep needs the username
+    # module of the same site.
+    modules: Tuple[str, ...] = ()
+    categories: Tuple[str, ...] = ()
     # How many usernames may be swept against every module, across all rounds.
     # Zero turns sweeping off entirely, leaving only the sites a pivot named.
     sweep: int = DEFAULT_SWEEP
@@ -59,6 +65,14 @@ def run_cross_scan(
     its own list for export.
     """
     print(f"\n{Fore.MAGENTA}== CROSS-SCAN =={Style.RESET_ALL}")
+
+    scope = _scope(cross_configs, configs)
+    if scope is not None and not scope:
+        print(
+            f"{Fore.YELLOW}[!] The -m/-c restriction names no username module, so "
+            f"there is nothing to cross-scan.{Style.RESET_ALL}"
+        )
+        return []
 
     depth = max(1, cross_configs.depth)
     budget = max(0, cross_configs.sweep)
@@ -91,9 +105,14 @@ def run_cross_scan(
             print(
                 f"\n{Fore.CYAN}[+] Sweeping every module for username: {username}{Style.RESET_ALL}"
             )
-            round_results.extend(_tag(run_user_full(username, configs), all_pivots, username))
+            swept_results = (
+                run_user_full(username, configs)
+                if scope is None
+                else run_user_module(scope, username, configs)
+            )
+            round_results.extend(_tag(swept_results, all_pivots, username))
 
-        for username, modules in _named_targets(pivots, swept, checked, configs).items():
+        for username, modules in _named_targets(pivots, swept, checked, configs, scope).items():
             print(
                 f"\n{Fore.CYAN}[+] Checking {username} on its {len(modules)} linked "
                 f"site(s){Style.RESET_ALL}"
@@ -112,6 +131,29 @@ def run_cross_scan(
     _apply_confidence(results, cross_results, all_pivots)
     _print_summary(results, cross_results)
     return cross_results
+
+
+def _scope(
+    cross_configs: CrossScanConfig, configs: ScanConfig
+) -> Optional[List[ModuleType]]:
+    """The user_scan modules this run is allowed to touch, or None if unrestricted."""
+    if cross_configs.modules:
+        return [
+            module
+            for name in cross_configs.modules
+            for module in find_module(
+                name.replace(".", "_"), is_email=False, no_nsfw=configs.no_nsfw
+            )
+        ]
+    if cross_configs.categories:
+        paths = load_categories(False, configs.no_nsfw)
+        return [
+            module
+            for name in cross_configs.categories
+            if name in paths
+            for module in load_modules(paths[name])
+        ]
+    return None
 
 
 def _already_swept(results: Iterable[Result]) -> Set[str]:
@@ -201,6 +243,7 @@ def _named_targets(
     swept: Set[str],
     checked: Set[Tuple[str, str]],
     configs: ScanConfig,
+    scope: Optional[List[ModuleType]] = None,
 ) -> Dict[str, List[ModuleType]]:
     """Modules to check for pivots whose username was not swept.
 
@@ -220,8 +263,12 @@ def _named_targets(
         casing.setdefault(key, pivot.username)
         sites_by_username.setdefault(key, set()).add(pivot.site)
 
+    allowed = None if scope is None else {module.__name__ for module in scope}
+
     targets: Dict[str, List[ModuleType]] = {}
     for key, sites in sites_by_username.items():
+        if allowed is not None:
+            sites = {site for site in sites if site in allowed}
         username = casing[key]
         modules = [
             module

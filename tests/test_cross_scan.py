@@ -1,8 +1,10 @@
 from user_scanner.core.cross_scan import (
+    CrossScanConfig,
     _already_swept,
     _followable,
     _fresh_pivots,
     _named_targets,
+    _scope,
 )
 from user_scanner.core.helpers import ScanConfig
 from user_scanner.core.pivots import PivotKind
@@ -92,3 +94,36 @@ def test_an_email_pass_seeds_nothing():
 
     assert _already_swept(prior) == set()
     assert [p.username for p in _fresh_pivots(prior, "all", set(), set())] == ["johndoe"]
+
+
+def test_an_unrestricted_run_has_no_scope():
+    assert _scope(CrossScanConfig(), ScanConfig()) is None
+
+
+def test_a_module_restriction_resolves_against_user_scan():
+    """-m names email modules on an email run, so the sweep must re-resolve the
+    same site names against user_scan."""
+    scope = _scope(CrossScanConfig(modules=("github", "chess.com")), ScanConfig())
+
+    assert sorted(m.__name__ for m in scope) == ["chess_com", "github"]
+
+
+def test_a_category_restriction_resolves_to_that_folder():
+    scope = _scope(CrossScanConfig(categories=("donation",)), ScanConfig())
+
+    assert scope and all("donation" in str(m.__file__) for m in scope)
+
+
+def test_named_checks_stay_inside_the_scope():
+    """A pivot naming a site outside -m/-c must not be checked either."""
+    pivots = _fresh_pivots(
+        source(verified_accounts="GitHub: https://github.com/johndoe (verified), "
+                                 "LinkedIn: https://www.linkedin.com/in/johndoe (verified)"),
+        "all",
+        swept=set(),
+        checked=set(),
+    )
+    scope = _scope(CrossScanConfig(modules=("github",)), ScanConfig())
+    targets = _named_targets(pivots, set(), set(), ScanConfig(), scope)
+
+    assert [m.__name__ for mods in targets.values() for m in mods] == ["github"]

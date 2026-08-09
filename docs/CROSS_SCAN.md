@@ -126,6 +126,25 @@ summary, not on the per-result lines as they stream past.
 
 ---
 
+## Scope
+
+`-m` and `-c` narrow the cross-scan exactly as they narrow the first pass, so a
+restricted run stays restricted:
+
+```
+-u johndoe -m gravatar --cross-scan     # 1 module in the first pass, 1 in the sweep
+-u johndoe -c dev --cross-scan          # 44 dev modules in both
+```
+
+Both the sweep and the named checks honour it, so a pivot naming a site outside
+the restriction is not checked either. Names are re-resolved against `user_scan`,
+because an email run's `-m` names *email* modules while the sweep needs the
+username module of the same site. A restriction naming no username module at all
+(`-e … -c news`, which exists only in `email_scan`) leaves nothing to cross-scan,
+and the run says so.
+
+---
+
 ## Depth: following a chain of links
 
 `--cross-depth N` runs N rounds. Each round pivots off the accounts the previous

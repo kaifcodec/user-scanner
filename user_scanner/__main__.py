@@ -57,6 +57,14 @@ X = Fore.RESET
 MAX_PERMUTATIONS_LIMIT = 100
 
 
+def _csv_names(value) -> tuple:
+    """Split a repeatable, comma-separated -m/-c value into names."""
+    if not value:
+        return ()
+    raw = ",".join(value) if isinstance(value, list) else value
+    return tuple(name.strip() for name in raw.split(",") if name.strip())
+
+
 def main():
     if "--only-found" in sys.argv:
         print(f"{Fore.YELLOW}[!] The '--only-found' flag is deprecated and has been removed.{Style.RESET_ALL}")
@@ -524,6 +532,8 @@ def main():
                     links=args.cross_links,
                     sweep=args.cross_sweep,
                     depth=args.cross_depth,
+                    modules=_csv_names(args.module),
+                    categories=_csv_names(args.category),
                 ),
             )
         )
