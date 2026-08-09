@@ -64,7 +64,7 @@ def run_cross_scan(
     budget = max(0, cross_configs.sweep)
     all_pivots: List[Pivot] = []
     cross_results: List[Result] = []
-    swept: Set[str] = set()
+    swept: Set[str] = _already_swept(results)
     checked: Set[Tuple[str, str]] = set()
     source: List[Result] = list(results)
 
@@ -112,6 +112,17 @@ def run_cross_scan(
     _apply_confidence(results, cross_results, all_pivots)
     _print_summary(results, cross_results)
     return cross_results
+
+
+def _already_swept(results: Iterable[Result]) -> Set[str]:
+    """Usernames the first pass already ran against every module.
+
+    A username pass is itself a sweep of its own target, and sites tend to report
+    that handle straight back, so without this it would rank first and spend a
+    sweep repeating the scan that just finished. An email pass contributes
+    nothing here — its target is not a username.
+    """
+    return {str(r.username).lower() for r in results if not r.is_email and r.username}
 
 
 def _fresh_pivots(

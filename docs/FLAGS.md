@@ -9,7 +9,7 @@
 | `--allow-loud`              | Enable scanning sites that may send emails/notifications    |
 | `--no-nsfw`                 | Disable NSFW site scanning                                  |
 | `--hudson, --hudson-scan`   | Check for infostealer intelligence using Hudson Rock's API  |
-| `--cross-scan`              | After an email scan, scan the usernames and links its results expose (see [CROSS_SCAN.md](CROSS_SCAN.md)) |
+| `--cross-scan`              | After the scan, follow the usernames and links its results expose and scan those too (see [CROSS_SCAN.md](CROSS_SCAN.md)) |
 | `--cross-links {all,verified,none}` | Which links a cross-scan may pivot from (default: `all`) |
 | `--cross-depth N`           | Rounds of link-following; each round pivots off the accounts the previous one found (default: 1) |
 | `--cross-sweep N`           | Usernames swept against every module, across all rounds; `0` disables sweeping (default: 3) |

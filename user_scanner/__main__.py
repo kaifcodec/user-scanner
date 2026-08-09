@@ -177,7 +177,7 @@ def main():
     parser.add_argument(
         "--cross-scan",
         action="store_true",
-        help="After an email scan, scan the usernames and links its results expose",
+        help="After the scan, follow the usernames and links its results expose and scan those too",
     )
 
     parser.add_argument(
@@ -410,10 +410,6 @@ def main():
 
     validated_modules = []
     validated_categories = []
-
-    if args.cross_scan and not is_email:
-        print(f"{R}[✘] Error: --cross-scan needs an email scan to pivot from (-e / -ef).{X}")
-        sys.exit(1)
 
     if args.hudson_scan:
         if args.cross_scan:

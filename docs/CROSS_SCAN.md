@@ -206,8 +206,9 @@ pass never did.
 
 ## Limits
 
-- Email mode only — `--cross-scan` with `-u` is an error, since a username scan
-  is already the thing a cross-scan pivots *into*.
+- A username pass (`-u` / `-uf`) can be cross-scanned too. Its own target starts
+  out marked as swept, since that pass already ran every module against it and
+  most sites report the handle straight back as a pivot.
 - Link shorteners are dead ends. `t.co/abc123` yields no pivot, and the redirect
   is never followed, so whatever it points at stays invisible at any depth.
 - A pivot is a lead, not proof of identity. A link on a profile says the profile

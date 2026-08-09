@@ -1,4 +1,9 @@
-from user_scanner.core.cross_scan import _followable, _fresh_pivots, _named_targets
+from user_scanner.core.cross_scan import (
+    _already_swept,
+    _followable,
+    _fresh_pivots,
+    _named_targets,
+)
 from user_scanner.core.helpers import ScanConfig
 from user_scanner.core.pivots import PivotKind
 from user_scanner.core.result import Result
@@ -65,3 +70,25 @@ def test_the_same_account_linked_twice_is_checked_once():
     assert [m.__name__ for mods in targets.values() for m in mods] == ["x"]
     # The best-vouched pivot supplies the casing that gets scanned.
     assert list(targets) == ["JohnDoe2"]
+
+
+def test_a_username_pass_does_not_rescan_its_own_target():
+    """A -u pass is already a sweep of its own handle, and sites echo that handle
+    back as a pivot, so it must start out marked as swept."""
+    prior = [
+        Result.taken(extra={"username": "JohnDoe"}).update(site_name="Chess.com", username="JohnDoe")
+    ]
+
+    assert _already_swept(prior) == {"johndoe"}
+    assert _fresh_pivots(prior, "all", _already_swept(prior), set()) == []
+
+
+def test_an_email_pass_seeds_nothing():
+    prior = [
+        Result.taken(extra={"username": "johndoe"}).update(
+            site_name="Gravatar", username="johndoe@gmail.com", is_email=True
+        )
+    ]
+
+    assert _already_swept(prior) == set()
+    assert [p.username for p in _fresh_pivots(prior, "all", set(), set())] == ["johndoe"]
