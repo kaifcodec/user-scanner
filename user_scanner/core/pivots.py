@@ -40,6 +40,36 @@ HANDLE_KEYS = frozenset(
 # Extra keys whose links the platform itself verified.
 VERIFIED_KEYS = frozenset({"verified_accounts", "verified_links", "connected_accounts"})
 
+# Extra keys named after another platform, holding a bare handle rather than a
+# URL. Kick, GitHub, Unsplash, Coderwall and 500px all publish socials this way,
+# and a bare handle never reaches ``_pivots_from_links``, which only matches URLs.
+#
+# ``discord`` is deliberately absent: sites store a server invite code there
+# (Kick's ``nAZEkUNWPt``), which is not an account name.
+PLATFORM_HANDLE_KEYS = {
+    "bluesky": "bluesky",
+    "facebook": "facebook",
+    "github": "github",
+    "instagram": "instagram",
+    "linkedin": "linkedin",
+    "mastodon": "mastodon",
+    "pinterest": "pinterest",
+    "reddit": "reddit",
+    "soundcloud": "soundcloud",
+    "spotify": "spotify",
+    "tiktok": "tiktok",
+    "tumblr": "tumblr",
+    "twitch": "twitch",
+    "twitter": "x",
+    "x": "x",
+    "youtube": "youtube",
+}
+
+# Suffixes a site may hang off a platform name (``twitter_handle``). ``_id`` is
+# excluded on purpose so that identifier fields — YouTube's ``UC…`` channel id —
+# are never read as handles.
+_PLATFORM_KEY_SUFFIXES = ("_handle", "_username", "_user", "_name")
+
 # Extra keys whose value is the account holder's own address. A key outside this
 # set may still carry an address, but only as free text — which is what keeps
 # package metadata (``author_email``, ``maintainer_email``) out of the trusted
@@ -475,7 +505,27 @@ def _pivots_from_result(result: Result) -> Iterator[Pivot]:
                 yield Pivot(handle, PivotKind.HANDLE, source_site, key, own_module)
             continue
 
+        module = _platform_key_module(key)
+        if module and not _URL_RE.search(value):
+            handle = _clean_handle(value, module)
+            if handle:
+                yield Pivot(handle, PivotKind.LINK, source_site, key, module)
+            continue
+
         yield from _pivots_from_links(value, key, source_site, own_module)
+
+
+def _platform_key_module(key: str) -> Optional[str]:
+    """The module a platform-named key points at — ``twitter_handle`` -> ``x``.
+
+    Only the key names the platform; the value is the handle. Returns ``None``
+    for any key that does not name a platform, so an unknown key still falls
+    through to URL extraction.
+    """
+    name = key.lower()
+    for suffix in _PLATFORM_KEY_SUFFIXES:
+        name = name.removesuffix(suffix)
+    return PLATFORM_HANDLE_KEYS.get(name)
 
 
 def _email_pivots_from_result(result: Result) -> Iterator[EmailPivot]:

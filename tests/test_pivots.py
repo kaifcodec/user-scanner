@@ -115,6 +115,53 @@ def test_a_sites_own_homepage_is_not_a_username():
     assert extract_pivots([result]) == []
 
 
+def test_a_platform_named_key_holding_a_bare_handle_is_a_pivot():
+    result = make_result(site_name="Kick", extra={"twitter": "BrunoLM7"})
+
+    (pivot,) = extract_pivots([result])
+    assert (pivot.username, pivot.site, pivot.kind) == ("BrunoLM7", "x", PivotKind.LINK)
+
+
+@pytest.mark.parametrize(
+    "key, expected_site",
+    [
+        ("twitter", "x"),
+        ("twitter_handle", "x"),
+        ("twitter_username", "x"),
+        ("instagram", "instagram"),
+        ("youtube", "youtube"),
+    ],
+)
+def test_platform_keys_are_read_through_their_suffixes(key, expected_site):
+    result = make_result(site_name="Kick", extra={key: "someone"})
+
+    (pivot,) = extract_pivots([result])
+    assert pivot.site == expected_site
+
+
+def test_an_identifier_field_is_not_read_as_a_handle():
+    """``_id`` is not a handle suffix, so YouTube's channel id stays out."""
+    result = make_result(
+        site_name="Youtube", extra={"youtube_channel_id": "UCMandQh49QaAH2ZfHWZdEFA"}
+    )
+
+    assert extract_pivots([result]) == []
+
+
+def test_a_discord_field_holds_an_invite_not_a_handle():
+    """Kick stores a server invite code under ``discord``, which names no account."""
+    result = make_result(site_name="Kick", extra={"discord": "nAZEkUNWPt"})
+
+    assert extract_pivots([result]) == []
+
+
+def test_a_platform_key_holding_a_url_still_goes_through_link_extraction():
+    result = make_result(site_name="Npmjs", extra={"github": "https://github.com/brunolm"})
+
+    (pivot,) = extract_pivots([result])
+    assert (pivot.username, pivot.site) == ("brunolm", "github")
+
+
 def test_select_pivots_filters_by_link_class():
     pivots = [
         Pivot("a", PivotKind.HANDLE, "Gravatar", "username"),
