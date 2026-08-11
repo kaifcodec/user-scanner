@@ -559,11 +559,14 @@ def main():
 
         if is_pdf_export:
             version_str, _ = load_local_version()
+            scan_type_str = "Email" if is_email else "Username"
+            if args.cross_scan:
+                scan_type_str = f"Cross-Scan ({scan_type_str})"
             try:
                 pdf_bytes = formatter.into_pdf(
                     results,
                     target=targets_found[0] if targets_found else "Target",
-                    scan_type="Email" if is_email else "Username",
+                    scan_type=scan_type_str,
                     total_modules=len(results),
                     include_media=not args.no_pdf_media,
                     version=version_str,
