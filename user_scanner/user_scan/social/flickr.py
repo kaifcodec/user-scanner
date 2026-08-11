@@ -2,10 +2,15 @@ import json
 import re
 import urllib.parse
 
-from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.impersonate import impersonate_request, impersonate_validate
 from user_scanner.core.result import Result
 
 BASE_URL = "https://www.flickr.com"
+
+# Public-profile fields naming the owner's account on another platform. Flickr
+# stores the bare handle and derives the sibling `<field>Url` from it, so the
+# handle is what gets emitted.
+SOCIAL_FIELDS = ("facebook", "instagram", "pinterest", "tumblr", "twitter")
 
 
 def validate_flickr(user: str) -> Result:
@@ -28,22 +33,28 @@ def validate_flickr(user: str) -> Result:
             return Result.error("200 response with no matching photostream owner")
 
         extra, media = _extract(owner, profile, contacts)
+        if nsid := owner.get("id"):
+            extra.update(_public_profile(str(nsid)))
         return Result.taken(extra=extra, media=media)
 
     return impersonate_validate(url, process, allow_redirects=True)
 
 
-def _models(text: str) -> tuple[dict, dict, dict]:
+def _main_models(text: str) -> dict:
     match = re.search(r"modelExport:\s*(.*?),\s*auth", text)
     if not match:
-        return {}, {}, {}
+        return {}
 
     try:
         data = json.loads(urllib.parse.unquote(match.group(1)))
     except (json.JSONDecodeError, ValueError):
-        return {}, {}, {}
+        return {}
 
-    main = data.get("main") or {}
+    return data.get("main") or {}
+
+
+def _models(text: str) -> tuple[dict, dict, dict]:
+    main = _main_models(text)
 
     def first(key: str) -> dict:
         models = main.get(key) or [{}]
@@ -88,3 +99,32 @@ def _extract(owner: dict, profile: dict, contacts: dict) -> tuple[dict, dict]:
         media["avatar"] = f"https:{avatar}" if avatar.startswith("//") else avatar
 
     return extra, media
+
+
+def _public_profile(nsid: str) -> dict:
+    """The accounts the profile links elsewhere, which only the /people/ page
+    carries — the photostream omits them. Addressed by NSID so the lookup is
+    immune to the handle's casing. Best-effort: a failure just yields no extra."""
+    try:
+        response = impersonate_request(f"{BASE_URL}/people/{nsid}/", allow_redirects=True)
+        if response.status_code != 200:
+            return {}
+        profile = _public_profile_object(response.text, nsid)
+    except Exception:
+        return {}
+
+    extra = {field: profile[field] for field in SOCIAL_FIELDS if profile.get(field)}
+    if occupation := profile.get("occupation"):
+        extra["occupation"] = occupation
+    return extra
+
+
+def _public_profile_object(text: str, nsid: str) -> dict:
+    """The public-profile model belonging to the NSID asked for. The /people/
+    page embeds a person model per contact, so the object is matched on the
+    owner's id rather than taken by position."""
+    for entry in _main_models(text).get("person-public-profile-models") or []:
+        data = (entry or {}).get("data")
+        if isinstance(data, dict) and str(data.get("id") or "") == nsid:
+            return data
+    return {}
