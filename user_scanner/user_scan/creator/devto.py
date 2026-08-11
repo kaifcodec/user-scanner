@@ -20,7 +20,11 @@ def validate_devto(user):
                 extra["joined_at"] = joined_at
             if website := data.get("website_url"):
                 extra["website"] = website
-                
+            if github := data.get("github_username"):
+                extra["github"] = github
+            if twitter := data.get("twitter_username"):
+                extra["twitter"] = twitter
+
             return Result.taken(extra=extra, url=show_url)
         elif response.status_code == 404:
             return Result.available(url=show_url)
