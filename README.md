@@ -1,6 +1,9 @@
 # User Scanner
 
-![User Scanner Logo](https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/49ec8d24-665b-4115-8525-01a8d0ca2ef4" alt="User Scanner Logo" width="600" />
+</p>
+
 <p align="center">
   <img src="https://img.shields.io/badge/Version-1.4.3.1-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
@@ -9,10 +12,9 @@
   <img src="https://img.shields.io/badge/Tested%20on-Linux-black?style=for-the-badge&logo=Linux" />
   <img src="https://img.shields.io/pepy/dt/user-scanner?style=for-the-badge" />
   <a href="https://discord.gg/tVNrKVXb49" target="_blank">
-     <img src="https://img.shields.io/badge/Discord-Join%20Chat-7289da?style=for-the-badge&logo=discord&logoColor=white"   alt="Discord" />
+     <img src="https://img.shields.io/badge/Discord-Join%20Chat-7289da?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
   </a>
 </p>
-
 
 <p align="center">
   <a href="https://trendshift.io/repositories/16556" target="_blank">
@@ -21,173 +23,170 @@
 </p>
 
 ---
+
 A powerful **2-in-1 OSINT suite** engineered for deep **Email and Username Intelligence**.
 
-With **375+ total scan vectors**—including **150+ email-integrated sites** and **225+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, and verify account registrations in seconds.
-
-The ultimate reconnaissance tool for hunting down targets using just an email or username—now fully integrated with **Hudson Rock** for instant data breach intelligence.
+With **375+ total scan vectors**—including **150+ email-integrated sites** and **225+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, full metadata of usernames and verify account registrations in seconds.
 
 ---
-## Sponsored by
+
+## 💖 Sponsored by
+
 <p align="center">
   <a href="https://webvetted.com/user-scanner?ref=github&utm_source=github" target="_blank">
-    <img width="850" height="270" alt="WebVetted Sponsor Banner" src="https://github.com/user-attachments/assets/a18398f5-193e-4659-87d6-ccdbf6d4d4c2" />
+    <img width="800" height="250" alt="WebVetted Sponsor Banner" src="https://github.com/user-attachments/assets/a18398f5-193e-4659-87d6-ccdbf6d4d4c2" />
   </a>
   <br>
-  <em><strong>Go beyond account enumeration.</strong> Webvetted turns an email or username into a complete identity investigation with deep OSINT enrichment, breach intel,  AI analysis, and an interactive identity graph.</em>
+  <em><strong>Go beyond account enumeration.</strong> WebVetted turns an email or username into a complete identity investigation with deep OSINT enrichment, breach intel, AI analysis, and an interactive identity graph.</em>
   <br>
   <a href="https://webvetted.com/user-scanner?ref=github&utm_source=github" target="_blank"><strong>Start an Investigation →</strong></a>
 </p>
 
 ---
 
-## User Scanner Features:
+## ✨ Key Features
 
-- ✅ **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 375+ platforms.
-- ✅ **Profile Data Extraction:** Goes beyond basic availability checks to scrape and extract rich metadata, account details, and digital footprints from target profiles.
-- ✅ **Dual-Mode Engine:** Run targeted email campaigns, massive username sweeps, or simultaneous dual-identifier scans.
-- ✅ **Granular Status Reporting:** Get crystal-clear results (`Registered`/`Available` for emails; `Found`/`Not Found`/`Error` for usernames) backed by precise exception handling.
-- ✅ **Modular & Extensible:** Built on a highly decoupled, modular architecture, adding new platform modules takes just a few lines of code.
-- ✅ **Mass Bulk Scanning:** High-throughput processing for bulk lists of usernames and emails via structured input files.
-- ✅ **Permutation Generator:** Wildcard-based username variation generation to catch typosquatting or alternative aliases.
-- ✅ **Cross-Scan Pivoting:** Turns any scan into the next one — mines the handles, profile links and email addresses the results expose, classifies each by how strongly the source vouches for it, scans them across every module of their kind, and scores every hit so a handle collision is never mistaken for the target.
-- ✅ **Multi-Format Export:** Clean console output paired with structured, automated exports to **PDF**, **JSON** and **CSV** for easy pipeline integration.
-- ✅ **Advanced Proxy Rotation:** Built-in proxy pivoting with automated rotation and pre-scan health checks to bypass strict rate-limiting.
-- ✅ **Smart Auto-Update System:** Keeps your signatures and modules fresh with interactive, seamless PyPI update prompts.
+- 🔎 **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 375+ platforms.
+- 👤 **Rich Metadata Scraping:** Scrapes avatars, bio descriptions, follower counts, UID numbers, seller statuses, and account attributes.
+- 🔀 **Cross-Scan & Pivot Engine:** Mines handles, profile links, and exposed email addresses from initial scans, automatically pivoting across secondary target vectors.
+- 🛡️ **Hudson Rock Infostealer Breach Intel:** Query infostealer malware breach logs using the `--hudson` flag for high-priority target correlation.
+- ⚡ **High-Throughput Parallel Engine:** Powered by `httpx` and `curl_cffi` for maximum concurrency with automated TLS fingerprint impersonation.
+- 🔀 **Permutation & Alias Generator:** Wildcard-based username variation generation to catch typosquatting or alternative aliases.
+- 📂 **Multi-Format Reports:** Automated exports to **PDF** (with profile photos), **JSON**, and **CSV** for pipeline integration.
+- 🌐 **Advanced Proxy Pivoting:** Built-in proxy rotation with protocol auto-detection (`http`, `socks5`) and pre-scan health validation (`--validate-proxies`).
+- 🎨 **Responsive Terminal UI:** Dynamic progress tracking, self-adaptive category grids (`-lu`/`-le`), and clear status reporting.
 
-## Virtual Environment (optional but recommended)
+---
+
+## 🚀 Installation
+
+### 🐍 Via PyPI (Recommended)
 
 ```bash
-# create venv
-python3 -m venv .venv
-````
-## Activate venv
-```bash
-# Linux / macOS
-source .venv/bin/activate
-
-# Windows (PowerShell)
-.venv\Scripts\Activate.ps1
-```
-## Installation
-
-#### 🐍 Via PyPI (Standard Python Setup)
-```bash
-# Upgrade pip to the latest version
+# Upgrade pip and install user-scanner
 python3 -m pip install --upgrade pip
-
-# Install the package globally or in your virtual environment
 pip install user-scanner
 ```
 
-#### ❄️ Via Nix (Linux & macOS)
+### 📦 Virtual Environment Setup
 
 ```bash
-# Run the scanner instantly without installing anything permanently
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\Activate.ps1
+
+# Install package
+pip install user-scanner
+```
+
+### ❄️ Via Nix (Linux & macOS)
+
+```bash
+# Run instantly without installing permanently
 nix run github:kaifcodec/user-scanner/main -- --help
 
-# Drop into a temporary shell where the 'user-scanner' command is active
+# Drop into a temporary shell with user-scanner active
 nix shell github:kaifcodec/user-scanner/main
-
-# (For Developers) Clone the repo and drop into an isolated workspace
-nix develop .
 ```
 
 ---
-### Important Flags
 
-See [Important flags](docs/FLAGS.md) here and use the tool powerfully
+## 💻 Usage Guide
 
+### 1. Basic Username & Email Scanning
 
-## Usage
-
-### Basic username/email scan
-
-Scan a single email or username across **all** available modules/platforms:
+Scan a single username or email address across all available platform modules:
 
 ```bash
-user-scanner -e johndoe@gmail.com   # single email scanning 
-user-scanner -u johndoe             # single username scanning 
-```
-### Verbose mode 
-
-Use `-v` flag to show the url of the sites being checked.
-Use `--all` flag to show all sites (including those where the target was not found, skipped, or errored).
-Note: By default, the scanner only displays sites where the target is found/registered.
-```bash
-user-scanner -v -e johndoe@gmail.com -c dev
-```
-Output:
-```sh
-  ...
-  [✔] Huggingface [https://huggingface.co] (johndoe@gmail.com): Registered
-  [✔] Envato [https://account.envato.com] (johndoe@gmail.com): Registered
-  [✔] Replit [https://replit.com] (johndoe@gmail.com): Registered
-  [✔] Xda [https://xda-developers.com] (johndoe@gmail.com): Registered
-  ...
+user-scanner -u johndoe             # Single username scan
+user-scanner -e johndoe@gmail.com   # Single email scan
 ```
 
-### Selective scanning
+### 2. Cross-Scan & Pivot Intelligence
 
-Scan only specific categories or single modules:
+An email scan proves an account exists but rarely reveals a handle. `--cross-scan` mines exposed handles, profile links, and secondary email addresses from target profiles, pivoting into multi-pass reconnaissance across all matching platforms:
+
+| Pivot Direction | What it Mines |
+| :--- | :--- |
+| `-e` → **username** | Handles or social links exposed on an email's registered profile |
+| `-u` → **username** | Secondary aliases advertised across target social profiles |
+| `-u` → **email** | Public email addresses published on target profile pages |
+| `-e` → **email** | Secondary addresses exposed by initial email profiles |
 
 ```bash
-user-scanner -u johndoe -c dev                # developer platforms only
-user-scanner -e johndoe@gmail.com -m github   # only GitHub
+user-scanner -u johndoe --cross-scan                                  # Pivot from username scan
+user-scanner -e johndoe@gmail.com --cross-scan                        # Pivot from email scan
+user-scanner -e johndoe@gmail.com --cross-scan --cross-links verified # Platform-verified links only
+user-scanner -u johndoe --cross-scan --cross-depth 2        # Follow links two hops deep
 ```
 
-### Bulk email/username scanning
+> 💡 *For confidence scoring, link classification rules, and cost models, see **[docs/CROSS_SCAN.md](docs/CROSS_SCAN.md)**.*
 
-Scan multiple emails/usernames from a file (one email/username per line):
-- Can also be combined with categories or modules using `-c` , `-m` and other flags
+### 3. Hudson Rock Malware Breach Intelligence
+
+Check if a target username or email address has been exposed in **infostealer malware infection logs**:
 
 ```bash
-user-scanner -ef emails.txt     # bulk email scan
-user-scanner -uf usernames.txt  # bulk username scan
+user-scanner -u johndoe --hudson             # Username malware log check
+user-scanner -e johndoe@gmail.com --hudson   # Email malware log check
 ```
 
-### Cross-scan
+> 🖼️ *To view output terminal screenshots and visual previews, see **[docs/EXAMPLES.md](docs/EXAMPLES.md)**.*
 
-An email scan proves an account exists but rarely learns its name. `--cross-scan`
-mines the usernames, profile links **and email addresses** the results expose,
-then scans each against the modules for its own kind — reaching sites no single
-pass can see. All four directions work off one mechanism:
+### 4. Targeted Category & Module Scanning
 
-| Direction | Mines |
-| --- | --- |
-| `-e` → username | a handle the address's profile reports, or a link it carries |
-| `-u` → username | the person's other handles, advertised on the profiles found |
-| `-u` → email | an address published on a profile the username pass found |
-| `-e` → email | a second address exposed by the first one's profiles |
+Scan specific categories or individual modules, or list available modules in a responsive grid:
 
 ```bash
-user-scanner -u johndoe --cross-scan                                  # pivot from a username pass
-user-scanner -e johndoe@gmail.com --cross-scan                        # pivot on every link
-user-scanner -e johndoe@gmail.com --cross-scan --cross-links verified # only platform-verified links
-user-scanner -u johndoe --cross-scan --cross-emails all               # include addresses found in bio text
-user-scanner -u johndoe --cross-scan --cross-emails none              # never scan an extracted address
-user-scanner -e johndoe@gmail.com --cross-scan --cross-sweep 0        # only sites a link named
-user-scanner -e johndoe@gmail.com --cross-scan --cross-depth 2        # follow links a second hop
+user-scanner -u johndoe -c dev                # Developer platforms only
+user-scanner -e johndoe@gmail.com -m github   # Single module check
+user-scanner -u johndoe -m github,instagram   # Specific comma-separated modules
+
+user-scanner -lu                              # List user categories & modules grid
+user-scanner -le                              # List email categories & modules grid
 ```
 
-A common handle collides with other people, so every hit is rated `confirmed` /
-`likely` / `candidate` / `conflicting` against the profiles the target's own
-links confirmed. Addresses are rated the same way before being scanned, with two
-sites publishing the same one outranking a single mention — and the email
-modules that notify the address are skipped unless `--allow-loud`. See
-[Cross-scan](docs/CROSS_SCAN.md) for the classes, confidence rules and cost
-model.
+### 5. Bulk File Scanning
 
-### Pattern generation
-See [Pattern Syntax](docs/PATTERNS.md) for more details
+Scan multiple targets from an input file (one target per line):
+
+```bash
+user-scanner -uf usernames.txt   # Bulk username scan
+user-scanner -ef emails.txt      # Bulk email scan
+```
+
+### 6. Report Exports, Options & Proxies
+
+```bash
+# Export results to PDF, JSON, or CSV
+user-scanner -u johndoe -f pdf -o report.pdf
+user-scanner -u johndoe -f json -o results.json
+
+# Verbose URL reporting and show all results (including not found)
+user-scanner -u johndoe -v --all
+
+# Rotate proxies with pre-scan validation check
+user-scanner -u johndoe -P proxies.txt --validate-proxies
+```
 
 ---
-### Library mode for email_scan
-Only available for `user-scanner>=1.2.0`
 
-See full usage (eg. category checks, full scan) guide [library usage](docs/USAGE.md)
+## 📚 Documentation Hub
 
-- Email scan example (single module):
+Explore detailed documentation guides in the [`docs/`](docs/) directory:
+
+- 📋 **[CLI Flags Reference](docs/FLAGS.md)** — Complete breakdown of every CLI flag and option.
+- 🔀 **[Cross-Scan & Pivoting Guide](docs/CROSS_SCAN.md)** — In-depth guide to multi-pass cross-scan reconnaissance.
+- 🔀 **[Pattern Syntax Guide](docs/PATTERNS.md)** — Wildcard and permutation patterns for username generation.
+- 🐍 **[Library Mode Guide](docs/USAGE.md)** — Calling the Python engine programmatically from your own scripts.
+- 🌐 **[Proxy & Network Guide](docs/PROXIES.md)** — Proxy rotation formats, health checks, and regional VPN troubleshooting.
+- 🖼️ **[Media & Output Gallery](docs/EXAMPLES.md)** — Video demonstrations, terminal recordings, and screenshot previews.
+
+---
+
+## 🐍 Python Library Mode
+
+Integrate the User Scanner engine directly into your Python scripts:
 
 ```python
 import asyncio
@@ -195,68 +194,28 @@ from user_scanner.core import engine
 from user_scanner.email_scan.shopping import etsy
 
 async def main():
-    # Engine detects 'email_scan' path -> returns "Registered" status
+    # Engine validates target against module and returns Result object
     result = await engine.check(etsy, "test@gmail.com")
-    json_data = result.to_json() # returns JSON output
-    csv_data = result.to_csv()   # returns CSV output
-    print(json_data)             # prints the json data
+    print(result.to_json())
 
 asyncio.run(main())
 ```
-Output:
 
-```json
-{
-  "email": "test@gmail.com",
-  "category": "Shopping",
-  "site_name": "Etsy",
-  "status": "Registered",
-  "url": "https://www.etsy.com",
-  "extra": {
-    "id": 98832,
-    "name": "test123",
-    "username": "test123",
-    "gender": "private",
-    "is_seller": "No",
-    "has_public_page": "No",
-    "stats": "0 followers | 0 following | 0 favorites",
-    "privacy": "Items are Public | Shops are Public",
-    "joined": "2010-09-19 05:04:06",
-    "last_profile_update": "2020-07-31 01:40:24",
-    "avatar": "https://i.etsystatic.com/site-assets/images/avatars/default_avatar.png?width=400"
-  },
-  "reason": ""
-}
-```
+> 💡 *For complete Python API documentation and batch category checking examples, see **[docs/USAGE.md](docs/USAGE.md)**.*
+
 ---
 
+## 💖 Support the Project
 
-### Using Proxies
+Web platforms constantly update authentication flows. Maintaining over 375+ scan modules requires around-the-clock commitment to keep the suite reliable and free for the cybersecurity community.
 
-Validate proxies before scanning (tests each proxy against google.com):
+If `user-scanner` has saved you hours of manual pivoting or aided your investigations, consider supporting the project:
 
-```bash
-user-scanner -u johndoe -P proxies.txt --validate-proxies # recommended
-```
+👉 **[Sponsor on GitHub](https://github.com/sponsors/kaifcodec)**
 
-This will:
-1. Filter out non-working proxies
-2. Save working proxies to `validated_proxies.txt`
-3. Use only validated proxies for scanning
----
-## 💖 Support the project
+### Project Sponsors
 
-Web platforms constantly update their authentication flows, meaning keeping over 300 modules running smoothly requires a relentless, around-the-clock commitment to maintaining code. What started as a passion project has evolved into a demanding, highly technical undertaking to ensure the tool remains reliable for the community.
-
-While commercial threat intelligence platforms often charge thousands of dollars for these exact capabilities, `user-scanner` remains completely free and open-source. 
-
-​If this tool just saved you hours of manual pivoting, helped you score a bug bounty, or secured your company's footprint, consider supporting this project. Keep OSINT powerful, open, and free.
-
-[GitHub Sponsor](https://github.com/sponsors/kaifcodec)
-
-## Sponsors
-
-Huge thanks to our amazing sponsors who support the development of `user-scanner`!
+Huge thanks to our amazing sponsors who support the ongoing development of `user-scanner`!
 
 <table>
   <tr>
@@ -269,14 +228,14 @@ Huge thanks to our amazing sponsors who support the development of `user-scanner
     </td>
     <td align="center">
       <a href="https://github.com/hienyimba">
-        <img src="https://github.com/hienyimba.png?size=100" width="50px;" alt="heynimba"/>
+        <img src="https://github.com/hienyimba.png?size=100" width="50px;" alt="hienyimba"/>
         <br />
         <sub><b>@hienyimba</b></sub>
       </a>
     </td>
     <td align="center">
       <a href="https://github.com/InDieTasten">
-        <img src="https://github.com/InDieTasten.png?size=100" width="50px;" alt="heynimba"/>
+        <img src="https://github.com/InDieTasten.png?size=100" width="50px;" alt="InDieTasten"/>
         <br />
         <sub><b>@InDieTasten</b></sub>
       </a>
@@ -284,51 +243,14 @@ Huge thanks to our amazing sponsors who support the development of `user-scanner
   </tr>
 </table>
 
-
----
-### Screenshots:
-**Note**: Screenshots might be outdated
-
----
-<img width="2160" height="3760" alt="1000188339" src="https://github.com/user-attachments/assets/da7d73a5-2a50-4704-b71c-993fe5a17644" />
-
-
 ---
 
-[user-scanner_u_usage.webm](https://github.com/user-attachments/assets/d901510c-880e-4395-8274-3494d984f2de)
+## 📜 Contributing
 
----
-
-- Use the `--hudson` flag to check if a **username** or **email** has been exposed in **infostealer malware logs**.
-
-```bash
-user-scanner -e johndoe@gmail.com --hudson   # for email check
-user-scanner -u johndoe --hudson             # for username check
-```
-<img width="1080" height="844" alt="1000183041" src="https://github.com/user-attachments/assets/366d4697-b94b-40b2-9844-f936b6fcea7f" />
-
----
-## Contributing
-
-See detailed [Contributing guidelines](CONTRIBUTING.md)
+We welcome community contributions! Please read our **[Contributing Guidelines](CONTRIBUTING.md)** before opening a PR or submitting new scan modules.
 
 ---
 
 ## ⚠️ Disclaimer
 
-This tool is provided strictly for **educational purposes**, **authorized security research**, and **defensive OSINT investigations**. 
-
-- **User Responsibility:** The user assumes all responsibility for ensuring that their deployment and use of this software complies with all applicable local, national, and international laws, as well as the Terms of Service (ToS) of any scanned platforms.
-- **Data Source & Methodology:** This tool acts exclusively as an aggregator of **publicly accessible information** and legitimate third-party threat intelligence APIs. It does not bypass authentication mechanisms, exploit security vulnerabilities, or access non-public private data.
-- **Information Aggregation:** While this software extracts public metadata and references external breach intelligence feeds (e.g., Hudson Rock), the developers do not host, store, or maintain any underlying personal data. All data is processed locally on the user's machine in real-time.
-- **Limitation of Liability:** This software is provided **"as is"**, without warranty of any kind, express or implied. The developers accept no liability and are not responsible for any misuse, unintended consequences, damage, or legal actions resulting from the use of this tool.
----
-
-## 🛠️ Troubleshooting
-
-Some sites may return **403 Forbidden** or **connection timeout** errors, especially if they are blocked in your region (this is common with some adult sites).
-
-- If a site is blocked in your region, use a VPN and select a region where you know the site is accessible.
-- Then run the tool again.
-
-These issues are caused by regional or network restrictions, not by the tool itself. If it still fails, report the error by opening an issue.
+This tool is provided strictly for **educational purposes**, **authorized security research**, and **defensive OSINT investigations**. The developers assume no liability and are not responsible for any misuse, unintended consequences, or legal actions resulting from the deployment of this software.
