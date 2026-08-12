@@ -88,10 +88,13 @@ async def _async_worker(
 
         try:
             import inspect
+            module_timeout = (get_global_timeout() or 15.0) + 10.0
             if inspect.iscoroutinefunction(func):
-                result = await func(email)
+                result = await asyncio.wait_for(func(email), timeout=module_timeout)
             else:
-                result = await asyncio.to_thread(func, email)
+                result = await asyncio.wait_for(asyncio.to_thread(func, email), timeout=module_timeout)
+        except asyncio.TimeoutError:
+            result = Result.error(f"Module execution timed out after {module_timeout}s")
         except Exception as e:
             result = Result.error(e)
 
@@ -108,12 +111,14 @@ async def _run_batch(
     tasks = []
     for module in modules:
         tasks.append(
-            _async_worker(
-                module,
-                email,
-                sem,
-                configs,
-                printed_cats=printed_cats,
+            asyncio.create_task(
+                _async_worker(
+                    module,
+                    email,
+                    sem,
+                    configs,
+                    printed_cats=printed_cats,
+                )
             )
         )
 
@@ -132,6 +137,9 @@ async def _run_batch(
     ) as progress:
         task_id = progress.add_task(f"[cyan]Scanning {email}...", total=len(tasks))
 
+        for task in tasks:
+            task.add_done_callback(lambda t: progress.advance(task_id))
+
         for coro in asyncio.as_completed(tasks):
             result = await coro
             actual_cat = result.category or "Unknown"
@@ -144,7 +152,6 @@ async def _run_batch(
 
             result.show(configs)
             results.append(result)
-            progress.advance(task_id)
 
     return results
 
@@ -152,6 +159,9 @@ async def _run_batch(
 async def _run_email_module_batch_async(
     module: Union[ModuleType, List[ModuleType]], email: str, configs: ScanConfig
 ) -> List[Result]:
+    loop = asyncio.get_running_loop()
+    import concurrent.futures
+    loop.set_default_executor(concurrent.futures.ThreadPoolExecutor(max_workers=250))
     modules = [module] if isinstance(module, ModuleType) else list(module)
     return await _run_batch(modules, email, configs)
 
@@ -165,6 +175,9 @@ def run_email_module_batch(
 async def _run_email_category_batch_async(
     category_path: Path, email: str, configs: ScanConfig
 ) -> List[Result]:
+    loop = asyncio.get_running_loop()
+    import concurrent.futures
+    loop.set_default_executor(concurrent.futures.ThreadPoolExecutor(max_workers=250))
     cat_name = category_path.stem.capitalize()
     modules = load_modules(category_path)
     printed_cats = set()
@@ -187,6 +200,9 @@ def run_email_category_batch(
 
 
 async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[Result]:
+    loop = asyncio.get_running_loop()
+    import concurrent.futures
+    loop.set_default_executor(concurrent.futures.ThreadPoolExecutor(max_workers=250))
     categories = load_categories(True, configs.no_nsfw)
     all_results = []
     printed_cats: Set[str] = set()
@@ -194,20 +210,23 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
     # 1. Pre-spawn all tasks for all categories (global concurrency)
     category_tasks = []
     total_tasks = 0
+    sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+    
     for cat_name, cat_path in categories.items():
         display_name = cat_name.capitalize()
         modules = load_modules(cat_path)
         
-        sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
         tasks = []
         for module in modules:
             tasks.append(
-                _async_worker(
-                    module,
-                    email,
-                    sem,
-                    configs,
-                    printed_cats=printed_cats,
+                asyncio.create_task(
+                    _async_worker(
+                        module,
+                        email,
+                        sem,
+                        configs,
+                        printed_cats=printed_cats,
+                    )
                 )
             )
         category_tasks.append((display_name, tasks))
@@ -224,6 +243,10 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
     ) as progress:
         task_id = progress.add_task(f"[cyan]Scanning {email}...", total=total_tasks)
         
+        for _, tasks in category_tasks:
+            for task in tasks:
+                task.add_done_callback(lambda t: progress.advance(task_id))
+                
         for display_name, tasks in category_tasks:
             if not tasks:
                 continue
@@ -244,7 +267,6 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
 
                 result.show(configs)
                 all_results.append(result)
-                progress.advance(task_id)
 
     return all_results
 

@@ -25,12 +25,12 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCo
 
 
 MAX_CONCURRENT_REQUESTS = 60
-_shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_REQUESTS)
+_shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=max(MAX_CONCURRENT_REQUESTS * 2, 250))
 
 def set_concurrency(val: int):
     global MAX_CONCURRENT_REQUESTS, _shared_executor
     MAX_CONCURRENT_REQUESTS = val
-    _shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=val)
+    _shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=max(val * 2, 250))
 
 async def _async_worker(
     module: ModuleType,
@@ -58,11 +58,17 @@ async def _async_worker(
             return Result.skipped().update(**params)
 
         try:
+            module_timeout = (get_global_timeout() or 15.0) + 10.0
             if inspect.iscoroutinefunction(func):
-                result = await func(username)
+                result = await asyncio.wait_for(func(username), timeout=module_timeout)
             else:
                 loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(_shared_executor, func, username)
+                result = await asyncio.wait_for(
+                    loop.run_in_executor(_shared_executor, func, username),
+                    timeout=module_timeout
+                )
+        except asyncio.TimeoutError:
+            result = Result.error(f"Module execution timed out after {module_timeout}s")
         except Exception as e:
             result = Result.error(e)
 
@@ -100,6 +106,9 @@ async def _run_batch(
     ) as progress:
         task_id = progress.add_task(f"[cyan]Scanning {username}...", total=len(tasks))
 
+        for task in tasks:
+            task.add_done_callback(lambda t: progress.advance(task_id))
+
         for coro in asyncio.as_completed(tasks):
             result = await coro
             
@@ -112,7 +121,6 @@ async def _run_batch(
                     
             result.show(configs)
             results.append(result)
-            progress.advance(task_id)
         
     return results
 
@@ -179,6 +187,10 @@ async def _run_user_full_async(username: str, configs: ScanConfig) -> List[Resul
     ) as progress:
         task_id = progress.add_task(f"[cyan]Scanning {username}...", total=total_tasks)
         
+        for _, tasks in category_tasks:
+            for task in tasks:
+                task.add_done_callback(lambda t: progress.advance(task_id))
+        
         for display_name, tasks in category_tasks:
             if not tasks:
                 continue
@@ -198,7 +210,6 @@ async def _run_user_full_async(username: str, configs: ScanConfig) -> List[Resul
                         
                 result.show(configs)
                 all_results.append(result)
-                progress.advance(task_id)
 
     return all_results
 
