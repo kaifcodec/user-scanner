@@ -26,7 +26,7 @@
 
 A powerful **2-in-1 OSINT suite** engineered for deep **Email and Username Intelligence**.
 
-With **375+ total scan vectors**—including **150+ email-integrated sites** and **225+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, and verify account registrations in seconds.
+With **375+ total scan vectors**—including **150+ email-integrated sites** and **225+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, full metadata of usernames and verify account registrations in seconds.
 
 ---
 
@@ -34,7 +34,7 @@ With **375+ total scan vectors**—including **150+ email-integrated sites** and
 
 <p align="center">
   <a href="https://webvetted.com/user-scanner?ref=github&utm_source=github" target="_blank">
-    <img width="850" height="270" alt="WebVetted Sponsor Banner" src="https://github.com/user-attachments/assets/a18398f5-193e-4659-87d6-ccdbf6d4d4c2" />
+    <img width="800" height="250" alt="WebVetted Sponsor Banner" src="https://github.com/user-attachments/assets/a18398f5-193e-4659-87d6-ccdbf6d4d4c2" />
   </a>
   <br>
   <em><strong>Go beyond account enumeration.</strong> WebVetted turns an email or username into a complete identity investigation with deep OSINT enrichment, breach intel, AI analysis, and an interactive identity graph.</em>
