@@ -1,4 +1,4 @@
-from user_scanner.core.orchestrator import generic_validate, Result
+from user_scanner.core.orchestrator import generic_validate, make_request, Result
 import html
 import re
 
@@ -37,6 +37,7 @@ def validate_liberapay(user):
     def process(response):
         if response.status_code == 200:
             extra = {}
+            media = {}
             title_match = re.search(r'<title>([^<]+)</title>', response.text)
             if title_match:
                 name = title_match.group(1).split("&#39;s profile")[0].split("'s profile")[0].strip()
@@ -45,7 +46,48 @@ def validate_liberapay(user):
             accounts = _verified_accounts(response.text)
             if accounts:
                 extra["verified_accounts"] = ", ".join(accounts)
-            return Result.taken(extra=extra)
+
+            # Enrich profile metadata via public.json API
+            try:
+                json_url = f"https://liberapay.com/{user}/public.json"
+                json_headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
+                json_resp = make_request(json_url, headers=json_headers)
+                if json_resp.status_code == 200:
+                    data = json_resp.json()
+                    if data.get("avatar"):
+                        media["avatar"] = data["avatar"]
+                    if data.get("display_name"):
+                        extra["name"] = data["display_name"]
+                    if data.get("id"):
+                        extra["id"] = data["id"]
+                    if data.get("kind"):
+                        extra["kind"] = data["kind"]
+                    if data.get("npatrons"):
+                        extra["patrons"] = data["npatrons"]
+                    if isinstance(data.get("receiving"), dict):
+                        amt = data["receiving"].get("amount")
+                        curr = data["receiving"].get("currency", "EUR")
+                        if amt:
+                            extra["receiving"] = f"{amt} {curr}"
+                    if isinstance(data.get("giving"), dict):
+                        amt = data["giving"].get("amount")
+                        curr = data["giving"].get("currency", "EUR")
+                        if amt and amt != "0.00":
+                            extra["giving"] = f"{amt} {curr}"
+                    if data.get("summaries") and isinstance(data["summaries"], list):
+                        summaries = data["summaries"]
+                        en_summary = next(
+                            (s.get("content") for s in summaries if isinstance(s, dict) and s.get("lang") == "en"),
+                            None
+                        )
+                        if not en_summary and summaries and isinstance(summaries[0], dict):
+                            en_summary = summaries[0].get("content")
+                        if en_summary:
+                            extra["summary"] = en_summary
+            except Exception:
+                pass
+
+            return Result.taken(extra=extra, media=media)
         elif response.status_code in (404, 410):
             return Result.available()
         return Result.error(f"Unexpected status {response.status_code}")
