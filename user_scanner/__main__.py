@@ -10,6 +10,14 @@ from dataclasses import replace
 
 from user_scanner.cli.banner import print_banner
 from user_scanner.core import formatter
+from user_scanner.core.cross_scan import (
+    DEFAULT_DEPTH,
+    DEFAULT_SWEEP,
+    EMAIL_CHOICES,
+    LINK_CHOICES,
+    CrossScanConfig,
+    run_cross_scan,
+)
 from user_scanner.core.email_orchestrator import (
     run_email_category_batch,
     run_email_full_batch,
@@ -48,6 +56,14 @@ Y = Fore.YELLOW
 X = Fore.RESET
 
 MAX_PERMUTATIONS_LIMIT = 100
+
+
+def _csv_names(value) -> tuple:
+    """Split a repeatable, comma-separated -m/-c value into names."""
+    if not value:
+        return ()
+    raw = ",".join(value) if isinstance(value, list) else value
+    return tuple(name.strip() for name in raw.split(",") if name.strip())
 
 
 def main():
@@ -165,6 +181,50 @@ def main():
         "--no-nsfw",
         action="store_true",
         help="Disable NSFW site scanning",
+    )
+
+    parser.add_argument(
+        "--cross-scan",
+        action="store_true",
+        help="After the scan, follow the usernames, links and email addresses its "
+        "results expose and scan those too",
+    )
+
+    parser.add_argument(
+        "--cross-links",
+        choices=list(LINK_CHOICES),
+        default="all",
+        help="Which links a cross-scan may pivot from: all, verified "
+        "(platform-proven connections only), or none (site-reported handles only)",
+    )
+
+    parser.add_argument(
+        "--cross-emails",
+        choices=list(EMAIL_CHOICES),
+        default="verified",
+        help="Which addresses found in scan metadata a cross-scan may scan as emails: "
+        "all (including ones scraped from bio text), verified (only addresses a site "
+        "published in its own email field), or none. Loud email modules are skipped "
+        "unless --allow-loud (default: verified)",
+    )
+
+    parser.add_argument(
+        "--cross-depth",
+        type=int,
+        default=DEFAULT_DEPTH,
+        help="Rounds of link-following. Each round pivots off the accounts the previous "
+        f"one found, reaching handles only a chain of links names (default: {DEFAULT_DEPTH})",
+    )
+
+    parser.add_argument(
+        "--cross-sweep",
+        type=int,
+        default=DEFAULT_SWEEP,
+        metavar="N",
+        help="Targets — usernames and addresses together — a cross-scan sweeps against "
+        "every module of their kind, across all rounds. 0 disables sweeping, leaving only "
+        "the sites a pivot named — fewer accounts, but no handle collisions "
+        f"(default: {DEFAULT_SWEEP})",
     )
 
     parser.add_argument("-U", "--update", action="store_true", help="Update the tool")
@@ -373,6 +433,9 @@ def main():
     validated_categories = []
 
     if args.hudson_scan:
+        if args.cross_scan:
+            print(f"{R}[✘] Error: --cross-scan cannot be used with --hudson {X}")
+            sys.exit(1)
         if args.category or args.module:
             print(f"{R}[✘] Error: --hudson cannot be used with -m or -c {X}")
             print(f"{Y}[i] Use it independently{X}")
@@ -473,6 +536,22 @@ def main():
     if args.hudson_scan:
         sys.exit(0)
 
+    if args.cross_scan:
+        results.extend(
+            run_cross_scan(
+                results,
+                config,
+                CrossScanConfig(
+                    links=args.cross_links,
+                    emails=args.cross_emails,
+                    sweep=args.cross_sweep,
+                    depth=args.cross_depth,
+                    modules=_csv_names(args.module),
+                    categories=_csv_names(args.category),
+                ),
+            )
+        )
+
     is_pdf_export = args.format == "pdf" or (args.output and args.output.lower().endswith(".pdf"))
 
     if args.output or is_pdf_export:
@@ -480,11 +559,14 @@ def main():
 
         if is_pdf_export:
             version_str, _ = load_local_version()
+            scan_type_str = "Email" if is_email else "Username"
+            if args.cross_scan:
+                scan_type_str = f"Cross-Scan ({scan_type_str})"
             try:
                 pdf_bytes = formatter.into_pdf(
                     results,
                     target=targets_found[0] if targets_found else "Target",
-                    scan_type="Email" if is_email else "Username",
+                    scan_type=scan_type_str,
                     total_modules=len(results),
                     include_media=not args.no_pdf_media,
                     version=version_str,

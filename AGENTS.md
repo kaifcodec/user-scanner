@@ -16,6 +16,7 @@ profile metadata. See `README.md` for the full feature list and install steps.
   (naming, validator signatures, orchestrator helpers, return values, style).
 - `docs/USAGE.md` — library-mode usage (calling the engine from Python).
 - `docs/FLAGS.md` — every CLI flag.
+- `docs/CROSS_SCAN.md` — how `--cross-scan` mines scan metadata for usernames.
 - `docs/PATTERNS.md` — the username/email permutation pattern syntax.
 
 ## Repository layout
