@@ -2,7 +2,7 @@ import asyncio
 import httpx
 from pathlib import Path
 from types import ModuleType
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Union, Callable
 
 from colorama import Fore, Style
 
@@ -65,9 +65,12 @@ async def _async_worker(
     sem: asyncio.Semaphore,
     configs: ScanConfig,
     printed_cats: Optional[Set] = None,
+    on_start: Optional[Callable[[str], None]] = None,
 ) -> Result:
     async with sem:
         site_name = get_site_name(module)
+        if on_start:
+            on_start(site_name)
         func = get_scan_func(module)
         actual_cat = find_category(module) or "Email"
 
@@ -107,24 +110,10 @@ async def _run_batch(
     configs: ScanConfig,
     printed_cats: Optional[Set] = None,
 ) -> List[Result]:
-    sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
-    tasks = []
-    for module in modules:
-        tasks.append(
-            asyncio.create_task(
-                _async_worker(
-                    module,
-                    email,
-                    sem,
-                    configs,
-                    printed_cats=printed_cats,
-                )
-            )
-        )
-
-    if not tasks:
+    if not modules:
         return []
 
+    sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     results = []
     
     with Progress(
@@ -135,10 +124,25 @@ async def _run_batch(
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         transient=True,
     ) as progress:
-        task_id = progress.add_task(f"[cyan]Scanning {email}...", total=len(tasks))
+        task_id = progress.add_task(f"[cyan]Scanning {email}...", total=len(modules))
 
-        for task in tasks:
-            task.add_done_callback(lambda t: progress.advance(task_id))
+        def on_start_cb(site: str):
+            progress.update(task_id, description=f"[cyan]Scanning {email}... ({site})")
+
+        tasks = []
+        for module in modules:
+            t = asyncio.create_task(
+                _async_worker(
+                    module,
+                    email,
+                    sem,
+                    configs,
+                    printed_cats=printed_cats,
+                    on_start=on_start_cb,
+                )
+            )
+            t.add_done_callback(lambda t: progress.advance(task_id))
+            tasks.append(t)
 
         for coro in asyncio.as_completed(tasks):
             result = await coro
@@ -208,29 +212,15 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
     printed_cats: Set[str] = set()
 
     # 1. Pre-spawn all tasks for all categories (global concurrency)
-    category_tasks = []
+    category_modules = []
     total_tasks = 0
     sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     
     for cat_name, cat_path in categories.items():
         display_name = cat_name.capitalize()
         modules = load_modules(cat_path)
-        
-        tasks = []
-        for module in modules:
-            tasks.append(
-                asyncio.create_task(
-                    _async_worker(
-                        module,
-                        email,
-                        sem,
-                        configs,
-                        printed_cats=printed_cats,
-                    )
-                )
-            )
-        category_tasks.append((display_name, tasks))
-        total_tasks += len(tasks)
+        category_modules.append((display_name, modules))
+        total_tasks += len(modules)
 
     # 2. Await tasks category by category to stream grouped output
     with Progress(
@@ -243,11 +233,28 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
     ) as progress:
         task_id = progress.add_task(f"[cyan]Scanning {email}...", total=total_tasks)
         
-        for _, tasks in category_tasks:
-            for task in tasks:
-                task.add_done_callback(lambda t: progress.advance(task_id))
+        def on_start_cb(site: str):
+            progress.update(task_id, description=f"[cyan]Scanning {email}... ({site})")
+            
+        spawned_category_tasks = []
+        for display_name, modules in category_modules:
+            tasks = []
+            for module in modules:
+                t = asyncio.create_task(
+                    _async_worker(
+                        module,
+                        email,
+                        sem,
+                        configs,
+                        printed_cats=printed_cats,
+                        on_start=on_start_cb,
+                    )
+                )
+                t.add_done_callback(lambda t: progress.advance(task_id))
+                tasks.append(t)
+            spawned_category_tasks.append((display_name, tasks))
                 
-        for display_name, tasks in category_tasks:
+        for display_name, tasks in spawned_category_tasks:
             if not tasks:
                 continue
                 
