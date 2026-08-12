@@ -1,46 +1,80 @@
 import html
 import re
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
-from user_scanner.core.orchestrator import generic_validate, make_request
+from user_scanner.core.impersonate import impersonate_request
 from user_scanner.core.result import Result
 
 BASE_URL = "https://www.osta.ee"
+DEFAULT_AVATAR_PATH = "/assets/gfx/images/avatar_"
 
 
 def validate_osta(user: str) -> Result:
-    url = (
-        f"{BASE_URL}/en?fuseaction=listing.seller&q%5Bseller%5D="
+    seller = _canonical_name(user) or user
+    url = _seller_url(seller)
+
+    try:
+        response = impersonate_request(url, allow_redirects=True)
+    except Exception as exc:
+        return Result.error(exc, url=url)
+
+    if response.status_code == 404 and 'class="error-image"' in response.text:
+        return Result.available(url=url)
+
+    if response.status_code == 200 and re.search(
+        rf'<strong class="username[^"]*">\s*{re.escape(seller)}\s*</strong>',
+        response.text,
+        re.IGNORECASE,
+    ):
+        extra = _extract_profile(response.text)
+        if seller != user:
+            extra["username"] = seller
+
+        profile_url = (
+            f"{BASE_URL}/en/user/{user_id}"
+            if (user_id := _user_id(response.text))
+            else ""
+        )
+        if profile_url:
+            extra.update(_fetch(profile_url, _extract_profile) or {})
+            about_url = f"{BASE_URL}/en?fuseaction=listing.aboutseller&user={user_id}"
+            if (about := _fetch(about_url, _extract_about)) is not None:
+                extra.update(about)
+
+        media = {"avatar": extra.pop("avatar")} if "avatar" in extra else {}
+        return Result.taken(extra=extra, media=media, url=profile_url or url)
+
+    return Result.error(f"Unexpected response status: {response.status_code}", url=url)
+
+
+def _canonical_name(user: str) -> str | None:
+    """The seller listing is case-sensitive, so ``kristjan123`` misses the real
+    ``Kristjan123``. The search route resolves a name case-insensitively and
+    redirects to the canonical spelling; a name that resolves to nothing gets a
+    plain 200 search page instead, which carries no verdict of its own.
+    """
+    search_url = (
+        f"{BASE_URL}/en?fuseaction=search.search&q%5Bseller%5D="
         f"{quote(user, safe='')}"
     )
+    try:
+        response = impersonate_request(search_url, allow_redirects=False)
+    except Exception:
+        return None
 
-    def process(response):
-        if response.status_code == 404:
-            return Result.available()
+    location = response.headers.get("location") or ""
+    if response.status_code not in (301, 302) or "listing.seller" not in location:
+        return None
 
-        if response.status_code == 200 and re.search(
-            rf'<strong class="username[^"]*">\s*{re.escape(user)}\s*</strong>',
-            response.text,
-            re.IGNORECASE,
-        ):
-            extra = _extract_profile(response.text)
-            profile_url = (
-                f"{BASE_URL}/en/user/{user_id}"
-                if (user_id := _user_id(response.text))
-                else ""
-            )
-            if profile_url:
-                extra.update(_fetch(profile_url, _extract_profile) or {})
-                about_url = f"{BASE_URL}/en?fuseaction=listing.aboutseller&user={user_id}"
-                if (about := _fetch(about_url, _extract_about)) is not None:
-                    extra.update(about)
+    names = re.findall(r"[?&]q\[seller\]=([^&]*)", location)
+    return unquote(names[-1]) if names else None
 
-            media = {"avatar": extra.pop("avatar")} if "avatar" in extra else {}
-            return Result.taken(extra=extra, media=media, url=profile_url)
 
-        return Result.error(f"Unexpected response status: {response.status_code}")
-
-    return generic_validate(url, process, follow_redirects=True)
+def _seller_url(seller: str) -> str:
+    return (
+        f"{BASE_URL}/en?fuseaction=listing.seller&q%5Bseller%5D="
+        f"{quote(seller, safe='')}"
+    )
 
 
 def _user_id(html_text: str) -> str | None:
@@ -50,7 +84,7 @@ def _user_id(html_text: str) -> str | None:
 
 def _fetch(url: str, extract):
     try:
-        response = make_request(url, follow_redirects=True)
+        response = impersonate_request(url, allow_redirects=True)
         return extract(response.text) if response.status_code == 200 else None
     except Exception:
         return None
@@ -80,7 +114,7 @@ def _extract_profile(html_text: str) -> dict:
     fields = (
         (r"([\d,.]+)\s+Successful sales per year\b", "successful_sales_per_year"),
         (r"([\d,.]+)\s+Followers\b", "followers"),
-        (r"([\d,.]+)\s+Active sales\b", "active_sales"),
+        (r"\bActive sales\s+([\d,.]+)", "active_sales"),
         (r"\bFeedback\s+([\d,.]+)", "feedback_total"),
     )
     for pattern, key in fields:
@@ -106,8 +140,8 @@ def _extract_profile(html_text: str) -> dict:
         html_text,
         re.IGNORECASE,
     )
-    if avatar:
-        extra["avatar"] = html.unescape(avatar.group(1))
+    if avatar and DEFAULT_AVATAR_PATH not in (url := html.unescape(avatar.group(1))):
+        extra["avatar"] = url
 
     return extra
 

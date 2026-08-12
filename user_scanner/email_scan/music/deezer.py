@@ -67,16 +67,24 @@ async def _check(email: str) -> Result:
                 return Result.error(f"HTTP Error: {response.status_code}")
 
             data = response.json()
-            errors = data.get("results", {}).get("errors", {})
+            results = data.get("results")
 
-            if errors.get("email", {}).get("error") == "email_already_used":
+            if not isinstance(results, dict) or "errors" not in results:
+                return Result.error("Unexpected response body structure, report it via GitHub issues")
+
+            errors = results.get("errors") or {}
+            email_error = (errors.get("email") or {}).get("error")
+
+            if email_error == "email_already_used":
                 return Result.taken(url=show_url)
 
-            elif "country" in errors and "email" not in errors:
+            # Deezer only reports an ``email`` constraint when the address is
+            # unusable; the sibling constraints it returns for the rest of the
+            # signup form say nothing about registration.
+            if not email_error:
                 return Result.available(url=show_url)
 
-            else:
-                return Result.error("Unexpected response body structure, report it via GitHub issues")
+            return Result.error(f"Deezer rejected the address: {email_error}")
 
     except httpx.ConnectTimeout:
         return Result.error("Connection timed out! maybe region blocks")

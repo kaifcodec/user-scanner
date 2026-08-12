@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
@@ -17,15 +19,20 @@ def validate_riot_id(user: str) -> Result:
     if not (3 <= len(tag) <= 5):
         return Result.error("Tag must be 3-5 characters")
 
-    encoded = user.replace("#", "%23")
-    url = f"https://www.riotid-lookup.com/api/lookup?riotId={encoded}"
+    url = f"https://www.riotid-lookup.com/api/lookup?riotId={quote(user, safe='')}"
 
     def process(response):
         if response.status_code == 200:
-            data = response.json()
-            if data.get("isTaken"):
-                return Result.taken()
-            return Result.available()
+            try:
+                data = response.json()
+            except ValueError:
+                return Result.error("Unexpected response body from the lookup API")
+
+            taken = data.get("isTaken") if isinstance(data, dict) else None
+            if not isinstance(taken, bool):
+                return Result.error("Lookup API did not report a verdict")
+
+            return Result.taken() if taken else Result.available()
 
         if response.status_code == 400:
             return Result.error("Invalid Riot ID format")

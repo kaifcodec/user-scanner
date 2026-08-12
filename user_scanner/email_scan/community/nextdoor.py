@@ -28,7 +28,18 @@ async def _check(email: str) -> Result:
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.post(url, data=payload, headers=headers)
+            try:
+                response = await client.post(url, data=payload, headers=headers)
+            except httpx.ConnectError as e:
+                # Outside the countries Nextdoor operates in, its own
+                # nameservers answer 0.0.0.0, so the host never resolves to a
+                # usable address and the check cannot run at all.
+                if "getaddrinfo" in str(e) or "11001" in str(e) or "11004" in str(e):
+                    return Result.error(
+                        "auth.nextdoor.com does not resolve from here; "
+                        "Nextdoor null-routes its DNS outside supported regions"
+                    )
+                raise
 
             if response.status_code == 403:
                 return Result.error("403")

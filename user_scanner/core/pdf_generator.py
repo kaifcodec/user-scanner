@@ -416,30 +416,62 @@ def generate_pdf_report(
     # Footprint Table
     elements.append(Paragraph("DIGITAL FOOTPRINT MAPPING", section_title_style))
 
-    table_data = [
-        [
-            Paragraph(
-                "<font size=8 name='Helvetica-Bold' color='#374151'>SL</font>",
-                normal_style,
-            ),
-            Paragraph(
-                "<font size=8 name='Helvetica-Bold' color='#374151'>PLATFORM</font>",
-                normal_style,
-            ),
-            Paragraph(
-                "<font size=8 name='Helvetica-Bold' color='#374151'>CATEGORY</font>",
-                normal_style,
-            ),
-            Paragraph(
-                "<font size=8 name='Helvetica-Bold' color='#374151'>STATUS</font>",
-                normal_style,
-            ),
-            Paragraph(
-                "<font size=8 name='Helvetica-Bold' color='#374151'>IDENTIFIED URL</font>",
-                normal_style,
-            ),
+    is_cross_scan = "cross" in scan_type.lower()
+
+    if is_cross_scan:
+        table_data = [
+            [
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>SL</font>",
+                    normal_style,
+                ),
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>TARGET</font>",
+                    normal_style,
+                ),
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>PLATFORM</font>",
+                    normal_style,
+                ),
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>CATEGORY</font>",
+                    normal_style,
+                ),
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>STATUS</font>",
+                    normal_style,
+                ),
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>IDENTIFIED URL</font>",
+                    normal_style,
+                ),
+            ]
         ]
-    ]
+    else:
+        table_data = [
+            [
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>SL</font>",
+                    normal_style,
+                ),
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>PLATFORM</font>",
+                    normal_style,
+                ),
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>CATEGORY</font>",
+                    normal_style,
+                ),
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>STATUS</font>",
+                    normal_style,
+                ),
+                Paragraph(
+                    "<font size=8 name='Helvetica-Bold' color='#374151'>IDENTIFIED URL</font>",
+                    normal_style,
+                ),
+            ]
+        ]
 
     for idx, hit in enumerate(hits):
         status = str(hit.get("status", "Unknown"))
@@ -449,34 +481,68 @@ def generate_pdf_report(
             else "#111111"
         )
         url_text = truncate(hit.get("url", "N/A"), 100)
+        target_val = html.escape(str(hit.get("email") or hit.get("username") or ""))
 
-        table_data.append(
-            [
-                Paragraph(
-                    f"<font size=8>{idx + 1}</font>",
-                    ParagraphStyle("C", alignment=1),
-                ),
-                Paragraph(
-                    f"<font size=8>{html.escape(str(hit.get('site_name', '')))}</font>", normal_style
-                ),
-                Paragraph(
-                    f"<font size=8>{html.escape(str(hit.get('category', '')))}</font>", normal_style
-                ),
-                Paragraph(
-                    f"<font size=8 color='{status_color}'>{html.escape(status)}</font>",
-                    normal_style,
-                ),
-                Paragraph(
-                    f"<font size=7 color='#2563eb'>{html.escape(url_text)}</font>", normal_style
-                ),
-            ]
+        if is_cross_scan:
+            table_data.append(
+                [
+                    Paragraph(
+                        f"<font size=8>{idx + 1}</font>",
+                        ParagraphStyle("C", alignment=1),
+                    ),
+                    Paragraph(
+                        f"<font size=8>{target_val}</font>", normal_style
+                    ),
+                    Paragraph(
+                        f"<font size=8>{html.escape(str(hit.get('site_name', '')))}</font>", normal_style
+                    ),
+                    Paragraph(
+                        f"<font size=8>{html.escape(str(hit.get('category', '')))}</font>", normal_style
+                    ),
+                    Paragraph(
+                        f"<font size=8 color='{status_color}'>{html.escape(status)}</font>",
+                        normal_style,
+                    ),
+                    Paragraph(
+                        f"<font size=7 color='#2563eb'>{html.escape(url_text)}</font>", normal_style
+                    ),
+                ]
+            )
+        else:
+            table_data.append(
+                [
+                    Paragraph(
+                        f"<font size=8>{idx + 1}</font>",
+                        ParagraphStyle("C", alignment=1),
+                    ),
+                    Paragraph(
+                        f"<font size=8>{html.escape(str(hit.get('site_name', '')))}</font>", normal_style
+                    ),
+                    Paragraph(
+                        f"<font size=8>{html.escape(str(hit.get('category', '')))}</font>", normal_style
+                    ),
+                    Paragraph(
+                        f"<font size=8 color='{status_color}'>{html.escape(status)}</font>",
+                        normal_style,
+                    ),
+                    Paragraph(
+                        f"<font size=7 color='#2563eb'>{html.escape(url_text)}</font>", normal_style
+                    ),
+                ]
+            )
+
+    if is_cross_scan:
+        data_table = Table(
+            table_data,
+            colWidths=[0.4 * inch, 1.5 * inch, 1.2 * inch, 0.9 * inch, 0.9 * inch, 2.4 * inch],
+            repeatRows=1,
         )
-
-    data_table = Table(
-        table_data,
-        colWidths=[0.5 * inch, 1.5 * inch, 1.2 * inch, 1.0 * inch, 3.1 * inch],
-        repeatRows=1,
-    )
+    else:
+        data_table = Table(
+            table_data,
+            colWidths=[0.5 * inch, 1.5 * inch, 1.2 * inch, 1.0 * inch, 3.1 * inch],
+            repeatRows=1,
+        )
     data_table.setStyle(
         TableStyle(
             [
@@ -509,9 +575,14 @@ def generate_pdf_report(
         )
 
         for hit, meta in hits_with_meta:
+            site_title = html.escape(str(hit.get('site_name', '')))
+            target_val = html.escape(str(hit.get("email") or hit.get("username") or ""))
+            if is_cross_scan and target_val:
+                site_title += f" ({target_val})"
+
             meta_elements = [
                 Paragraph(
-                    f"<font size=10 name='Helvetica-Bold'>{html.escape(str(hit.get('site_name', '')))}</font>",
+                    f"<font size=10 name='Helvetica-Bold'>{site_title}</font>",
                     normal_style,
                 ),
                 Spacer(1, 5),

@@ -6,7 +6,7 @@ from user_scanner.core.orchestrator import Result, generic_validate, make_reques
 
 def validate_bdsmsingles(user: str) -> Result:
     url = f"https://www.bdsmsingles.com/members/{user}/"
-    show_url = f"https://www.bdsmsingles.com/members/{user}/"
+    show_url = url
 
     def process(response):
         if response.status_code == 202:

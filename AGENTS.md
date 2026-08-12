@@ -16,6 +16,7 @@ profile metadata. See `README.md` for the full feature list and install steps.
   (naming, validator signatures, orchestrator helpers, return values, style).
 - `docs/USAGE.md` — library-mode usage (calling the engine from Python).
 - `docs/FLAGS.md` — every CLI flag.
+- `docs/CROSS_SCAN.md` — how `--cross-scan` mines scan metadata for usernames.
 - `docs/PATTERNS.md` — the username/email permutation pattern syntax.
 
 ## Repository layout
@@ -26,6 +27,8 @@ profile metadata. See `README.md` for the full feature list and install steps.
   Asynchronous. Export `async def validate_<service>(email: str) -> Result`.
 - `user_scanner/core/` — engine, orchestrator, helpers, `Result`, formatters,
   exporters (JSON/CSV/PDF). Changes here affect every module; review carefully.
+- `abandoned/<email_scan|user_scan>/<category>/<site>.py` — retired modules
+  (dead sites, permanently broken detection). See "Retiring a module" below.
 - `tests/` — pytest suite. Add tests for new core behavior only. **Do not
   add unit tests for individual scan modules** — modules are verified by
   live-testing against real and nonexistent handles (see "Before opening a
@@ -55,6 +58,14 @@ Read `CONTRIBUTING.md` first — it has full examples. The essentials:
 6. **Never use `raise`.** Return `Result.error(...)` so the scan continues.
 7. **Respect the global CLI flags** in any request-making code (timeout `-t`,
    concurrency `-C`, `--allow-loud`) — mirror the existing helpers.
+
+## Retiring a module
+
+Never delete a scan module. When a site shuts down or a module can no longer
+work, **move** the file from `user_scanner/<email_scan|user_scan>/<category>/`
+to `abandoned/<email_scan|user_scan>/<category>/` — same scan type, same
+category, same file name, contents unchanged. This keeps the module out of
+`load_modules()` while preserving it for revival if the site returns.
 
 ## Before opening a PR
 

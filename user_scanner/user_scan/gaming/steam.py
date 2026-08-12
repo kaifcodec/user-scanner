@@ -1,7 +1,9 @@
-from user_scanner.core.orchestrator import generic_validate
-from user_scanner.core.result import Result
-import re as local_re
 import html
+import re as local_re
+
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
+
 
 def validate_steam(user):
     url = f"https://steamcommunity.com/id/{user}/"
@@ -11,40 +13,42 @@ def validate_steam(user):
         if response.status_code == 200:
             if "Error</title>" in response.text:
                 return Result.available()
+
+            steamid_match = local_re.search(r'"steamid"\s*:\s*"((?:[^"\\]|\\.)*)"', response.text)
+            if not steamid_match:
+                return Result.error("Unrecognized response")
+
+            extra = {"steam_id": steamid_match.group(1)}
+            media = {}
+
+            personaname_match = local_re.search(r'"personaname"\s*:\s*"((?:[^"\\]|\\.)*)"', response.text)
+            if personaname_match:
+                extra["persona_name"] = html.unescape(personaname_match.group(1).replace(r'\/', '/').replace(r'\"', '"'))
+
+            realname_match = local_re.search(r'class="header_real_name[^"]*">\s*<bdi>([^<]+)</bdi>', response.text)
+            if realname_match: extra["real_name"] = html.unescape(realname_match.group(1).strip())
+
+            loc_match = local_re.search(r'class="header_location"[^>]*>\s*(?:<img[^>]*>\s*)?([^<\r\n]+)', response.text)
+            if loc_match: extra["location"] = html.unescape(loc_match.group(1).strip())
+
+            avatar_match = local_re.search(r'class="playerAvatar profile_header_size.*?<picture>.*?<img srcset="([^"]+)"', response.text, local_re.DOTALL)
+            if avatar_match:
+                media["avatar"] = avatar_match.group(1).strip()
             else:
-                extra = {}
-                media = {}
-                steamid_match = local_re.search(r'"steamid"\s*:\s*"((?:[^"\\]|\\.)*)"', response.text)
-                if steamid_match: extra["steam_id"] = steamid_match.group(1)
+                full_avatar_match = local_re.search(r'https?://avatars\.(?:fastly\.)?steamstatic\.com/[a-f0-9]+_full\.jpg', response.text)
+                if full_avatar_match:
+                    media["avatar"] = full_avatar_match.group(0)
 
-                personaname_match = local_re.search(r'"personaname"\s*:\s*"((?:[^"\\]|\\.)*)"', response.text)
-                if personaname_match: 
-                    extra["persona_name"] = html.unescape(personaname_match.group(1).replace(r'\/', '/').replace(r'\"', '"'))
+            summary_match = local_re.search(r'"summary"\s*:\s*"((?:[^"\\]|\\.)*)"', response.text)
+            if summary_match:
+                raw_summary = summary_match.group(1).replace(r'\/', '/').replace(r'\n', '\n').replace(r'\r', '\r').replace(r'\"', '"')
+                clean_summary = local_re.sub(r'<[^>]*>', '', raw_summary)
+                clean_summary = html.unescape(clean_summary).strip()
+                if clean_summary:
+                    extra["summary"] = clean_summary
 
-                realname_match = local_re.search(r'class="header_real_name[^"]*">\s*<bdi>([^<]+)</bdi>', response.text)
-                if realname_match: extra["real_name"] = html.unescape(realname_match.group(1).strip())
-
-                loc_match = local_re.search(r'class="header_location"[^>]*>\s*(?:<img[^>]*>\s*)?([^<\r\n]+)', response.text)
-                if loc_match: extra["location"] = html.unescape(loc_match.group(1).strip())
-
-                avatar_match = local_re.search(r'class="playerAvatar profile_header_size.*?<picture>.*?<img srcset="([^"]+)"', response.text, local_re.DOTALL)
-                if avatar_match:
-                    media["avatar"] = avatar_match.group(1).strip()
-                else:
-                    full_avatar_match = local_re.search(r'https?://avatars\.(?:fastly\.)?steamstatic\.com/[a-f0-9]+_full\.jpg', response.text)
-                    if full_avatar_match:
-                        media["avatar"] = full_avatar_match.group(0)
-
-                summary_match = local_re.search(r'"summary"\s*:\s*"((?:[^"\\]|\\.)*)"', response.text)
-                if summary_match:
-                    raw_summary = summary_match.group(1).replace(r'\/', '/').replace(r'\n', '\n').replace(r'\r', '\r').replace(r'\"', '"')
-                    clean_summary = local_re.sub(r'<[^>]*>', '', raw_summary)
-                    clean_summary = html.unescape(clean_summary).strip()
-                    if clean_summary:
-                        extra["summary"] = clean_summary
-
-                return Result.taken(extra=extra, media=media)
+            return Result.taken(extra=extra, media=media)
 
         return Result.error("Invalid status code")
 
-    return generic_validate(url, process, show_url=show_url)
+    return impersonate_validate(url, process, show_url=show_url)

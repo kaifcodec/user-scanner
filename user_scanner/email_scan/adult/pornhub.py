@@ -1,71 +1,95 @@
-import httpx
 import re
+
+from user_scanner.core.impersonate import impersonate_request_async
 from user_scanner.core.result import Result
+
+BASE_URL = "https://www.pornhub.com"
+SHOW_URL = "https://pornhub.com"
+CHECK_API = f"{BASE_URL}/api/v1/user/create_account_check"
+
+# The token is only reachable through the create_account_check URL Pornhub
+# embeds (HTML-escaped) in the page's signup config.
+TOKEN_RE = re.compile(r"create_account_check\?token=([A-Za-z0-9_.\-]+)")
+
+# Pornhub no longer discloses registration for the address as typed: a
+# deliverable address always gets the same "if this email is already
+# registered" placeholder, and that path is what mails the account holder.
+# Probing a sub-addressed alias sidesteps both problems, because Pornhub
+# normalises the "+tag" away and then answers plainly.
+PROBE_TAG = "+phck"
+
+HEADERS = {
+    "x-requested-with": "XMLHttpRequest",
+    "origin": BASE_URL,
+    "referer": BASE_URL + "/",
+    "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+}
 
 
 async def _check(email: str) -> Result:
-    base_url = "https://www.pornhub.com"
-    show_url = "https://pornhub.com"
-    check_api = f"{base_url}/api/v1/user/create_account_check"
+    local, _, domain = email.rpartition("@")
+    if not local or not domain:
+        return Result.error("Not a valid email address")
 
-    headers = {
-        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36",
-        "x-requested-with": "XMLHttpRequest",
-        "origin": base_url,
-        "referer": base_url + "/",
-        "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-    }
+    if "+" in local:
+        return Result.error(
+            "Address is already sub-addressed; Pornhub cannot be probed for it"
+        )
 
-    async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=15.0) as client:
-        try:
-            landing_resp = await client.get(base_url, headers=headers)
-            token_match = re.search(
-                r'var\s+token\s*=\s*"([^"]+)"', landing_resp.text)
+    try:
+        landing = await impersonate_request_async(BASE_URL + "/", allow_redirects=True)
+        token_match = TOKEN_RE.search(landing.text)
 
-            if not token_match:
-                return Result.error("Failed to extract dynamic token from HTML")
+        if not token_match:
+            return Result.error("Failed to extract dynamic token from HTML")
 
-            token = token_match.group(1)
+        response = await impersonate_request_async(
+            CHECK_API,
+            "POST",
+            params={"token": token_match.group(1)},
+            headers=HEADERS,
+            data={"check_what": "email", "email": f"{local}{PROBE_TAG}@{domain}"},
+        )
 
-            params = {"token": token}
-            payload = {
-                "check_what": "email",
-                "email": email
-            }
+        if response.status_code == 429:
+            return Result.error("Rate limited, wait for a few minutes")
 
-            response = await client.post(
-                check_api,
-                params=params,
-                headers=headers,
-                data=payload
+        if response.status_code != 200:
+            return Result.error(f"HTTP Error: {response.status_code}")
+
+        data = response.json()
+        status = data.get("email")
+        error_msg = data.get("error_message", "")
+
+        if status == "create_account_passed":
+            return Result.available(url=SHOW_URL)
+
+        if "has been taken" in error_msg:
+            return Result.taken(url=SHOW_URL)
+
+        if "delivery issues" in error_msg:
+            return Result.error(url=SHOW_URL, reason="The email is experiencing email delivery issues")
+
+        # Pornhub refuses to check some providers at all (proton.me, zoho.com),
+        # which is a rule about the domain rather than a verdict on the address.
+        if "is not allowed" in error_msg:
+            return Result.error(
+                url=SHOW_URL,
+                reason=f"Pornhub does not accept registrations from '{domain}'",
             )
 
-            if response.status_code == 429:
-                return Result.error("Rate limited, wait for a few minutes")
+        # Sub-addressing is only accepted for mailboxes that actually resolve,
+        # so an unusable alias says nothing about the address it derives from.
+        if "invalid or cannot be used" in error_msg:
+            return Result.error(
+                url=SHOW_URL,
+                reason=f"Domain '{domain}' does not support the sub-address probe",
+            )
 
-            if response.status_code != 200:
-                return Result.error(f"HTTP Error: {response.status_code}")
+        return Result.error(f"Unexpected API response: {status}: {error_msg}")
 
-            data = response.json()
-            status = data.get("email")
-            error_msg = data.get("error_message", "")
-            email_dom = email.split("@")[-1]
-
-            if status == "create_account_failed":
-                if "Email extension" in error_msg:
-                    return Result.available(url=show_url, reason=f"Domain '{email_dom}' is not allowed by PornHub")
-                if "delivery issues" in error_msg:
-                    return Result.error(url=show_url, reason="The email is experiencing email delivery issues")
-
-            if status == "create_account_passed" and error_msg == "":
-                return Result.available(url=show_url)
-            elif status == "create_account_failed" and "already registered" in error_msg:
-                return Result.taken(url=show_url)
-            else:
-                return Result.error(f"Unexpected API response: {status}: {error_msg}")
-
-        except Exception as e:
-            return Result.error(e)
+    except Exception as e:
+        return Result.error(e)
 
 
 async def validate_pornhub(email: str) -> Result:

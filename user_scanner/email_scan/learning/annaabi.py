@@ -1,5 +1,4 @@
-import httpx
-
+from user_scanner.core.impersonate import impersonate_request_async
 from user_scanner.core.result import Result
 
 
@@ -7,16 +6,19 @@ async def validate_annaabi(email: str) -> Result:
     show_url = "https://annaabi.ee"
 
     try:
-        async with httpx.AsyncClient(
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Referer": f"{show_url}/register.php",
-            },
-            timeout=15.0,
-        ) as client:
-            response = await client.get(
-                f"{show_url}/register.php",
-                params={"go": "1", "emailcheck": email},
+        response = await impersonate_request_async(
+            f"{show_url}/register.php",
+            params={"go": "1", "emailcheck": email},
+            headers={"Referer": f"{show_url}/register.php"},
+            allow_redirects=True,
+        )
+
+        # Cloudflare serves a managed challenge to some clients; no HTTP client
+        # can clear it, so never turn it into a verdict.
+        if response.headers.get("cf-mitigated") == "challenge":
+            return Result.error(
+                "Cloudflare challenge, cannot be solved without a browser",
+                url=show_url,
             )
 
         if response.status_code != 200:
@@ -40,5 +42,5 @@ async def validate_annaabi(email: str) -> Result:
                 else Result.available(url=show_url)
             )
         return Result.error("Unexpected response body", url=show_url)
-    except httpx.HTTPError as exc:
+    except Exception as exc:
         return Result.error(exc, url=show_url)

@@ -1,4 +1,4 @@
-import httpx
+from user_scanner.core.impersonate import impersonate_request_async
 from user_scanner.core.result import Result
 
 
@@ -32,22 +32,23 @@ async def _check(email: str) -> Result:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.post(url, data=payload, headers=headers)
+        response = await impersonate_request_async(
+            url, "POST", data=payload, headers=headers
+        )
 
-            if response.status_code == 403:
-                return Result.error("403")
+        if response.status_code == 403:
+            return Result.error("403")
 
-            data = response.json()
-            message = data.get("message", "")
+        data = response.json()
+        message = data.get("message", "")
 
-            if "belongs to an existing account" in message:
-                return Result.taken(url=show_url)
+        if "belongs to an existing account" in message:
+            return Result.taken(url=show_url)
 
-            if "password must be at least" in message:
-                return Result.available(url=show_url)
+        if "password must be at least" in message:
+            return Result.available(url=show_url)
 
-            return Result.error(f"Unexpected: {message[:50]}")
+        return Result.error(f"Unexpected: {message[:50]}")
 
     except Exception as e:
         return Result.error(e)
