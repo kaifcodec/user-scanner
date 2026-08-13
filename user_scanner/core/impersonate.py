@@ -11,6 +11,7 @@ DEFAULT_IMPERSONATE = "chrome"
 DEFAULT_TIMEOUT = 15.0
 
 _sessions: dict[tuple, cffi.Session] = {}
+_key_locks: dict[tuple, threading.Lock] = {}
 _warmed: set[tuple] = set()
 _lock = threading.Lock()
 
@@ -93,12 +94,20 @@ def _get_warm_session(
                 proxies={"http": proxy, "https": proxy} if proxy else None,
             )
             _sessions[key] = session
+            _key_locks[key] = threading.Lock()
+            
+        key_lock = _key_locks.get(key)
+        if key_lock is None:
+            key_lock = threading.Lock()
+            _key_locks[key] = key_lock
 
-        if warmup_url and key not in _warmed:
-            # A blocked (403) warm-up still returns normally and sets the cookie;
-            # only a network error leaves the session unwarmed for a later retry.
-            session.get(warmup_url, timeout=_timeout())
-            _warmed.add(key)
+    if warmup_url and key not in _warmed:
+        with key_lock:
+            if key not in _warmed:
+                # A blocked (403) warm-up still returns normally and sets the cookie;
+                # only a network error leaves the session unwarmed for a later retry.
+                session.get(warmup_url, timeout=_timeout())
+                _warmed.add(key)
 
     return session
 

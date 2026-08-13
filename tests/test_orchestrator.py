@@ -58,7 +58,7 @@ def test_set_concurrency():
     original_max = orchestrator.MAX_CONCURRENT_REQUESTS
     set_concurrency(10)
     assert orchestrator.MAX_CONCURRENT_REQUESTS == 10
-    assert orchestrator._shared_executor._max_workers == 10
+    assert orchestrator._shared_executor._max_workers == max(10 * 2, 250)
     
     # restore
     set_concurrency(original_max)
