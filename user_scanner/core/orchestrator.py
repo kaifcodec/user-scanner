@@ -132,7 +132,7 @@ def run_user_module(
     module: Union[ModuleType, List[ModuleType]], username: str, configs: ScanConfig
 ) -> List[Result]:
     modules = [module] if isinstance(module, ModuleType) else list(module)
-    return asyncio.run(_run_batch(modules, username, configs))
+    return asyncio.run(_run_batch(modules, username, configs, printed_cats=set()))
 
 
 def run_user_category(

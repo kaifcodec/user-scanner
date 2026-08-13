@@ -167,7 +167,7 @@ async def _run_email_module_batch_async(
     import concurrent.futures
     loop.set_default_executor(concurrent.futures.ThreadPoolExecutor(max_workers=250))
     modules = [module] if isinstance(module, ModuleType) else list(module)
-    return await _run_batch(modules, email, configs)
+    return await _run_batch(modules, email, configs, printed_cats=set())
 
 
 def run_email_module_batch(
