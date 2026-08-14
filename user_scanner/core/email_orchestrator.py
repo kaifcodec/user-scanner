@@ -147,7 +147,7 @@ async def _run_batch(
         for coro in asyncio.as_completed(tasks):
             result = await coro
             actual_cat = result.category or "Unknown"
-            if not configs.show_all and result.is_visible(configs):
+            if configs.show_all or result.is_visible(configs):
                 if printed_cats is not None and actual_cat not in printed_cats:
                     print(
                         f"\n{Fore.MAGENTA}== {actual_cat.upper()} SITES =={Style.RESET_ALL}"
@@ -264,7 +264,7 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
                 
             for coro in asyncio.as_completed(tasks):
                 result = await coro
-                if not configs.show_all and result.is_visible(configs):
+                if configs.show_all or result.is_visible(configs):
                     display_name = result.category or "Unknown"
                     if display_name not in printed_cats:
                         print(
