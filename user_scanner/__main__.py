@@ -212,7 +212,7 @@ def main():
             from rich import box
 
             console = Console()
-            num_grid_cols = 3 if console.width >= 140 else 2
+            num_grid_cols = 1 if console.width < 70 else (3 if console.width >= 140 else 2)
 
             cat_panels = []
             total_modules = 0
