@@ -27,8 +27,7 @@ def validate_apexlegends(user: str) -> Result:
                 f"{API_URL}/{platform}/{user}", headers=HEADERS
             )
         except Exception as e:
-            errors.append(f"{platform}: {e}")
-            continue
+            return Result.error(e, url=show_url)
 
         if response.status_code == 404:
             continue

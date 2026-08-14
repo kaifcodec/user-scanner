@@ -59,6 +59,9 @@ def humanize_exception(e: Exception) -> str:
     if "errno 101" in msg or "network is unreachable" in msg:
         return "Network unreachable (Is your internet on?)"
 
+    if "curl: (28)" in msg or "connection timed out" in msg:
+        return "Connection timed out (try a VPN if the site is blocked in your region)"
+
     return str(e)
 
 
