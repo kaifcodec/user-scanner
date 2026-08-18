@@ -13,7 +13,14 @@ def validate_hive_blog(user: str) -> Result:
     }
 
     def process(response):
-        if response.status_code == 200 and "hive" in response.text.lower():
+        response_text_lower = response.text.lower()
+
+        # 1. Explicit check for available / not-found state (HTTP 404 or explicit title marker)
+        if response.status_code == 404 or "user not found - hive" in response_text_lower or "user not found" in response_text_lower:
+            return Result.available(url=show_url)
+
+        # 2. Explicit verification of 200 OK + site marker
+        if response.status_code == 200 and "hive" in response_text_lower:
             script_match = re.search(
                 r'<script[^>]*>(\{"community":[\s\S]+?)</script>',
                 response.text,
@@ -56,10 +63,10 @@ def validate_hive_blog(user: str) -> Result:
 
                         return Result.taken(extra=extra, media=media, url=show_url)
                 except Exception:
-                    pass
-            return Result.available(url=show_url)
-        elif response.status_code == 404:
-            return Result.available(url=show_url)
+                    return Result.error("Failed to parse userProfiles JSON on Hive Blog", url=show_url)
+            return Result.error("Could not find userProfiles script tag on Hive Blog", url=show_url)
+
+        # 3. Graceful error for unexpected status codes (No bare else!)
         return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
 
     return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)

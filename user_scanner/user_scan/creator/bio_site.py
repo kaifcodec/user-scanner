@@ -13,7 +13,14 @@ def validate_bio_site(user: str) -> Result:
     }
 
     def process(response):
-        if response.status_code == 200 and "bio.site" in response.text.lower():
+        response_text_lower = response.text.lower()
+
+        # 1. Explicit verification of available / not-found state (HTTP 404 or explicit text marker)
+        if response.status_code == 404 or "this bio site doesn’t exist" in response_text_lower or "this bio site doesn't exist" in response_text_lower:
+            return Result.available(url=show_url)
+
+        # 2. Explicit verification of taken state + deep data extraction
+        if response.status_code == 200 and "bio.site" in response_text_lower:
             state_match = re.search(
                 r"window\.initial_state=({[\s\S]+?});\s*window\.additional",
                 response.text,
@@ -37,10 +44,10 @@ def validate_bio_site(user: str) -> Result:
 
                         return Result.taken(extra=extra, media=media, url=show_url)
                 except Exception:
-                    pass
-            return Result.available(url=show_url)
-        elif response.status_code == 404:
-            return Result.available(url=show_url)
+                    return Result.error("Failed to parse initial_state JSON on Bio Site", url=show_url)
+            return Result.error("Could not find profile initial_state on Bio Site", url=show_url)
+
+        # 3. Graceful error for unexpected status codes or unhandled states (No bare else!)
         return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
 
     return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
