@@ -21,7 +21,7 @@
       in {
         default = pkgs.python312Packages.buildPythonApplication {
           pname = "user-scanner";
-          version = "1.5.0";
+          version = "1.5.0.1";
 
           src = self;
 
