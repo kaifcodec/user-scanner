@@ -94,7 +94,9 @@ async def _check(email: str) -> Result:
             response = await client.post(url3, params=params3, data=payload3, headers=headers3)
             body = response.text
 
-            if "These accounts matched your search" in body or "redirectPageTo" in body:
+            if "error\":3252001" in body or "temporarily blocked" in body:
+                return Result.error("Rate limited by Facebook (IP blocked)")
+            elif "These accounts matched your search" in body or "redirectPageTo" in body:
                 return Result.taken(url=show_url)
             elif "No search results" in body or "Your search did not return any results." in body:
                 return Result.available(url=show_url)
