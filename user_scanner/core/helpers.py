@@ -52,6 +52,9 @@ LOUD_MODULES: Dict[str, List[str]] = {
         "fantasia",
         "couplejoy",
         "asafeer",
+        "weverse",
+        "cambly",
+        "superlive",
     ],
 }
 
