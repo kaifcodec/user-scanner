@@ -1,13 +1,13 @@
-import json
 import re
 from datetime import datetime, timezone
 
 from user_scanner.core.impersonate import impersonate_request, impersonate_validate
+from user_scanner.core.nextjs import (
+    parse_next_pages_data,
+    parse_next_pages_redirect,
+)
 from user_scanner.core.result import Result
 
-NEXT_DATA_RE = re.compile(
-    r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.DOTALL
-)
 LANDING_MARKER = '<meta property="og:url" content="https://throne.com/landing">'
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_-]{3,50}$")
 
@@ -30,7 +30,7 @@ def validate_throne(user: str) -> Result:
         if LANDING_MARKER in response.text:
             return Result.available()
 
-        data = json.loads(NEXT_DATA_RE.findall(response.text)[0])
+        data = parse_next_pages_data(response.text) or {}
         page_props = data["props"]["pageProps"]
         # An uncached slug returns an empty shell before Next.js resolves it.
         # Fetch the final profile or not-found result as the browser does.
@@ -42,8 +42,7 @@ def validate_throne(user: str) -> Result:
             data_response.raise_for_status()
             page_props = data_response.json()["pageProps"]
             # Missing profiles are 307 home redirects in 200 JSON, not HTTP redirects.
-            redirected_home = page_props.get("__N_REDIRECT") == "/"
-            if redirected_home and page_props.get("__N_REDIRECT_STATUS") == 307:
+            if parse_next_pages_redirect(page_props) == ("/", 307):
                 return Result.available()
 
         fallback = page_props.get("fallback") or {}

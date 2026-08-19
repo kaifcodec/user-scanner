@@ -1,12 +1,9 @@
-import html
-import json
-import re
 from urllib.parse import quote
 
 from user_scanner.core.helpers import get_random_user_agent
+from user_scanner.core.nextjs import parse_next_pages_data
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
-
 
 GEO_BLOCK_MARKER = "configured to block access from your country"
 
@@ -35,18 +32,9 @@ def validate_yaga_co_za(user: str) -> Result:
                 f"Unexpected response status: {response.status_code}",
             )
 
-        match = re.search(
-            r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
-            response.text,
-            re.DOTALL,
-        )
-        if not match:
-            return Result.error("Could not find Next.js data")
-
-        try:
-            data = json.loads(html.unescape(match.group(1)))
-        except json.JSONDecodeError:
-            return Result.error("Could not parse Next.js data")
+        data = parse_next_pages_data(response.text)
+        if data is None:
+            return Result.error("Could not read Next.js data")
 
         page_props = data.get("props", {}).get("pageProps", {})
         shop = page_props.get("initialShop")

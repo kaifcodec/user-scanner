@@ -1,28 +1,7 @@
-import json
-import re
-
 from user_scanner.core.helpers import get_random_user_agent
+from user_scanner.core.nextjs import parse_next_pages_data
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
-
-
-NEXT_DATA_PATTERN = re.compile(
-    r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
-    re.DOTALL,
-)
-
-
-def _extract_next_data(html: str) -> dict | None:
-    match = NEXT_DATA_PATTERN.search(html)
-    if not match:
-        return None
-
-    try:
-        data = json.loads(match.group(1))
-    except json.JSONDecodeError:
-        return None
-
-    return data if isinstance(data, dict) else None
 
 
 def validate_daily_dev(user):
@@ -39,7 +18,7 @@ def validate_daily_dev(user):
         if response.status_code == 404:
             return Result.available()
 
-        next_data = _extract_next_data(response.text)
+        next_data = parse_next_pages_data(response.text)
         if next_data is None:
             return Result.error(
                 "Could not read __NEXT_DATA__ payload, report it via GitHub issues."

@@ -1,8 +1,7 @@
-import json
-import re
 from datetime import datetime, timezone
 
 from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.nextjs import parse_next_pages_data
 from user_scanner.core.result import Result
 
 
@@ -16,7 +15,8 @@ def validate_buzzfeed(user: str) -> Result:
         if r.status_code != 200:
             return Result.error(f"HTTP {r.status_code}")
 
-        page_props = _page_props(r.text)
+        data = parse_next_pages_data(r.text) or {}
+        page_props = data.get("props", {}).get("pageProps", {})
         user_data = page_props.get("user") or {}
 
         # Section pages (/quizzes, /tasty, /search) answer 200 with the same
@@ -28,17 +28,6 @@ def validate_buzzfeed(user: str) -> Result:
         return Result.taken(extra=extra, media=media)
 
     return impersonate_validate(url, process, allow_redirects=True)
-
-
-def _page_props(text: str) -> dict:
-    match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', text, re.DOTALL)
-    if not match:
-        return {}
-    try:
-        return json.loads(match.group(1)).get("props", {}).get("pageProps", {})
-    except json.JSONDecodeError:
-        return {}
-
 
 def _extract(page_props: dict, user_data: dict) -> tuple[dict, dict]:
     extra: dict = {}

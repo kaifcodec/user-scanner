@@ -1,7 +1,5 @@
-import json
-import re
-
 from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.nextjs import parse_next_pages_data
 from user_scanner.core.orchestrator import Result
 
 
@@ -13,15 +11,10 @@ def validate_magnific(user: str) -> Result:
             return Result.error(f"Unexpected response status: {response.status_code}")
 
         try:
-            match = re.search(
-                r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>',
-                response.text,
-                re.DOTALL,
-            )
-            data = json.loads(match.group(1))
+            data = parse_next_pages_data(response.text) or {}
             page = data.get("page")
             author = data["props"]["pageProps"].get("author")
-        except (AttributeError, json.JSONDecodeError, KeyError, TypeError):
+        except (AttributeError, KeyError, TypeError):
             return Result.error("Invalid Magnific profile data")
 
         if response.status_code == 404:
