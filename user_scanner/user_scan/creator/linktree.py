@@ -1,7 +1,7 @@
-import json
 import re
 
 from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.nextjs import parse_next_pages_data
 from user_scanner.core.result import Result
 
 
@@ -11,18 +11,8 @@ def validate_linktree(user: str) -> Result:
     def process(response):
         html = response.text
 
-        # Try to parse __NEXT_DATA__ first for deep extraction
-        data = {}
-        page_props = {}
-        next_data_match = re.search(
-            r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL
-        )
-        if next_data_match:
-            try:
-                data = json.loads(next_data_match.group(1))
-                page_props = data.get("props", {}).get("pageProps", {})
-            except json.JSONDecodeError:
-                pass
+        data = parse_next_pages_data(html) or {}
+        page_props = data.get("props", {}).get("pageProps", {})
 
         if response.status_code == 404:
             if (

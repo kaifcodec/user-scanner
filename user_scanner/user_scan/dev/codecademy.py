@@ -1,6 +1,6 @@
-from user_scanner.core.orchestrator import generic_validate, Result
-import json
-import re
+from user_scanner.core.nextjs import parse_next_pages_data
+from user_scanner.core.orchestrator import Result, generic_validate
+
 
 def validate_codecademy(user):
     url = f"https://www.codecademy.com/profiles/{user}"
@@ -14,30 +14,27 @@ def validate_codecademy(user):
             return Result.available()
             
         elif response.status_code == 200:
-            try:
-                match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', response.text)
-                if match:
-                    data = json.loads(match.group(1))
-                    user_data = data.get("props", {}).get("pageProps", {}).get("profile", {})
-                    if user_data and user_data.get("username"):
-                        extra = {"is_private": False}
-                        if user_data.get("name"):
-                            extra["name"] = user_data.get("name")
-                        if user_data.get("bio"):
-                            extra["bio"] = user_data.get("bio")
-                        if user_data.get("location"):
-                            extra["location"] = user_data.get("location")
-                        if user_data.get("createdAt"):
-                            extra["joined"] = user_data.get("createdAt")
-                        return Result.taken(extra=extra)
-                    else:
-                        return Result.available()
-                    
-                if f"profiles/{user}" in response.text or user in response.text:
-                    return Result.taken(extra={"is_private": False})
+            data = parse_next_pages_data(response.text)
+            if data:
+                user_data = (
+                    data.get("props", {}).get("pageProps", {}).get("profile", {})
+                )
+                if user_data and user_data.get("username"):
+                    extra = {"is_private": False}
+                    if user_data.get("name"):
+                        extra["name"] = user_data.get("name")
+                    if user_data.get("bio"):
+                        extra["bio"] = user_data.get("bio")
+                    if user_data.get("location"):
+                        extra["location"] = user_data.get("location")
+                    if user_data.get("createdAt"):
+                        extra["joined"] = user_data.get("createdAt")
+                    return Result.taken(extra=extra)
                 return Result.available()
-            except Exception:
-                return Result.error("200 response status with no recognizable data, report it via GitHub issues")
+
+            if f"profiles/{user}" in response.text or user in response.text:
+                return Result.taken(extra={"is_private": False})
+            return Result.available()
 
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
