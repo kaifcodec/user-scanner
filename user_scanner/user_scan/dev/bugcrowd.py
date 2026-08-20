@@ -15,6 +15,9 @@ def validate_bugcrowd(user: str) -> Result:
         if response.status_code == 404 and data.get("error") == "Not Found":
             return Result.available()
 
+        if response.status_code == 404 and not data:
+            return Result.taken(extra={"public": False})
+
         if response.status_code != 200:
             return Result.error(f"Unexpected response status: {response.status_code}")
 
@@ -23,6 +26,7 @@ def validate_bugcrowd(user: str) -> Result:
             return Result.error("Profile response did not match the requested username")
 
         extra = {
+            "public": True,
             "country": data.get("countryCode"),
             "twitter": data.get("twitterUsername"),
             "linkedin": data.get("linkedinUrl"),
