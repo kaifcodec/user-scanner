@@ -4,6 +4,7 @@ import re
 from urllib.parse import quote
 
 from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.nextjs import iter_next_app_flight_chunks
 from user_scanner.core.result import Result
 
 
@@ -58,11 +59,14 @@ def validate_nexusmods(user: str) -> Result:
                 extra[field] = match.group(1)
 
         try:
-            match = re.search(
-                r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*UserByName(?:[^"\\]|\\.)*")\]\)</script>',
-                response.text,
+            flight = next(
+                (
+                    chunk
+                    for chunk in iter_next_app_flight_chunks(response.text)
+                    if "UserByName" in chunk
+                ),
+                "",
             )
-            flight = json.loads(match.group(1))
             member_id = flight.index('"memberId":')
             start = flight.rfind('"data":', 0, member_id) + len('"data":')
             profile = json.JSONDecoder().raw_decode(flight[start:])[0]

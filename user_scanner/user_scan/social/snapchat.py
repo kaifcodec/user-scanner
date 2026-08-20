@@ -1,5 +1,6 @@
 from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import generic_validate, Result
+from user_scanner.core.nextjs import parse_next_pages_data
+from user_scanner.core.orchestrator import Result, generic_validate
 
 
 def validate_snapchat(user):
@@ -28,21 +29,18 @@ def validate_snapchat(user):
         elif response.status_code == 200:
             extra = {}
             media = {}
-            try:
-                import re as local_re
-                import json as local_json
-                m = local_re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', response.text)
-                if m:
-                    next_data = local_json.loads(m.group(1))
-                    user_profile = next_data.get("props", {}).get("pageProps", {}).get("userProfile", {})
-                    u_info = user_profile.get("userInfo", {})
-                    if u_info:
-                        if u_info.get("displayName"):
-                            extra["display_name"] = u_info.get("displayName")
-                        if u_info.get("snapcodeImageUrl"):
-                            media["snapcode"] = u_info.get("snapcodeImageUrl")
-            except Exception:
-                pass
+            next_data = parse_next_pages_data(response.text) or {}
+            user_profile = (
+                next_data.get("props", {})
+                .get("pageProps", {})
+                .get("userProfile", {})
+            )
+            u_info = user_profile.get("userInfo", {})
+            if u_info:
+                if u_info.get("displayName"):
+                    extra["display_name"] = u_info.get("displayName")
+                if u_info.get("snapcodeImageUrl"):
+                    media["snapcode"] = u_info.get("snapcodeImageUrl")
             return Result.taken(extra=extra, media=media)
         else:
             return Result.error(f"HTTP {response.status_code}")
