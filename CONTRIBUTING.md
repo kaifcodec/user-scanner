@@ -136,6 +136,7 @@ def validate_<sitename>(user: str) -> Result:
 2. **Deep Data Extraction:** If the user is found, attempt to extract rich metadata (fullname, location, bio, stats) and return it via `Result.taken(extra={"fullname": "John Doe", ...})`. **If extracting profile pictures, banners, or other images, you MUST pass their URLs in the `media` dictionary** (e.g., `Result.taken(media={"avatar": "https://..."})`), not in `extra`.
 3. **Strict Error Handling:** NEVER use `raise Exception()`. All unhandled states or unexpected status codes must return `Result.error(f"Unexpected status code {resp.status_code}")`.
 4. **Use Orchestrator Helpers:** Use `generic_validate` to standardize `httpx` logic, but write robust `process` callbacks.
+5. **Use Next.js Helpers:** When a site is based on Next.js, use the matching helper from `user_scanner.core.nextjs`: `parse_next_pages_data` for Pages Router `__NEXT_DATA__`, `iter_next_app_flight_chunks` for App Router Flight data, or `parse_next_pages_redirect` for Pages Router JSON redirects. Do not duplicate this parsing in a module.
 
 ---
 
