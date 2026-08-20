@@ -56,7 +56,7 @@ def _enrichment(
             json={
                 "query": PROFILE_QUERY,
                 "variables": {
-                    "ownerType": "User",
+                    "ownerType": "Team",
                     "ownerUsername": user,
                 },
             },
@@ -81,9 +81,9 @@ def _enrichment(
     return extra, {"avatar": str(profile.get("avatar512") or "")}
 
 
-def validate_codepen(user: str) -> Result:
+def validate_codepenteams(user: str) -> Result:
     encoded = quote(user, safe="")
-    url = f"https://codepen.io/{encoded}"
+    url = f"https://codepen.io/team/{encoded}"
 
     def process(response):
         document = response.text
