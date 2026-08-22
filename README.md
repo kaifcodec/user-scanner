@@ -49,6 +49,7 @@ With **400+ total scan vectors**—including **170+ email-integrated sites** and
 - 🔎 **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 400+ platforms.
 - 👤 **Rich Metadata Scraping:** Scrapes avatars, bio descriptions, follower counts, UID numbers, seller statuses, and account attributes.
 - 🔀 **Cross-Scan & Pivot Engine:** Mines handles, profile links, and exposed email addresses from initial scans, automatically pivoting across secondary target vectors.
+- 🤖 **Model Context Protocol (MCP) Server:** Native AI agent integration for Claude Desktop, Cursor, Antigravity, and LLMs to run autonomous OSINT scans and recursive pivots.
 - 🛡️ **Hudson Rock Infostealer Breach Intel:** Query infostealer malware breach logs using the `--hudson` flag for high-priority target correlation.
 - ⚡ **High-Throughput Parallel Engine:** Powered by `httpx` and `curl_cffi` for maximum concurrency with automated TLS fingerprint impersonation.
 - 🔀 **Permutation & Alias Generator:** Wildcard-based username variation generation to catch typosquatting or alternative aliases.
@@ -66,6 +67,9 @@ With **400+ total scan vectors**—including **170+ email-integrated sites** and
 # Upgrade pip and install user-scanner
 python3 -m pip install --upgrade pip
 pip install user-scanner
+
+# Optional: Install with MCP Server support for AI agents
+pip install "user-scanner[mcp]"
 ```
 
 ### 📦 Virtual Environment Setup
@@ -168,6 +172,42 @@ user-scanner -u johndoe -v --all
 # Rotate proxies with pre-scan validation check
 user-scanner -u johndoe -P proxies.txt --validate-proxies
 ```
+
+### 7. AI & LLM Agent Integration (MCP Server)
+
+Connect `user-scanner` directly to AI coding assistants and LLM platforms via the **Model Context Protocol (MCP)**. This enables AI agents (Claude Desktop, Cursor, Antigravity, Open-WebUI) to autonomously investigate handles and emails, pivot on exposed profiles, and analyze digital footprints.
+
+#### Starting the Server
+
+```bash
+# Start the MCP server over standard I/O (stdio)
+user-scanner-mcp
+
+# Optional: Enable verbose logging to stderr
+user-scanner-mcp -v
+```
+
+#### MCP Client Configuration
+
+Add `user-scanner` to your client configuration (e.g. `claude_desktop_config.json` or `mcp_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "user-scanner": {
+      "command": "user-scanner-mcp"
+    }
+  }
+}
+```
+
+#### Exposed AI Tools
+
+| Tool | Description | Capabilities |
+| :--- | :--- | :--- |
+| `scan_username` | Deep username OSINT & profile enrichment across platforms | Targeted scans (`category`, `module`), recursive `cross_scan`, proxy injection, loudness toggles |
+| `scan_email` | Deep email verification & account discovery across platforms | Target scoping, automated link pivoting (`cross_scan`), custom proxies, loudness toggles |
+| `list_available_modules` | Dynamic catalog & module discovery | Allows AI agents to query all supported platforms and categories dynamically |
 
 ---
 
