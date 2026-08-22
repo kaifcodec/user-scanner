@@ -41,6 +41,8 @@ def make_result(site_name="Gravatar", extra=None, found=True, **kwargs):
         ("https://johndoe.github.io", ("github", "johndoe")),
         ("https://bsky.app/profile/johndoe.bsky.social", ("bluesky", "johndoe")),
         ("https://www.reddit.com/user/johndoe/", ("reddit", "johndoe")),
+        ("https://ko-fi.com/johndoe", ("kofi", "johndoe")),
+        ("https://buymeacoffee.com/johndoe", ("buymeacoffee", "johndoe")),
     ],
 )
 def test_resolve_url_reads_the_handle(url, expected):
