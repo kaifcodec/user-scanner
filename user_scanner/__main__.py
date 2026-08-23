@@ -632,25 +632,33 @@ def main():
             
         output_path = args.output or f"{targets_found[0] if targets_found else 'target'}_report.{default_ext}"
 
-        if is_pdf_export:
-            version_str, _ = load_local_version()
-            scan_type_str = "Email" if is_email else "Username"
+        target_to_results = {}
+        for r in results:
+            t = getattr(r, "seed_target", None)
+            if not t:
+                t = getattr(r, "email", None) if is_email else getattr(r, "username", None)
+            if not t:
+                t = targets_found[0] if targets_found else "Target"
+            if t not in target_to_results:
+                target_to_results[t] = []
+            target_to_results[t].append(r)
             
-            if args.cross_scan:
-                scan_type_str = f"Cross-Scan ({scan_type_str})"
+        for t, t_results in target_to_results.items():
+            if len(target_to_results) > 1:
+                if args.output:
+                    base, ext = os.path.splitext(args.output)
+                    t_output = f"{base}_{t}{ext}"
+                else:
+                    t_output = f"{t}_report.{default_ext}"
+            else:
+                t_output = output_path
 
-            target_to_results = {}
-            for r in results:
-                t = getattr(r, "seed_target", None)
-                if not t:
-                    t = getattr(r, "email", None) if is_email else getattr(r, "username", None)
-                if not t:
-                    t = targets_found[0] if targets_found else "Target"
-                if t not in target_to_results:
-                    target_to_results[t] = []
-                target_to_results[t].append(r)
-            
-            for t, t_results in target_to_results.items():
+            if is_pdf_export:
+                version_str, _ = load_local_version()
+                scan_type_str = "Email" if is_email else "Username"
+                if args.cross_scan:
+                    scan_type_str = f"Cross-Scan ({scan_type_str})"
+
                 try:
                     pdf_bytes = formatter.into_pdf(
                         t_results,
@@ -660,15 +668,6 @@ def main():
                         include_media=not args.no_pdf_media,
                         version=version_str,
                     )
-                    if len(target_to_results) > 1:
-                        if args.output:
-                            base, ext = os.path.splitext(args.output)
-                            t_output = f"{base}_{t}{ext}"
-                        else:
-                            t_output = f"{t}_report.pdf"
-                    else:
-                        t_output = output_path
-                        
                     with open(t_output, "wb") as f:
                         f.write(pdf_bytes)
                     print(G + f"\n[+] PDF report saved to {t_output}" + Style.RESET_ALL)
@@ -676,36 +675,38 @@ def main():
                     print(f"\n{R}[✘] PDF export failed for {t}: {e}{X}")
                 except Exception as e:
                     print(f"\n{R}[✘] Failed to generate PDF report for {t}: {e}{X}")
-        elif args.format == "json":
-            new_items = formatter.get_json_data(results)
-            data = []
 
-            if os.path.exists(output_path):
+            elif args.format == "json":
+                new_items = formatter.get_json_data(t_results)
+                data = []
+
+                if os.path.exists(t_output):
+                    try:
+                        with open(t_output, "r", encoding="utf-8") as f:
+                            old = json.load(f)
+                            if isinstance(old, list):
+                                data = old
+                    except (json.JSONDecodeError, Exception):
+                        pass
+
+                data.extend(new_items)
+                with open(t_output, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                print(G + f"\n[+] JSON Results saved to {t_output}" + Style.RESET_ALL)
+
+            elif args.format == "csv":
+                content_csv = formatter.into_csv(t_results)
                 try:
-                    with open(output_path, "r", encoding="utf-8") as f:
-                        old = json.load(f)
-                        if isinstance(old, list):
-                            data = old
-                except (json.JSONDecodeError, Exception):
-                    pass
+                    with open(t_output, "r", encoding="utf-8") as init_file:
+                        has_content = init_file.read().strip() != ""
+                except Exception:
+                    has_content = False
 
-            data.extend(new_items)
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            print(G + f"\n[+] Results saved to {output_path}" + Style.RESET_ALL)
-        else:
-            content = formatter.into_csv(results) if args.format == "csv" else formatter.into_json(results)
-            try:
-                with open(output_path, "r", encoding="utf-8") as init_file:
-                    has_content = init_file.read().strip() != ""
-            except Exception:
-                has_content = False
-
-            with open(output_path, "a", encoding="utf-8") as f:
-                if has_content:
-                    f.write("\n")
-                f.write(content)
-            print(G + f"\n[+] Results saved to {output_path}" + Style.RESET_ALL)
+                with open(t_output, "a", encoding="utf-8") as f:
+                    if has_content:
+                        f.write("\n")
+                    f.write(content_csv)
+                print(G + f"\n[+] CSV Results saved to {t_output}" + Style.RESET_ALL)
 
 
     total_found = len([r for r in results if r.is_found()])
