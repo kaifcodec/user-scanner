@@ -2,11 +2,19 @@ from user_scanner.core.orchestrator import Result, make_request
 
 def validate_wikipedia(user):
     # Using formatversion=2 for a cleaner JSON response
-    api_url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&list=users&ususers={user}&usprop=editcount|registration|gender&formatversion=2"
+    api_url = "https://en.wikipedia.org/w/api.php"
     show_url = f"https://en.wikipedia.org/wiki/User:{user}"
+    params = {
+        "action": "query",
+        "format": "json",
+        "list": "users",
+        "ususers": user,
+        "usprop": "editcount|registration|gender",
+        "formatversion": 2,
+    }
 
     try:
-        response = make_request(api_url, follow_redirects=True, http2=True)
+        response = make_request(api_url, params=params, follow_redirects=True, http2=True)
         if response.status_code == 200:
             data = response.json()
             users = data.get("query", {}).get("users", [])

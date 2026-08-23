@@ -15,7 +15,8 @@ async def _check(email: str) -> Result:
     try:
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
             response = await client.get(
-                f'https://axonaut.com/onboarding/?email={email}',
+                'https://axonaut.com/onboarding/',
+                params={'email': email},
                 headers=headers
             )
 

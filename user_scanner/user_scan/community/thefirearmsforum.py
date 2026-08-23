@@ -20,10 +20,11 @@ PROFILE_PATH_RE = re.compile(r"/members/([^/]+)\.(\d+)/?$")
 
 
 def validate_thefirearmsforum(user: str) -> Result:
-    url = f"{BASE_URL}/members/?username={user}"
+    url = f"{BASE_URL}/members/"
+    params = {"username": user}
 
     try:
-        response = impersonate_request(url)
+        response = impersonate_request(url, params=params)
 
         # The site answers 202 with a JavaScript proof-of-work page; solving it
         # and replaying with the pow_bypass cookie returns the real response.
@@ -31,7 +32,9 @@ def validate_thefirearmsforum(user: str) -> Result:
             cookie = _solve_challenge(response.text)
             if not cookie:
                 return Result.error("Failed to solve PoW challenge", url=url)
-            response = impersonate_request(url, cookies={"pow_bypass": cookie})
+            response = impersonate_request(
+                url, params=params, cookies={"pow_bypass": cookie}
+            )
     except Exception as e:
         return Result.error(e, url=url)
 

@@ -3,7 +3,7 @@ from user_scanner.core.orchestrator import status_validate
 
 
 def validate_threads(user):
-    url = f"https://www.threads.net/api/v1/users/web_profile_info/?username={user}"
+    url = "https://www.threads.net/api/v1/users/web_profile_info/"
     show_url = f"https://www.threads.net/@{user}"
 
     headers = {
@@ -17,5 +17,6 @@ def validate_threads(user):
     }
 
     return status_validate(
-        url, 404, 200, show_url=show_url, headers=headers, http2=True
+        url, 404, 200, show_url=show_url, headers=headers, http2=True,
+        params={"username": user},
     )

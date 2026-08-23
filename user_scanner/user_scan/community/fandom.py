@@ -5,11 +5,15 @@ from user_scanner.core.result import Result
 
 def validate_fandom(user: str) -> Result:
     """Validate a username on Fandom (fandom.com)."""
-    url = (
-        f"https://community.fandom.com/api.php"
-        f"?action=query&list=users&ususers={user}&usprop=registration|gender|editcount|groups&format=json"
-    )
+    url = "https://community.fandom.com/api.php"
     show_url = f"https://community.fandom.com/wiki/User:{user}"
+    params = {
+        "action": "query",
+        "list": "users",
+        "ususers": user,
+        "usprop": "registration|gender|editcount|groups",
+        "format": "json",
+    }
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
@@ -57,4 +61,7 @@ def validate_fandom(user: str) -> Result:
         # 3. Graceful error for unexpected status codes or unhandled responses (No bare else!)
         return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
 
-    return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
+    return generic_validate(
+        url, process, headers=headers, show_url=show_url,
+        follow_redirects=True, params=params,
+    )

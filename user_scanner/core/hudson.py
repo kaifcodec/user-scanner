@@ -57,7 +57,7 @@ def run_hudson_scan(target: str, is_email: bool = False):
     endpoint = "search-by-email" if is_email else "search-by-username"
     param = "email" if is_email else "username"
 
-    url = f"{base_url}{endpoint}?{param}={target}"
+    url = f"{base_url}{endpoint}"
 
     print(f"\n{M}== HUDSON ROCK INFOSTEALER INTELLIGENCE =={X}")
     print(f"{C}[i] Attribution: Data provided by Hudson Rock (https://www.hudsonrock.com){X}")
@@ -65,7 +65,7 @@ def run_hudson_scan(target: str, is_email: bool = False):
 
     try:
         with httpx.Client(timeout=10.0) as client:
-            response = client.get(url)
+            response = client.get(url, params={param: target})
 
             if response.status_code == 200:
                 data = response.json()
