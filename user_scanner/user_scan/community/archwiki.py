@@ -2,8 +2,16 @@ from user_scanner.core.orchestrator import Result, generic_validate
 
 
 def validate_archwiki(user):
-    url = f"https://wiki.archlinux.org/api.php?action=query&format=json&list=users&ususers={user}&usprop=blockinfo|groups|editcount|registration|gender&formatversion=2"
+    url = "https://wiki.archlinux.org/api.php"
     show_url = f"https://wiki.archlinux.org/title/User:{user}"
+    params = {
+        "action": "query",
+        "format": "json",
+        "list": "users",
+        "ususers": user,
+        "usprop": "blockinfo|groups|editcount|registration|gender",
+        "formatversion": 2,
+    }
 
     def process(response):
         try:
@@ -37,4 +45,4 @@ def validate_archwiki(user):
             return Result.error("Unexpected user structure")
         except Exception as e:
             return Result.error(e)
-    return generic_validate(url, process, show_url=show_url)
+    return generic_validate(url, process, show_url=show_url, params=params)

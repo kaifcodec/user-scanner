@@ -14,7 +14,7 @@ def validate_lemmy(user: str) -> Result:
     if not re.match(r"^[a-zA-Z0-9_]+$", user):
         return Result.error("Only letters, numbers, and underscores allowed")
 
-    url = f"https://lemmy.world/api/v3/user?username={user}"
+    url = "https://lemmy.world/api/v3/user"
     show_url = f"https://lemmy.world/u/{user}"
 
     def process(response):
@@ -52,4 +52,6 @@ def validate_lemmy(user: str) -> Result:
             return Result.taken(extra=extra, media=media)
         return Result.error(f"Unexpected status code: {response.status_code}")
 
-    return generic_validate(url, process, show_url=show_url, timeout=5.0)
+    return generic_validate(
+        url, process, show_url=show_url, timeout=5.0, params={"username": user}
+    )

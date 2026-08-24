@@ -8,7 +8,7 @@ from user_scanner.core.result import Result
 def validate_vinted(user: str):
     user = user.lower().strip()
 
-    url = f"https://www.vinted.pt/member/general/search?search_text={user}"
+    url = "https://www.vinted.pt/member/general/search"
     show_url = f"https://www.vinted.pt/member/general/search?search_text={user}"
 
     if not re.match(r"^[a-zA-Z0-9_.-]+$", user):
@@ -39,4 +39,4 @@ def validate_vinted(user: str):
                 extra={"id": id_search[0] if len(id_search) > 0 else None}
             )
 
-    return generic_validate(url, process, show_url=show_url)
+    return generic_validate(url, process, show_url=show_url, params={"search_text": user})

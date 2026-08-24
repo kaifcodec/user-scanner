@@ -1,7 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_pr0gramm(user):
-    url = f"https://pr0gramm.com/api/profile/info?name={user}"
+    url = "https://pr0gramm.com/api/profile/info"
     show_url = f"https://pr0gramm.com/user/{user}"
 
     def process(response):
@@ -28,4 +28,6 @@ def validate_pr0gramm(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers, params={"name": user}
+    )

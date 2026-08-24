@@ -16,6 +16,8 @@ class DummyClient:
     def __init__(self, response=None, exc=None):
         self._response = response
         self._exc = exc
+        self.last_url = None
+        self.last_params = None
 
     def __enter__(self):
         return self
@@ -23,15 +25,23 @@ class DummyClient:
     def __exit__(self, *a):
         return False
 
-    def get(self, url):
+    def get(self, url, params=None):
+        self.last_url = url
+        self.last_params = params
         if self._exc:
             raise self._exc
         return self._response
 
 
 def make_client_factory(response=None, exc=None):
+    instances = []
+
     def factory(*args, **kwargs):
-        return DummyClient(response=response, exc=exc)
+        client = DummyClient(response=response, exc=exc)
+        instances.append(client)
+        return client
+
+    factory.instances = instances
     return factory
 
 
@@ -144,6 +154,24 @@ def test_run_hudson_scan_unexpected_status(monkeypatch, capsys):
     hudson.run_hudson_scan("bob")
     out = capsys.readouterr().out
     assert "Hudson Rock API error: HTTP 500" in out
+
+
+def test_run_hudson_scan_passes_target_via_params(monkeypatch, capsys):
+    # Regression test: the target used to be interpolated directly into the
+    # URL's query string (e.g. "...?email=user+tag@example.com"), which gets
+    # silently mangled by any URL-decoding client/server (the '+' becomes a
+    # space). It must be passed via `params` so httpx encodes it correctly.
+    monkeypatch.setattr(hudson, "check_hudson_permission", lambda target: True)
+    response = DummyResponse(200, {"stealers": []})
+    factory = make_client_factory(response=response)
+    monkeypatch.setattr(hudson.httpx, "Client", factory)
+
+    target = "user+tag@example.com"
+    hudson.run_hudson_scan(target, is_email=True)
+
+    client = factory.instances[-1]
+    assert "?" not in client.last_url  # query string built via params, not the URL
+    assert client.last_params == {"email": target}
 
 
 def test_run_hudson_scan_handles_exception(monkeypatch, capsys):

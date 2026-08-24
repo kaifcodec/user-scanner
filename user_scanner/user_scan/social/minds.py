@@ -2,7 +2,7 @@ from user_scanner.core.orchestrator import generic_validate, Result
 
 
 def validate_minds(user):
-    url = f"https://www.minds.com/api/v3/register/validate?username={user}"
+    url = "https://www.minds.com/api/v3/register/validate"
     show_url = f"https://www.minds.com/{user}"
 
     def process(response):
@@ -14,4 +14,4 @@ def validate_minds(user):
 
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
-    return generic_validate(url, process, show_url=show_url)
+    return generic_validate(url, process, show_url=show_url, params={"username": user})
