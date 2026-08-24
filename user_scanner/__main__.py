@@ -1,7 +1,7 @@
 import argparse
 import json
-import os
 import sys
+import os
 import time
 
 from colorama import Fore, Style
@@ -545,6 +545,7 @@ def main():
                 validated_categories.append(cat_path)
 
     for i, target in enumerate(targets):
+        target_results = []
         if i != 0 and args.delay:
             time.sleep(args.delay)
 
@@ -573,20 +574,20 @@ def main():
                             is_email=is_email,
                         )
                         skipped.show(config)
-                        results.append(skipped)
+                        target_results.append(skipped)
                         continue
                     per_module_config = replace(config, allow_loud=True)
-                    results.extend(fn(module, target, per_module_config))
+                    target_results.extend(fn(module, target, per_module_config))
                 else:
                     modules_to_run.append(module)
 
             if modules_to_run:
-                results.extend(fn(modules_to_run, target, config))
+                target_results.extend(fn(modules_to_run, target, config))
 
         elif args.category:
             fn = run_email_category_batch if is_email else run_user_category
             for cat_path in validated_categories:
-                results.extend(
+                target_results.extend(
                     fn(
                         cat_path,
                         target,
@@ -595,84 +596,117 @@ def main():
                 )
         else:
             fn = run_email_full_batch if is_email else run_user_full
-            results.extend(fn(target, config))
+            target_results.extend(fn(target, config))
 
 
+
+        if args.cross_scan:
+            target_results.extend(
+                run_cross_scan(
+                    target_results,
+                    config,
+                    CrossScanConfig(
+                        links=args.cross_links,
+                        emails=args.cross_emails,
+                        sweep=args.cross_sweep,
+                        depth=args.cross_depth,
+                        modules=_csv_names(args.module),
+                        categories=_csv_names(args.category),
+                    ),
+                )
+            )
+            
+        for r in target_results:
+            r.seed_target = target
+            
+        results.extend(target_results)
     if args.hudson_scan:
         sys.exit(0)
 
-    if args.cross_scan:
-        results.extend(
-            run_cross_scan(
-                results,
-                config,
-                CrossScanConfig(
-                    links=args.cross_links,
-                    emails=args.cross_emails,
-                    sweep=args.cross_sweep,
-                    depth=args.cross_depth,
-                    modules=_csv_names(args.module),
-                    categories=_csv_names(args.category),
-                ),
-            )
-        )
-
     is_pdf_export = args.format == "pdf" or (args.output and args.output.lower().endswith(".pdf"))
 
-    if args.output or is_pdf_export:
-        output_path = args.output or f"{targets_found[0] if targets_found else 'target'}_report.pdf"
-
+    if args.output or args.format:
+        default_ext = args.format if args.format else "pdf"
         if is_pdf_export:
-            version_str, _ = load_local_version()
-            scan_type_str = "Email" if is_email else "Username"
-            if args.cross_scan:
-                scan_type_str = f"Cross-Scan ({scan_type_str})"
-            try:
-                pdf_bytes = formatter.into_pdf(
-                    results,
-                    target=targets_found[0] if targets_found else "Target",
-                    scan_type=scan_type_str,
-                    total_modules=len(results),
-                    include_media=not args.no_pdf_media,
-                    version=version_str,
-                )
-                with open(output_path, "wb") as f:
-                    f.write(pdf_bytes)
-                print(G + f"\n[+] PDF report saved to {output_path}" + Style.RESET_ALL)
-            except ImportError as e:
-                print(f"\n{R}[✘] PDF export failed: {e}{X}")
-            except Exception as e:
-                print(f"\n{R}[✘] Failed to generate PDF report: {e}{X}")
-        elif args.format == "json":
-            new_items = formatter.get_json_data(results)
-            data = []
+            default_ext = "pdf"
+            
+        output_path = args.output or f"{targets_found[0] if targets_found else 'target'}_report.{default_ext}"
 
-            if os.path.exists(output_path):
+        target_to_results = {}
+        for r in results:
+            t = getattr(r, "seed_target", None)
+            if not t:
+                t = getattr(r, "email", None) if is_email else getattr(r, "username", None)
+            if not t:
+                t = targets_found[0] if targets_found else "Target"
+            if t not in target_to_results:
+                target_to_results[t] = []
+            target_to_results[t].append(r)
+            
+        for t, t_results in target_to_results.items():
+            if len(target_to_results) > 1:
+                if args.output:
+                    base, ext = os.path.splitext(args.output)
+                    t_output = f"{base}_{t}{ext}"
+                else:
+                    t_output = f"{t}_report.{default_ext}"
+            else:
+                t_output = output_path
+
+            if is_pdf_export:
+                version_str, _ = load_local_version()
+                scan_type_str = "Email" if is_email else "Username"
+                if args.cross_scan:
+                    scan_type_str = f"Cross-Scan ({scan_type_str})"
+
                 try:
-                    with open(output_path, "r", encoding="utf-8") as f:
-                        old = json.load(f)
-                        if isinstance(old, list):
-                            data = old
-                except (json.JSONDecodeError, Exception):
-                    pass
+                    pdf_bytes = formatter.into_pdf(
+                        t_results,
+                        target=t,
+                        scan_type=scan_type_str,
+                        total_modules=len(t_results),
+                        include_media=not args.no_pdf_media,
+                        version=version_str,
+                    )
+                    with open(t_output, "wb") as f:
+                        f.write(pdf_bytes)
+                    print(G + f"\n[+] PDF report saved to {t_output}" + Style.RESET_ALL)
+                except ImportError as e:
+                    print(f"\n{R}[✘] PDF export failed for {t}: {e}{X}")
+                except Exception as e:
+                    print(f"\n{R}[✘] Failed to generate PDF report for {t}: {e}{X}")
 
-            data.extend(new_items)
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            print(G + f"\n[+] Results saved to {output_path}" + Style.RESET_ALL)
-        else:
-            content = formatter.into_csv(results) if args.format == "csv" else formatter.into_json(results)
-            try:
-                with open(output_path, "r", encoding="utf-8") as init_file:
-                    has_content = init_file.read().strip() != ""
-            except Exception:
-                has_content = False
+            elif args.format == "json":
+                new_items = formatter.get_json_data(t_results)
+                data = []
 
-            with open(output_path, "a", encoding="utf-8") as f:
-                if has_content:
-                    f.write("\n")
-                f.write(content)
-            print(G + f"\n[+] Results saved to {output_path}" + Style.RESET_ALL)
+                if os.path.exists(t_output):
+                    try:
+                        with open(t_output, "r", encoding="utf-8") as f:
+                            old = json.load(f)
+                            if isinstance(old, list):
+                                data = old
+                    except (json.JSONDecodeError, Exception):
+                        pass
+
+                data.extend(new_items)
+                with open(t_output, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                print(G + f"\n[+] JSON Results saved to {t_output}" + Style.RESET_ALL)
+
+            elif args.format == "csv":
+                content_csv = formatter.into_csv(t_results)
+                try:
+                    with open(t_output, "r", encoding="utf-8") as init_file:
+                        has_content = init_file.read().strip() != ""
+                except Exception:
+                    has_content = False
+
+                with open(t_output, "a", encoding="utf-8") as f:
+                    if has_content:
+                        f.write("\n")
+                    f.write(content_csv)
+                print(G + f"\n[+] CSV Results saved to {t_output}" + Style.RESET_ALL)
 
 
     total_found = len([r for r in results if r.is_found()])
