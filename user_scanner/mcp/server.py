@@ -18,21 +18,24 @@ from user_scanner.mcp.handlers import call_tool
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    stream=sys.stderr
+    stream=sys.stderr,
 )
 logger = logging.getLogger("user-scanner-mcp")
 
 app = Server("user-scanner")
 
-@app.list_tools()  # type: ignore
+
+@app.list_tools()  # type: ignore[attr-defined]
 async def handle_list_tools():
     """Provide the list of tools available from this server."""
     return get_tool_list()
 
-@app.call_tool()  # type: ignore
+
+@app.call_tool()  # type: ignore[attr-defined]
 async def handle_call_tool(name: str, arguments: dict | None):
     """Execute the requested tool and return the OSINT scan results."""
     return await call_tool(name, arguments)
+
 
 async def run():
     """Run the server over standard input/output streams."""
@@ -40,13 +43,18 @@ async def run():
         await app.run(
             read_stream,
             write_stream,
-            app.create_initialization_options()
+            app.create_initialization_options(),
         )
+
 
 def main():
     """Entry point for the MCP server script."""
     parser = argparse.ArgumentParser(description="user-scanner MCP server")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging output to stderr")
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose logging output to stderr",
+    )
     args = parser.parse_args()
 
     if not args.verbose:
@@ -54,8 +62,9 @@ def main():
     else:
         logger.setLevel(logging.INFO)
         logger.info("Starting user-scanner MCP server over stdio in verbose mode...")
-        
+
     asyncio.run(run())
+
 
 if __name__ == "__main__":
     main()
