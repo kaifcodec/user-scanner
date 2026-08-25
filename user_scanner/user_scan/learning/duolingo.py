@@ -1,7 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_duolingo(user):
-    url = f"https://www.duolingo.com/2017-06-30/users?username={user}"
+    url = "https://www.duolingo.com/2017-06-30/users"
     show_url = f"https://www.duolingo.com/profile/{user}"
 
     def process(response):
@@ -33,4 +33,6 @@ def validate_duolingo(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers, params={"username": user}
+    )

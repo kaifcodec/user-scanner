@@ -2,11 +2,11 @@ from user_scanner.core.orchestrator import Result, make_request
 
 
 def validate_devto(user):
-    url = f"https://dev.to/api/users/by_username?url={user}"
+    url = "https://dev.to/api/users/by_username"
     show_url = f"https://dev.to/{user}"
 
     try:
-        response = make_request(url, follow_redirects=True)
+        response = make_request(url, params={"url": user}, follow_redirects=True)
         if response.status_code == 200:
             data = response.json()
             extra = {}

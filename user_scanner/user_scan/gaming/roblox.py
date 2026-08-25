@@ -120,9 +120,10 @@ def validate_roblox(user: str) -> Result:
 
     # If rate limited, uses a simple status validation
     return status_validate(
-        f"https://www.roblox.com/user.aspx?username={user}",
+        "https://www.roblox.com/user.aspx",
         404,
         [200, 302],
         show_url="https://roblox.com",
         follow_redirects=True,
+        params={"username": user},
     )

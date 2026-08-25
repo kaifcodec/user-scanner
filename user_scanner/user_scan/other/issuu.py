@@ -4,16 +4,26 @@ from user_scanner.core.orchestrator import Result, make_request
 
 def validate_issuu(user: str) -> Result:
     url = f"https://issuu.com/{user}"
-    api_url = f"https://issuu.com/query?format=json&_=3210224608766&profileUsername={user}&action=issuu.user.get_anonymous"
-    
+    api_url = "https://issuu.com/query"
+
     headers = {
         "User-Agent": get_random_user_agent(),
         "Accept": "application/json",
         "Referer": url,
     }
-    
+
     try:
-        response = make_request(api_url, headers=headers, follow_redirects=True)
+        response = make_request(
+            api_url,
+            params={
+                "format": "json",
+                "_": "3210224608766",
+                "profileUsername": user,
+                "action": "issuu.user.get_anonymous",
+            },
+            headers=headers,
+            follow_redirects=True,
+        )
         text = response.text
         
         if response.status_code == 200 and "displayName" in text:

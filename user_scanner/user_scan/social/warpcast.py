@@ -1,7 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_warpcast(user):
-    url = f"https://client.warpcast.com/v2/user-by-username?username={user}"
+    url = "https://client.warpcast.com/v2/user-by-username"
     show_url = f"https://warpcast.com/{user}"
 
     def process(response):
@@ -31,4 +31,6 @@ def validate_warpcast(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers, params={"username": user}
+    )

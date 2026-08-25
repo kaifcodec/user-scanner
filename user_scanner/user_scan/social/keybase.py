@@ -1,7 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_keybase(user):
-    url = f"https://keybase.io/_/api/1.0/user/lookup.json?usernames={user}"
+    url = "https://keybase.io/_/api/1.0/user/lookup.json"
     show_url = f"https://keybase.io/{user}"
 
     def process(response):
@@ -45,4 +45,6 @@ def validate_keybase(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     headers = {"Accept": "application/json"}
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers, params={"usernames": user}
+    )

@@ -1,7 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_codeforces(user):
-    url = f"https://codeforces.com/api/user.info?handles={user}"
+    url = "https://codeforces.com/api/user.info"
     show_url = f"https://codeforces.com/profile/{user}"
 
     def process(response):
@@ -41,4 +41,6 @@ def validate_codeforces(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers, params={"handles": user}
+    )

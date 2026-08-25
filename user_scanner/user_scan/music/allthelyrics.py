@@ -1,14 +1,15 @@
 from user_scanner.core.orchestrator import Result, make_request
 
 def validate_allthelyrics(user):
-    url = f"https://www.allthelyrics.com/forum/member.php?username={user}"
+    url = "https://www.allthelyrics.com/forum/member.php"
     show_url = f"https://www.allthelyrics.com/forum/members/{user}.html"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     }
-    
+
     try:
-        response = make_request(url, headers=headers, follow_redirects=True)
+        response = make_request(
+            url, params={"username": user}, headers=headers, follow_redirects=True)
         html = response.text
         
         if "The server is too busy" in html:
