@@ -1,9 +1,22 @@
+import json
 from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_500px(user):
-    # Notice we pass the variables in URL encoded form, matching the query we inspected
-    url = f"https://api.500px.com/graphql?query=query%28%24username%3AString%21%29%7BuserByUsername%28username%3A%24username%29%7Bid%20legacyId%20username%20displayName%20firstName%20lastName%20registeredAt%20userProfile%7Bfirstname%20lastname%20about%20country%20city%20state%7DsocialMedia%7Bwebsite%20twitter%20facebook%20instagram%7D%7D%7D&variables=%7B%22username%22%3A%22{user}%22%7D"
+    url = "https://api.500px.com/graphql"
     show_url = f"https://500px.com/{user}"
+
+    graphql_query = (
+        "query($username:String!){"
+        "userByUsername(username:$username){"
+        "id legacyId username displayName firstName lastName registeredAt "
+        "userProfile{firstname lastname about country city state}"
+        "socialMedia{website twitter facebook instagram}"
+        "}}"
+    )
+    params = {
+        "query": graphql_query,
+        "variables": json.dumps({"username": user}),
+    }
 
     def process(response):
         if response.status_code == 200:
@@ -18,7 +31,7 @@ def validate_500px(user):
                         extra['displayName'] = user_data.get('displayName')
                     if user_data.get('registeredAt'):
                         extra['registeredAt'] = user_data.get('registeredAt')
-                    
+
                     profile = user_data.get('userProfile', {})
                     if profile.get('country'):
                         extra['country'] = profile.get('country')
@@ -26,7 +39,7 @@ def validate_500px(user):
                         extra['city'] = profile.get('city')
                     if profile.get('about'):
                         extra['about'] = profile.get('about')
-                        
+
                     social = user_data.get('socialMedia', {})
                     for net in ['website', 'twitter', 'facebook', 'instagram']:
                         if social.get(net):
@@ -39,8 +52,8 @@ def validate_500px(user):
                 pass
         elif response.status_code == 404:
             return Result.available()
-            
+
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     headers = {"Accept": "application/json"}
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(url, process, show_url=show_url, params=params, headers=headers)
