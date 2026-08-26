@@ -26,12 +26,14 @@ keywords = ["osint", "email-osint", "username-osint", "python", "cli-tool", "cyb
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov", "pytest-anyio", "anyio[trio]"]
 pdf = ["reportlab>=4.0.0", "pillow>=10.0.0", "svglib>=1.5.0"]
+mcp = ["mcp>=1.2.0,<2"]
 
 [project.urls]
 Homepage = "https://github.com/kaifcodec/user-scanner"
 
 [project.scripts]
 user-scanner = "user_scanner.__main__:main"
+user-scanner-mcp = "user_scanner.mcp.server:main"
 
 [tool.flit.module]
 name = "user_scanner"

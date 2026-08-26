@@ -71,7 +71,7 @@ class ScanConfig:
 
 _global_timeout: Optional[float] = None
 
-def set_global_timeout(timeout: float) -> None:
+def set_global_timeout(timeout: Optional[float]) -> None:
     global _global_timeout
     _global_timeout = timeout
 
