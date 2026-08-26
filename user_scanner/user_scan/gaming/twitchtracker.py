@@ -12,12 +12,17 @@ def validate_twitchtracker(user: str) -> Result:
     }
 
     def process(response) -> Result:
-        if response.status_code == 200:
-            extra: dict[str, str] = {}
-            media: dict[str, str] = {}
+        if response.status_code == 404:
+            if "404 Page Not Found" in response.text or "Page Not Found" in response.text or "404" in response.text:
+                return Result.available()
+            return Result.error("404 received without expected not-found markers")
 
+        if response.status_code == 200:
             # Check if page is an active channel profile
-            if f"name: '{user}'" in response.text or f"name: '{user.lower()}'" in response.text.lower() or "Streamer Overview" in response.text:
+            if "Streamer Overview" in response.text or f"name: '{user}'" in response.text.lower() or f"name: '{user.lower()}'" in response.text.lower():
+                extra: dict[str, str] = {}
+                media: dict[str, str] = {}
+
                 rank_match = re.search(r'#([0-9,]+)\s*</div>\s*<div[^>]*>\s*RANK', response.text, re.I)
                 if rank_match:
                     extra["rank"] = rank_match.group(1).replace(",", "")
@@ -36,10 +41,10 @@ def validate_twitchtracker(user: str) -> Result:
 
                 return Result.taken(url=show_url, extra=extra, media=media)
 
-            return Result.available()
+            if "404 Page Not Found" in response.text or "Page Not Found" in response.text:
+                return Result.available()
 
-        if response.status_code == 404:
-            return Result.available()
+            return Result.error("Unable to verify TwitchTracker profile structure")
 
         return Result.error(f"Unexpected status code: {response.status_code}")
 
