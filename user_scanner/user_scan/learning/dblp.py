@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 
 def validate_dblp(user: str) -> Result:
     """Validate an author/researcher username on DBLP (dblp.org)."""
-    url = f"https://dblp.org/search/author/api?q={user}&format=json"
+    url = "https://dblp.org/search/author/api"
     show_url = f"https://dblp.org/search/author?q={user}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -49,4 +49,7 @@ def validate_dblp(user: str) -> Result:
         # 3. Graceful error for unexpected status codes or unhandled responses (No bare else!)
         return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
 
-    return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
+    return generic_validate(
+        url, process, headers=headers, show_url=show_url, follow_redirects=True,
+        params={"q": user, "format": "json"},
+    )

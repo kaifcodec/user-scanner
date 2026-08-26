@@ -14,10 +14,8 @@ def validate_protonmail(user: str) -> Result:
     """
 
     # Use the same endpoint described in the issue; keep params explicit.
-    url = (
-        "https://account.proton.me/api/core/v4/users/available"
-        f"?Name={user}%40proton.me&ParseDomain=1"
-    )
+    url = "https://account.proton.me/api/core/v4/users/available"
+    params = {"Name": f"{user}@proton.me", "ParseDomain": "1"}
     show_url = "https://account.proton.me"
 
     headers = {
@@ -43,4 +41,4 @@ def validate_protonmail(user: str) -> Result:
 
         return Result.error(f"Unexpected Proton response code: {code}")
 
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(url, process, show_url=show_url, headers=headers, params=params)

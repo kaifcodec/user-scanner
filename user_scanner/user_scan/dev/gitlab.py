@@ -4,7 +4,7 @@ from user_scanner.core.result import Result
 
 
 def validate_gitlab(user):
-    url = f"https://gitlab.com/api/v4/users?username={user}"
+    url = "https://gitlab.com/api/v4/users"
     show_url = f"https://gitlab.com/{user}"
 
     headers = {
@@ -50,4 +50,6 @@ def validate_gitlab(user):
                     return Result.taken(extra=extra, media=media)
         return Result.error(f"Unexpected status or response: {response.status_code}")
 
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers, params={"username": user}
+    )

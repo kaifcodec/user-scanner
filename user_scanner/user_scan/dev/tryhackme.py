@@ -26,7 +26,7 @@ def validate_tryhackme(user: str) -> Result:
     "Profile not found"}. An existing user returns 200 with
     {"status": "success", "data": {...profile fields...}}.
     """
-    url = f"https://tryhackme.com/api/v2/public-profile?username={user}"
+    url = "https://tryhackme.com/api/v2/public-profile"
     show_url = f"https://tryhackme.com/p/{user}"
 
     def process(response):
@@ -83,4 +83,5 @@ def validate_tryhackme(user: str) -> Result:
         impersonate="chrome",
         show_url=show_url,
         allow_redirects=True,
+        params={"username": user},
     )

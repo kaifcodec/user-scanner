@@ -13,7 +13,7 @@ def validate_instagram(user: str) -> Result:
         )
 
     show_url = f"https://www.instagram.com/{user}/"
-    api_url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={user}"
+    api_url = "https://www.instagram.com/api/v1/users/web_profile_info/"
 
     headers = {
         "User-Agent": get_random_user_agent(),
@@ -24,7 +24,7 @@ def validate_instagram(user: str) -> Result:
 
     try:
         response = make_request(
-            api_url, headers=headers, http2=True, timeout=10)
+            api_url, params={"username": user}, headers=headers, http2=True, timeout=10)
 
         if response.status_code == 200:
             try:

@@ -1,7 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_freelancer(user):
-    url = f"https://www.freelancer.com/api/users/0.1/users?usernames%5B%5D={user}&compact=true"
+    url = "https://www.freelancer.com/api/users/0.1/users"
     show_url = f"https://www.freelancer.com/u/{user}"
 
     def process(response):
@@ -32,4 +32,7 @@ def validate_freelancer(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers,
+        params={"usernames[]": user, "compact": "true"},
+    )

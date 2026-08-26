@@ -4,16 +4,17 @@ from user_scanner.core.orchestrator import Result, make_request
 
 def validate_yandexmusic(user: str) -> Result:
     url = f"https://music.yandex.ru/users/{user}"
-    api_url = f"https://music.yandex.ru/handlers/library.jsx?owner={user}"
-    
+    api_url = "https://music.yandex.ru/handlers/library.jsx"
+
     headers = {
         "User-Agent": get_random_user_agent(),
         "Referer": f"{url}/playlists",
         "Accept": "application/json",
     }
-    
+
     try:
-        response = make_request(api_url, headers=headers, follow_redirects=True)
+        response = make_request(
+            api_url, params={"owner": user}, headers=headers, follow_redirects=True)
         if response.status_code == 200:
             try:
                 data = response.json()

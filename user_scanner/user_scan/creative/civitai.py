@@ -5,7 +5,7 @@ from user_scanner.core.result import Result
 
 def validate_civitai(user: str) -> Result:
     """Validate a creator on Civitai (civitai.com)."""
-    url = f"https://civitai.com/api/v1/creators?query={user}"
+    url = "https://civitai.com/api/v1/creators"
     show_url = f"https://civitai.com/user/{user}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -58,4 +58,7 @@ def validate_civitai(user: str) -> Result:
         # 3. Graceful error for unexpected status codes (No bare else!)
         return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
 
-    return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
+    return generic_validate(
+        url, process, headers=headers, show_url=show_url,
+        follow_redirects=True, params={"query": user},
+    )

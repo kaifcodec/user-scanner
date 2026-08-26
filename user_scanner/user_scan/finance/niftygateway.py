@@ -1,7 +1,7 @@
 from user_scanner.core.orchestrator import generic_validate, Result
 
 def validate_niftygateway(user):
-    url = f"https://api.niftygateway.com/user/profile-and-offchain-nifties-by-url/?profile_url={user}"
+    url = "https://api.niftygateway.com/user/profile-and-offchain-nifties-by-url/"
     show_url = f"https://niftygateway.com/profile/{user}"
 
     def process(response):
@@ -32,4 +32,6 @@ def validate_niftygateway(user):
         return Result.error("Unexpected response body, report it via GitHub issues.")
 
     headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-    return generic_validate(url, process, show_url=show_url, headers=headers)
+    return generic_validate(
+        url, process, show_url=show_url, headers=headers, params={"profile_url": user}
+    )

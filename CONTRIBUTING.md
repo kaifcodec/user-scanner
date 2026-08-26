@@ -226,6 +226,38 @@ For multi-step flows, use `impersonate_request` directly. It returns the raw `cu
 - **Purpose:** Simple helper for sites where availability can be determined purely from HTTP status codes (e.g., 404 = available, 200 = taken).
 - **Warning:** Use this *only* as a last resort if the site has absolutely no WAF and reliably returns strict HTTP codes without custom redirect/error pages. Modern sites heavily punish this approach.
 
+### 4. URL construction and user input
+
+Never interpolate user-controlled input (`user`, `email`, `target`, etc.) directly
+into a URL string:
+
+```python
+# ❌ Don't do this — special characters (&, #, %, +, whitespace, non-ASCII)
+# can corrupt the request or inject unintended query parameters
+url = f"https://example.com/api/users?username={user}"
+```
+
+Instead, build the URL without the value and pass it via `params`. This is
+supported by `generic_validate`, `make_request`, `status_validate`, and
+`impersonate_request`, and encodes correctly regardless of what the input
+contains:
+
+```python
+# ✅ Do this
+url = "https://example.com/api/users"
+return generic_validate(url, process, show_url=show_url, params={"username": user})
+```
+
+If a module needs a separate human-facing URL (e.g. to show the profile link
+in results), keep that as its own `show_url` built with an f-string — it's
+just for display and isn't sent as a request, so interpolation there is fine:
+
+```python
+url = "https://example.com/api/users"
+show_url = f"https://example.com/{user}"  # display only, not a request
+return generic_validate(url, process, show_url=show_url, params={"username": user})
+```
+
 ---
 
 ## Return values and error handling

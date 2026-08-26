@@ -16,7 +16,7 @@ def validate_mastodon(user: str) -> Result:
     if not re.match(r"^[a-zA-Z0-9].*[a-zA-Z0-9]$", user):
         return Result.error("Username must start and end with a letter or number")
 
-    url = f"https://mastodon.social/api/v1/accounts/lookup?acct={user}"
+    url = "https://mastodon.social/api/v1/accounts/lookup"
     show_url = f"https://mastodon.social/@{user}"
 
     def process(response):
@@ -50,5 +50,6 @@ def validate_mastodon(user: str) -> Result:
             return Result.error(f"HTTP {response.status_code}")
 
     return generic_validate(
-        url, process, show_url=show_url, follow_redirects=True
+        url, process, show_url=show_url, follow_redirects=True,
+        params={"acct": user},
     )
