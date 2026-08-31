@@ -68,41 +68,59 @@ async def _check(email: str) -> Result:
             headers_validate["x-apollo-operation"] = "ValidateEmail"
             headers_validate["x-emb-path"] = "/graphql/ValidateEmail"
 
-            payload_validate = {
-                "operationName": "ValidateEmail",
-                "variables": {
-                    "email": email
-                },
-                "query": "query ValidateEmail($email: String!) { auth { isEmailValid(email: $email) } }",
-                "extensions": {
-                    "clientLibrary": {
-                        "name": "apollo-kotlin",
-                        "version": "4.4.3",
-                    }
-                },
-            }
+            async def check(address: str) -> bool | Result:
+                payload = {
+                    "operationName": "ValidateEmail",
+                    "variables": {"email": address},
+                    "query": "query ValidateEmail($email: String!) { auth { isEmailValid(email: $email) } }",
+                    "extensions": {
+                        "clientLibrary": {
+                            "name": "apollo-kotlin",
+                            "version": "4.4.3",
+                        }
+                    },
+                }
+                response = await client.post(
+                    validate_url,
+                    json=payload,
+                    headers=headers_validate,
+                    timeout=6.0,
+                )
 
-            response = await client.post(validate_url, json=payload_validate, headers=headers_validate, timeout=6.0)
+                if response.status_code == 429:
+                    return Result.error("Rate limited", url=show_url)
 
-            if response.status_code == 429:
-                return Result.error("Rate limited", url=show_url)
+                if response.status_code != 200:
+                    return Result.error(
+                        f"Unexpected response status: {response.status_code}, report it via GitHub issues",
+                        url=show_url,
+                    )
 
-            if response.status_code == 200:
-                data = response.json()
-                auth_data = data.get("data", {}).get("auth", {})
-                if "isEmailValid" in auth_data:
-                    is_valid = auth_data["isEmailValid"]
-                    if is_valid is False:
-                        return Result.taken(url=show_url)
-                    elif is_valid is True:
-                        return Result.available(url=show_url)
+                is_valid = response.json().get("data", {}).get("auth", {}).get("isEmailValid")
+                if isinstance(is_valid, bool):
+                    return is_valid
 
                 return Result.error("Unexpected response body, report it via GitHub issues", url=show_url)
 
-            return Result.error(
-                f"Unexpected response status: {response.status_code}, report it via GitHub issues",
-                url=show_url,
-            )
+            is_valid = await check(email)
+            if isinstance(is_valid, Result):
+                return is_valid
+
+            if is_valid:
+                return Result.available(url=show_url)
+
+            domain = email.rsplit("@", 1)[-1]
+            probe = await check(f"{secrets.token_hex(16)}@{domain}")
+            if isinstance(probe, Result):
+                return probe
+
+            if probe is False:
+                return Result.available(
+                    reason=f"OkCupid rejects registrations from '{domain}'",
+                    url=show_url,
+                )
+
+            return Result.taken(url=show_url)
 
         except Exception as e:
             return Result.error(e, url=show_url)
