@@ -2,6 +2,16 @@ import httpx
 import re
 from user_scanner.core.result import Result
 
+# screener.in renders its "field required" error with Django's errorlist markup.
+# Django now emits an id on that <ul> (id="id_<field>_error"), so the previous
+# exact-tag string match stopped matching and every address fell through to the
+# "unexpected response body structure" error. Match on the class and the message
+# it wraps instead, so the check survives further attribute changes.
+_REQUIRED_FIELD_ERROR = re.compile(
+    r'<ul[^>]*\sclass="[^"]*\berrorlist\b[^"]*"[^>]*>\s*<li>\s*This field is required\.\s*</li>',
+    re.IGNORECASE,
+)
+
 
 async def _check(email: str) -> Result:
     url = "https://www.screener.in/register/"
@@ -65,7 +75,7 @@ async def _check(email: str) -> Result:
             if "User account with this Email already exists" in res_text:
                 return Result.taken(url=show_url)
 
-            if '<ul class="errorlist"><li>This field is required.</li>' in res_text:
+            if _REQUIRED_FIELD_ERROR.search(res_text):
                 return Result.available(url=show_url)
 
             return Result.error("Unexpected response body structure, report it via GitHub issues")
