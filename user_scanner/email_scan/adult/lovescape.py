@@ -1,7 +1,7 @@
 import httpx
-import json
 import re
 from user_scanner.core.result import Result
+
 
 async def _get_guest_uuid(client: httpx.AsyncClient) -> str:
     """Get a guest UUID from the config endpoint."""
@@ -11,9 +11,11 @@ async def _get_guest_uuid(client: httpx.AsyncClient) -> str:
         if config_response.status_code == 200:
             config_data = config_response.json()
             return config_data.get("guestUuid", "")
-    except Exception:
+    except (httpx.HTTPError, httpx.TimeoutException):
+        # Config endpoint may be unavailable; fallback to empty string
         pass
     return ""
+
 
 async def _check(email: str) -> Result:
     url = "https://lovescape.com/api/front/auth/signup"
@@ -36,7 +38,7 @@ async def _check(email: str) -> Result:
         async with httpx.AsyncClient(timeout=15.0) as client:
             # Step 1: Get guest UUID from config endpoint
             guest_uuid = await _get_guest_uuid(client)
-            
+
             # If no guest UUID, try to get it from the signup page
             if not guest_uuid:
                 try:
@@ -46,7 +48,8 @@ async def _check(email: str) -> Result:
                         uuid_match = re.search(r'guestUuid=([^;]+)', cookies)
                         if uuid_match:
                             guest_uuid = uuid_match.group(1)
-                except Exception:
+                except (httpx.HTTPError, httpx.TimeoutException):
+                    # Signup page may be unavailable; continue with empty UUID
                     pass
 
             # Step 2: Build payload with guest UUID
@@ -69,7 +72,7 @@ async def _check(email: str) -> Result:
                 "os": "Android",
                 "locale": "en",
                 "authType": "native",
-                "guestUuid": guest_uuid,  # <-- THIS IS THE FIX
+                "guestUuid": guest_uuid,
                 "ampl": {
                     "ep": {
                         "source": "page_signup",
@@ -116,8 +119,11 @@ async def _check(email: str) -> Result:
 
             return Result.error(f"Unexpected: {error_msg}")
 
+    except (httpx.HTTPError, httpx.TimeoutException) as e:
+        return Result.error(f"Network error: {str(e)}")
     except Exception as e:
         return Result.error(str(e))
+
 
 async def validate_lovescape(email: str) -> Result:
     return await _check(email)
