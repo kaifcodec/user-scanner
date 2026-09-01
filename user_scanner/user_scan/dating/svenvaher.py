@@ -24,6 +24,12 @@ def validate_svenvaher(user: str) -> Result:
 
     def process(response: httpx.Response) -> Result:
         if (
+            response.status_code == 403
+            and "<title>Attention Required! | Cloudflare</title>" in response.text
+            and "Sorry, you have been blocked" in response.text
+        ):
+            return Result.error("Blocked by SvenVaher Cloudflare security")
+        if (
             response.status_code == 404
             and "<title>404 Ei leitud</title>" in response.text
         ):

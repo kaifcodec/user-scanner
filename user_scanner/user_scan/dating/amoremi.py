@@ -15,9 +15,10 @@ def validate_amoremi(user: str) -> Result:
     url = f"https://www.amoremi.ee/user/{quote(username, safe='')}"
 
     def process(response: httpx.Response) -> Result:
-        if (
-            response.status_code == 404
-            and "<title>Lehekülge ei leitud</title>" in response.text
+        if response.status_code == 404 and (
+            "<title>Lehekülge ei leitud</title>" in response.text
+            or f'Kasutajat nimega "{html.escape(username)}" ei eksisteeri.'
+            in response.text
         ):
             return Result.available()
         if response.status_code != 200:

@@ -1,10 +1,10 @@
 import html
 import re
-from urllib.parse import quote, unquote, urljoin
+from urllib.parse import quote, urljoin
 
 import httpx
 
-from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.orchestrator import generic_validate, make_request
 from user_scanner.core.result import Result
 
 
@@ -12,30 +12,15 @@ def validate_neanky(user: str) -> Result:
     username = user.strip()
     url = f"https://neanky.ee/user/{quote(username, safe='')}"
 
-    def process(response: httpx.Response) -> Result:
-        if (
-            response.status_code == 404
-            and "Kasutajat ei leitud | Neanky suhtlusvõrgustik" in response.text
-        ):
-            return Result.available()
+    def process_profile(response: httpx.Response) -> Result:
         if response.status_code != 200:
-            return Result.error(f"Unexpected response status: {response.status_code}")
+            return Result.taken()
 
-        pending = re.search(
+        if pending := re.search(
             r"Soovitud kasutaja ei ole hetkel veel aktiveeritud!<br>\s*"
             r"Konto registreeritud:\s*([^<]+)<br>",
             response.text,
-        )
-        canonical = re.search(
-            r'<link rel="canonical" href="https://neanky\.ee/user/([^"?#]+)">',
-            response.text,
-        )
-        if pending and canonical:
-            profile_user = html.unescape(unquote(canonical.group(1))).strip()
-            if profile_user.casefold() != username.casefold():
-                return Result.error(
-                    "Profile response does not match the requested handle"
-                )
+        ):
             return Result.taken(
                 extra={
                     "account_status": "pending_activation",
@@ -49,11 +34,7 @@ def validate_neanky(user: str) -> Result:
             re.DOTALL,
         )
         if not match:
-            return Result.error("Could not verify profile page")
-
-        profile_user = _text(match.group(1))
-        if profile_user.casefold() != username.casefold():
-            return Result.error("Profile response does not match the requested handle")
+            return Result.taken()
 
         extra: dict[str, object] = {}
         if name := re.search(r"Nimi:\s*<strong>(.*?)</strong>", response.text):
@@ -75,7 +56,30 @@ def validate_neanky(user: str) -> Result:
             media["avatar"] = urljoin("https://neanky.ee", avatar.group(1))
         return Result.taken(extra=extra, media=media)
 
-    return generic_validate(url, process, show_url=url)
+    def process_availability(response: httpx.Response) -> Result:
+        if response.status_code != 200:
+            return Result.error(f"Unexpected response status: {response.status_code}")
+        data = response.json()
+        if data.get("user", {}).get("username", "").casefold() != username.casefold():
+            return Result.error(
+                "Availability response does not match the requested handle"
+            )
+        if data.get("state") == 1:
+            return Result.available()
+        if data.get("state") != 0:
+            return Result.error("Could not verify username availability")
+        try:
+            return process_profile(make_request(url))
+        except httpx.HTTPError:
+            return Result.taken()
+
+    return generic_validate(
+        "https://neanky.ee/p/register",
+        process_availability,
+        method="POST",
+        data={"username": username, "type": "validateusername"},
+        show_url=url,
+    )
 
 
 def _text(value: str) -> str:

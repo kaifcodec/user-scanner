@@ -14,6 +14,11 @@ def validate_tutvused(user: str) -> Result:
 
     def process(response: httpx.Response) -> Result:
         if (
+            "<title>One moment, please...</title>" in response.text
+            and "Please wait while your request is being verified..." in response.text
+        ):
+            return Result.error("Blocked by Tutvused bot challenge")
+        if (
             response.status_code == 404
             and "<title>Page not found - Tutvused</title>" in response.text
         ):

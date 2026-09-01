@@ -79,12 +79,12 @@ def validate_iha(user: str) -> Result:
                 media=_media(response.text, user_id.group(1) if user_id else None),
             )
 
-        if (
-            re.search(
-                r"<title>\s*Iha\.ee - Seksikate inimeste kohtumispaik\s*</title>",
-                response.text,
-            )
-            and 'id="online_list"' in response.text
+        if re.search(
+            r"<title>\s*Iha\.ee - Seksikate inimeste kohtumispaik\s*</title>",
+            response.text,
+        ) and (
+            'id="online_list"' in response.text
+            or "Sellist kasutajat ei leitud" in response.text
         ):
             return Result.available()
 
