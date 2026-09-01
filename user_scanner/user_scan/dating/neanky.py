@@ -13,8 +13,13 @@ def validate_neanky(user: str) -> Result:
     url = f"https://neanky.ee/user/{quote(username, safe='')}"
 
     def process_profile(response: httpx.Response) -> Result:
+        if (
+            response.status_code == 404
+            and "<title>Kasutajat ei leitud | Neanky" in response.text
+        ):
+            return Result.available()
         if response.status_code != 200:
-            return Result.taken()
+            return Result.error(f"Unexpected response status: {response.status_code}")
 
         if pending := re.search(
             r"Soovitud kasutaja ei ole hetkel veel aktiveeritud!<br>\s*"
@@ -74,8 +79,8 @@ def validate_neanky(user: str) -> Result:
             return Result.error("Could not verify username availability")
         try:
             return process_profile(make_request(url))
-        except httpx.HTTPError:
-            return Result.taken()
+        except httpx.HTTPError as exc:
+            return Result.error(exc)
 
     return generic_validate(
         "https://neanky.ee/p/register",
