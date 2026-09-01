@@ -57,13 +57,13 @@ With **465+ total scan vectors**—including **175+ email-integrated sites** and
 ---
 
 <p align="center">
-  <a href="https://goodfirstissues.org/" target="_blank">
-    <img width="700" style="max-width: 100%; height: auto;" alt="banner-github" src="https://github.com/user-attachments/assets/dafc6cbd-22e9-4294-a2c2-473f59f389bc" />
+  <a href="https://goodfirstissues.org/?ref=user-scanner&utm_source=github&utm_medium=banner&utm_campaign=user-scanner" target="_blank">
+    <img width="750" style="max-width: 100%; height: auto;" alt="banner-github" src="https://github.com/user-attachments/assets/dafc6cbd-22e9-4294-a2c2-473f59f389bc" />
   </a>
   <br>
   <em><strong>Find beginner-friendly open-source issues and make your first pull request today.</strong></em>
   <br>
-  <a href="https://goodfirstissues.org/" target="_blank"><strong>Get Started →</strong></a>
+  <a href="https://goodfirstissues.org/?ref=user-scanner&utm_source=github&utm_medium=banner&utm_campaign=user-scanner" target="_blank"><strong>Get Started →</strong></a>
 </p>
 
 ---
