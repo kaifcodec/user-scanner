@@ -36,6 +36,10 @@ def validate_neanky(user: str) -> Result:
         if not match:
             return Result.taken()
 
+        profile_user = _text(match.group(1))
+        if profile_user.casefold() != username.casefold():
+            return Result.error("Profile response does not match the requested handle")
+
         extra: dict[str, object] = {}
         if name := re.search(r"Nimi:\s*<strong>(.*?)</strong>", response.text):
             extra["name"] = _text(name.group(1))
