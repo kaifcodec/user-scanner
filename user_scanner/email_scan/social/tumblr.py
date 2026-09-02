@@ -1,82 +1,114 @@
 import re
-import urllib.request
-import urllib.error
 import json
 import asyncio
 from user_scanner.core.result import Result
+from curl_cffi import requests
 
 # The public web app's bearer token, embedded in the homepage HTML.
 API_TOKEN_RE = re.compile(r'"API_TOKEN":"([^"]+)"')
 VALIDATE_URL = "https://www.tumblr.com/api/v2/register/account/validate"
 
-# response codes returned by the account-validate endpoint. A deliberately
-# short password means a free email always trips PASSWORD_TOO_SHORT (so no
-# account is created), while a taken email trips USER_EXISTS first regardless.
+# response codes returned by the account-validate endpoint.
 USER_EXISTS = 2
 PASSWORD_TOO_SHORT = 1030
 
 
 def _check_sync(email: str) -> Result:
     show_url = "https://tumblr.com"
+
+    # Use curl_cffi to impersonate a real Chrome browser
+    session = requests.Session(impersonate="chrome131", timeout=15.0)
+
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        'Accept-Language': "en-US,en;q=0.9",
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+        'Connection': 'keep-alive',
     }
+
     try:
-        # 1. Get Home Page
-        req = urllib.request.Request("https://www.tumblr.com/", headers=headers)
-        with urllib.request.urlopen(req, timeout=15.0) as response:
-            html = response.read().decode("utf-8")
-        
+        # 1. Get Home Page to extract API token
+        response = session.get("https://www.tumblr.com/", headers=headers)
+        html = response.text
+
         token_match = API_TOKEN_RE.search(html)
         if not token_match:
             return Result.error("Token extraction failed, report it via GitHub issues")
         token = token_match.group(1)
 
         # 2. Get Radar to extract CSRF
-        req2 = urllib.request.Request("https://www.tumblr.com/api/v2/radar", headers={
-            **headers,
-            'Authorization': f"Bearer {token}"
-        })
-        with urllib.request.urlopen(req2, timeout=15.0) as response2:
-            csrf = response2.headers.get("X-Csrf")
+        radar_headers = {
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Authorization': f"Bearer {token}",
+            'Origin': 'https://www.tumblr.com',
+            'Referer': 'https://www.tumblr.com/',
+            'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+        }
+        response2 = session.get("https://www.tumblr.com/api/v2/radar", headers=radar_headers)
+        csrf = response2.headers.get("X-Csrf")
+        
         if not csrf:
             return Result.error("CSRF extraction failed, report it via GitHub issues")
 
         # 3. Post Account Validate
-        req3 = urllib.request.Request(
+        validate_headers = {
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Content-Type': 'application/json',
+            'Authorization': f"Bearer {token}",
+            'X-CSRF': csrf,
+            'Origin': 'https://www.tumblr.com',
+            'Referer': 'https://www.tumblr.com/register',
+            'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+        }
+
+        payload = {
+            'email': email,
+            'password': "Password123!@#",
+            'tumblelog': "osintuserprobe"
+        }
+
+        response3 = session.post(
             VALIDATE_URL,
-            headers={
-                **headers,
-                'Authorization': f"Bearer {token}",
-                'X-CSRF': csrf,
-                'Content-Type': "application/json",
-                'Accept': "application/json",
-                'Origin': "https://www.tumblr.com",
-                'Referer': "https://www.tumblr.com/register",
-            },
-            data=json.dumps({'email': email, 'password': "x", 'tumblelog': "osintuserprobe"}).encode("utf-8"),
-            method="POST"
+            headers=validate_headers,
+            json=payload
         )
-        
-        try:
-            with urllib.request.urlopen(req3, timeout=15.0) as response3:
-                res_body = response3.read().decode("utf-8")
-        except urllib.error.HTTPError as e:
-            if e.code == 400:
-                res_body = e.read().decode("utf-8")
-            else:
-                return Result.error(f"Unexpected HTTP status: {e.code}")
-        
-        data = json.loads(res_body).get("response")
+
+        if response3.status_code != 200:
+            return Result.error(f"Unexpected HTTP status: {response3.status_code}")
+
+        response_data = response3.json()
+        # If the response is directly the object (not wrapped in "response")
+        if "response" in response_data:
+            data = response_data.get("response")
+        else:
+            data = response_data
+
+        # If the response is an empty list, it means the email is available
+        if not data or data == []:
+            return Result.available(url=show_url)
+
         if not isinstance(data, dict):
-            return Result.error("Invalid API response format, response is not a dict")
-            
+            return Result.error(f"Invalid API response format: {data}")
+
         code = data.get("code")
         error_msg = str(data.get("error", "")).lower()
-        
-        # Check both response code and the description message to prevent false positives if the structure changes
+
         if code == USER_EXISTS and "user already exists" in error_msg:
             return Result.taken(url=show_url)
         elif code == PASSWORD_TOO_SHORT and "password" in error_msg:
