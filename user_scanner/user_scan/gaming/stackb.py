@@ -27,7 +27,7 @@ def validate_stackb(user: str) -> Result:
         login_text = login_response.text
         csrf_match = re.search(r'<meta name="csrf-token" content="([^"]+)"', login_text)
         snapshot_match = re.search(
-            r'<div wire:snapshot="([^"]+)"[^>]*wire:id="([^"]+)"[^>]*x-data="loginFormCaptcha',
+            r'<div[^>]*wire:snapshot="([^"]+)"[^>]*x-data="loginFormCaptcha',
             login_text,
         )
         if not csrf_match or not snapshot_match:
@@ -98,7 +98,7 @@ def validate_stackb(user: str) -> Result:
             )
             response_text = profile_response.text
             profile = {}
-            for json_match in re.finditer(r'<script type="application/ld\+json">(.*?)</script>', response_text, re.DOTALL):
+            for json_match in re.finditer(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', response_text, re.DOTALL):
                 try:
                     data = json.loads(html.unescape(json_match.group(1)))
                 except json.JSONDecodeError:

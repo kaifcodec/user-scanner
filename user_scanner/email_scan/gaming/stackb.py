@@ -34,7 +34,7 @@ async def _check(email: str) -> Result:
                 login_response.text,
             )
             snapshot_match = re.search(
-                r'<div wire:snapshot="([^"]+)"[^>]*wire:id="[^"]+"'
+                r'<div[^>]*wire:snapshot="([^"]+)"'
                 r'[^>]*x-data="loginFormCaptcha',
                 login_response.text,
             )
