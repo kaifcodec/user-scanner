@@ -1,83 +1,64 @@
-import httpx
 import re
+
+from user_scanner.core.impersonate import impersonate_request_async
 from user_scanner.core.result import Result
 
-
-async def _check(email: str) -> Result:
-    show_url = "https://gumroad.com"
-    async with httpx.AsyncClient(timeout=15.0, http2=False, follow_redirects=True) as client:
-        try:
-            url1 = "https://gumroad.com/users/forgot_password/new"
-            headers1 = {
-                'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-                'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-                'Accept-Encoding': "identity",
-                'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
-                'sec-ch-ua-mobile': "?0",
-                'sec-ch-ua-platform': '"Linux"',
-                'upgrade-insecure-requests': "1",
-                'referer': "https://www.google.com/",
-                'accept-language': "en-US,en;q=0.9"
-            }
-
-            res1 = await client.get(url1, headers=headers1)
-            html = res1.text
-
-            csrf_match = re.search(
-                r'authenticity_token&quot;:&quot;([^&]+)&quot;', html)
-            if not csrf_match:
-                csrf_match = re.search(
-                    r'name="csrf-token" content="([^"]+)"', html)
-
-            if not csrf_match:
-                return Result.error("Failed to extract CSRF token")
-
-            csrf_token = csrf_match.group(1)
-
-            url2 = "https://gumroad.com/users/forgot_password"
-
-            payload = {
-                "user": {
-                    "email": email
-                }
-            }
-
-            headers2 = {
-                'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-                'Accept': "text/html, application/xhtml+xml",
-                'Accept-Encoding': "identity",
-                'Content-Type': "application/json",
-                'sec-ch-ua-platform': '"Linux"',
-                'x-csrf-token': csrf_token,
-                'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
-                'x-inertia': "true",
-                'sec-ch-ua-mobile': "?0",
-                'x-requested-with': "XMLHttpRequest",
-                'origin': "https://gumroad.com",
-                'sec-fetch-site': "same-origin",
-                'sec-fetch-mode': "cors",
-                'sec-fetch-dest': "empty",
-                'referer': "https://gumroad.com/users/forgot_password/new",
-                'accept-language': "en-US,en;q=0.9",
-                'priority': "u=1, i"
-            }
-
-            response = await client.post(url2, json=payload, headers=headers2)
-
-            data = response.json()
-            flash_msg = data.get("props", {}).get(
-                "flash", {}).get("message", "")
-
-            if "An account does not exist" in flash_msg:
-                return Result.available(url=show_url)
-            elif "An account does not exist" not in flash_msg:
-                return Result.taken(url=show_url)
-            else:
-                return Result.error(f"Unexpected status: {response.status_code}")
-
-        except Exception as e:
-            return Result.error(f"unexpected exception: {e}")
+SIGNUP_URL = "https://gumroad.com/signup"
+CSRF_RE = re.compile(r'<meta name="csrf-token" content="([^"]+)"')
 
 
 async def validate_gumroad(email: str) -> Result:
-    return await _check(email)
+    show_url = "https://gumroad.com"
+
+    try:
+        page = await impersonate_request_async(SIGNUP_URL, allow_redirects=True)
+        if page.status_code != 200:
+            return Result.error(
+                f"Unexpected Gumroad signup response: {page.status_code}",
+                url=show_url,
+            )
+
+        token = CSRF_RE.search(page.text)
+        if not token or "Signup/New" not in page.text:
+            return Result.error("Could not read Gumroad signup form", url=show_url)
+
+        response = await impersonate_request_async(
+            SIGNUP_URL,
+            "POST",
+            json={
+                "user": {
+                    "email": email,
+                    # Gumroad rejects this three-character password after checking
+                    # whether the email is already registered.
+                    "password": "Q7~",
+                },
+            },
+            headers={
+                "accept": "text/html, application/xhtml+xml",
+                "origin": "https://gumroad.com",
+                "referer": SIGNUP_URL,
+                "x-csrf-token": token.group(1),
+                "x-inertia": "true",
+                "x-requested-with": "XMLHttpRequest",
+            },
+            allow_redirects=True,
+        )
+        if response.status_code != 200:
+            return Result.error(
+                f"Unexpected Gumroad signup response: {response.status_code}",
+                url=show_url,
+            )
+
+        data = response.json()
+        if data.get("component") != "Signup/New":
+            return Result.error("Unexpected Gumroad signup page", url=show_url)
+
+        flash = data.get("props", {}).get("flash") or {}
+        message = flash.get("message")
+        if message == "An account already exists with this email.":
+            return Result.taken(url=show_url)
+        if message == "Password is too short (minimum is 4 characters)":
+            return Result.available(url=show_url)
+        return Result.error("Unexpected Gumroad signup result", url=show_url)
+    except Exception as exc:
+        return Result.error(exc, url=show_url)
