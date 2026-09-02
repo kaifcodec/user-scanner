@@ -18,7 +18,7 @@ def _check_sync(email: str) -> Result:
     show_url = "https://tumblr.com"
 
     # Use curl_cffi to impersonate a real Chrome browser
-    session = requests.Session(impersonate="chrome131", timeout=15.0)
+    session: requests.Session = requests.Session(impersonate="chrome131", timeout=15.0)
 
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
@@ -117,12 +117,12 @@ def _check_sync(email: str) -> Result:
         else:
             return Result.error(f"Unexpected response (code: {code}, error: {error_msg}), report it via GitHub issues")
 
-    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
+    except (requests.exceptions.RequestException, ValueError, KeyError, TypeError) as e:
         return Result.error(f"unexpected exception: {e}")
 
 
 async def validate_tumblr(email: str) -> Result:
     try:
         return await asyncio.to_thread(_check_sync, email)
-    except (requests.RequestException, ValueError, TypeError) as e:
+    except (requests.exceptions.RequestException, ValueError, TypeError) as e:
         return Result.error(f"unexpected exception: {e}")
