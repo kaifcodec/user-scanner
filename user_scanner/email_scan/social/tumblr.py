@@ -1,8 +1,9 @@
-import re
-import json
 import asyncio
-from user_scanner.core.result import Result
+import re
+
 from curl_cffi import requests
+
+from user_scanner.core.result import Result
 
 # The public web app's bearer token, embedded in the homepage HTML.
 API_TOKEN_RE = re.compile(r'"API_TOKEN":"([^"]+)"')
@@ -116,12 +117,12 @@ def _check_sync(email: str) -> Result:
         else:
             return Result.error(f"Unexpected response (code: {code}, error: {error_msg}), report it via GitHub issues")
 
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
         return Result.error(f"unexpected exception: {e}")
 
 
 async def validate_tumblr(email: str) -> Result:
     try:
         return await asyncio.to_thread(_check_sync, email)
-    except Exception as e:
+    except (requests.RequestException, ValueError, TypeError) as e:
         return Result.error(f"unexpected exception: {e}")
