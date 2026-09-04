@@ -10,6 +10,8 @@ def _text(value: str) -> str:
 
 def validate_kofi(user: str) -> Result:
     url = f"https://ko-fi.com/{user}"
+    if "." in user:
+        return Result.available("Username cannot contain periods", url=url)
 
     def process(response):
         if response.status_code != 200:
