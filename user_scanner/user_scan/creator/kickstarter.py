@@ -5,7 +5,6 @@ from urllib.parse import quote
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
-
 NOT_FOUND = "The page you were looking for doesn't exist (404)"
 
 
@@ -20,7 +19,7 @@ def validate_kickstarter(user: str) -> Result:
         if response.status_code != 200:
             return Result.error(f"Unexpected status code: {response.status_code}")
         if (
-            _meta(document, "og:type") != "kickstarter:creator"
+            _meta(document, "og:type") not in {"profile", "kickstarter:creator"}
             or _meta(document, "og:url").rstrip("/").casefold()
             != profile_url.casefold()
         ):
@@ -30,6 +29,7 @@ def validate_kickstarter(user: str) -> Result:
             extra={
                 "name": _meta(document, "og:title"),
                 "bio": _meta(document, "og:description"),
+                "is_private": "This user's profile is private." in document,
                 "location": _match(
                     document,
                     r'class="location[^"]*"[^>]*>\s*<a[^>]*>([^<]+)',
@@ -73,11 +73,11 @@ def _number(document: str, pattern: str) -> int | None:
     return int(value.replace(",", "")) if value else None
 
 
-def _badges(document: str) -> list[str]:
+def _badges(document: str) -> list[str] | None:
     value = _match(document, r'data-badges="([^"]*)"')
-    return re.findall(r'"([^"]+)"', value)
+    return re.findall(r'"([^"]+)"', value) or None
 
 
-def _websites(document: str) -> list[str]:
+def _websites(document: str) -> list[str] | None:
     block = _match(document, r'<ul class="menu-submenu mb6">(.*?)</ul>')
-    return re.findall(r'href="([^"]+)"', block)
+    return re.findall(r'href="([^"]+)"', block) or None
