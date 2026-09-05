@@ -20,18 +20,21 @@ IMAGE_RE = re.compile(
     r'class="channel-header--(img|backsplash-img)"[^>]+src="([^"]+)"',
     re.IGNORECASE,
 )
-NOT_FOUND_MARKER = "<title>404 Not found</title>"
 SOCIAL_RE = re.compile(r'<a href="([^"]+)" class="channel-subheader--socials-item"')
 STAT_RE = re.compile(r"([\d,]+)\s+(views|videos)\s*</p>", re.IGNORECASE)
+TITLE_RE = re.compile(r"<title>([^<]*)</title>", re.IGNORECASE)
 VERIFIED_RE = re.compile(r'<svg class="channel-header--verified\b')
 
 
-def validate_rumble(user: str) -> Result:
-    """Validate a Rumble user account."""
-    url = f"https://rumble.com/user/{quote(user, safe='')}"
+def validate_rumble_channel(user: str) -> Result:
+    """Validate a Rumble channel."""
+    url = f"https://rumble.com/c/{quote(user, safe='')}"
 
     def process(response):
-        if response.status_code == 404 and NOT_FOUND_MARKER in response.text:
+        title_match = TITLE_RE.search(response.text)
+        title = html.unescape(title_match.group(1)).strip() if title_match else ""
+
+        if response.status_code == 404 and title.casefold() == "404 not found":
             return Result.available()
 
         if response.status_code != 200:
@@ -39,15 +42,17 @@ def validate_rumble(user: str) -> Result:
 
         canonical = CANONICAL_RE.search(response.text)
         if not canonical or canonical.group(1).casefold() != url.casefold():
-            return Result.error("Canonical URL does not match the requested Rumble user")
+            return Result.error("Canonical URL does not match the requested Rumble channel")
 
-        extra = {}
+        extra = {"name": title}
         if creator_id := re.search(r'"creator_id":\s*"(\d+)"', response.text):
             extra["creator_id"] = creator_id.group(1)
+        if channel_id := re.search(r'"channel_id":\s*"(\d+)"', response.text):
+            extra["channel_id"] = channel_id.group(1)
 
         profile = {}
         profile_start = re.search(
-            rf'\{{"type":"user","url":"{re.escape(canonical.group(1))}"',
+            rf'\{{"type":"channel","url":"{re.escape(canonical.group(1))}"',
             response.text,
             re.IGNORECASE,
         )
