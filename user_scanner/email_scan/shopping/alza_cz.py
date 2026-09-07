@@ -1,13 +1,11 @@
 import httpx
 
-from user_scanner.core.result import Result, Status
-
-ALZA_COUNTRY_CODES = ("cz", "sk", "de", "hu", "at")
+from user_scanner.core.result import Result
 
 
-async def _check_given_website(email: str, main_url: str) -> Result:
+async def _check(email: str) -> Result:
     """
-    Checks whether a given email is associated with an account or order on a specified Alza regional website.
+    Checks whether a given email is associated with an account or order on the Alza website.
 
     The check has two steps:
 
@@ -28,7 +26,7 @@ async def _check_given_website(email: str, main_url: str) -> Result:
 
         I do not know whether the other fields can have different values; they remained unchanged during testing.
     """
-
+    main_url = "https://www.alza.cz"
     check_login_availability_url = (
         f"{main_url}/Services/EShopService.svc/CheckLoginAvailability"
     )
@@ -74,61 +72,21 @@ async def _check_given_website(email: str, main_url: str) -> Result:
             return Result.available(url=main_url)
         case 1:
             # Account with this email exists
-            return Result.taken(url=main_url, extra={"has_account": True})
+            return Result.taken(url=main_url)
         case 2:
             # Orders with this email were created, but the email does not belong to any account
-            return Result.taken(url=main_url, extra={"has_account": False})
+            return Result.taken(
+                url=main_url,
+                reason="Order was made using this email, but account does not exist.",
+            )
         case _:
             return Result.error(
                 "Unexpected response structure, please report it via GitHub issues"
             )
 
 
-async def _check(email: str) -> Result:
+async def validate_alza_cz(email: str) -> Result:
     """
-    Check whether an email is associated with an account or order across the following Alza regional websites:
-
-        - Czech Republic (www.alza.cz)
-        - Slovakia (www.alza.sk)
-        - Germany (www.alza.de)
-        - Hungary (www.alza.hu)
-        - Austria (www.alza.at)
-
-    Returns:
-        Result:
-            - with status=TAKEN if email was found on at least one website, also returns the list of websites where the given email
-                is associated with an account and a list of websites where the email was used for an order without a registered account,
-            - with status=AVAILABLE if the email was not found on any of the websites,
-            - with status=ERROR if an error occurred while checking any of the websites.
-    """
-    domain_name_template = "https://www.alza.{cctld}"
-    order_only_countries = []
-    account_countries = []
-    for cctld in ALZA_COUNTRY_CODES:
-        url = domain_name_template.format(cctld=cctld)
-        result = await _check_given_website(email, url)
-        if result.status == Status.TAKEN:
-            if result.extra["has_account"]:
-                account_countries.append(cctld)
-            else:
-                order_only_countries.append(cctld)
-        elif result.status == Status.ERROR:
-            return result
-
-    if not account_countries and not order_only_countries:
-        return Result.available()
-
-    return Result.taken(
-        extra={
-            "account_countries": ", ".join(account_countries),
-            "order_only_countries": ", ".join(order_only_countries),
-        }
-    )
-
-
-async def validate_alza(email: str) -> Result:
-    """
-    Checks whether an email is associated with an account or order across supported Alza regional websites.
-    Each regional website has its own database and users.
+    Checks whether an email is associated with an account or order on alza.cz website.
     """
     return await _check(email)
