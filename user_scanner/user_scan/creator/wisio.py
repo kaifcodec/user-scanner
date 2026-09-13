@@ -19,6 +19,12 @@ def validate_wisio(user: str) -> Result:
             return Result.available()
 
         def process_profile(profile_response):
+            if profile_response.status_code == 404:
+                return Result.error(
+                    "No public creator profile "
+                    "(private, reserved, and invalid usernames look the same)"
+                )
+
             if profile_response.status_code != 200:
                 return Result.error(
                     f"Unexpected Wisio profile response: {profile_response.status_code}"
