@@ -436,6 +436,6 @@ Every `Result` object returned by the engine supports the following methods:
 
 To format a **List** of results, use the `formatter`:
 - `into_json(results_list)`
-- `into_csv(results_list)`
+- `into_csv(results_list, include_header=True)` — pass `include_header=False` when appending to a CSV that already has a header, to avoid writing it twice.
 
 ---
