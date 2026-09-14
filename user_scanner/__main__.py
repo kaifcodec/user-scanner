@@ -705,6 +705,8 @@ def main():
                 with open(t_output, "a", encoding="utf-8") as f:
                     if has_content:
                         f.write("\n")
+                    else:
+                        f.write(formatter.CSV_HEADER + "\n")
                     f.write(content_csv)
                 print(G + f"\n[+] CSV Results saved to {t_output}" + Style.RESET_ALL)
 
