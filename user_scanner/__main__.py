@@ -695,12 +695,13 @@ def main():
                 print(G + f"\n[+] JSON Results saved to {t_output}" + Style.RESET_ALL)
 
             elif args.format == "csv":
-                content_csv = formatter.into_csv(t_results)
                 try:
                     with open(t_output, "r", encoding="utf-8") as init_file:
                         has_content = init_file.read().strip() != ""
                 except Exception:
                     has_content = False
+
+                content_csv = formatter.into_csv(t_results, include_header=not has_content)
 
                 with open(t_output, "a", encoding="utf-8") as f:
                     if has_content:
