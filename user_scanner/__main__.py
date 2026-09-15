@@ -239,6 +239,29 @@ def main():
 
     parser.add_argument("--version", action="store_true", help="Print version")
 
+    parser.add_argument(
+        "-w",
+        "--web",
+        action="store_true",
+        help="Launch interactive animated web scanner dashboard",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Web server port (default: 8000)",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Web server host (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Do not automatically open the default web browser",
+    )
+
     args = parser.parse_args()
 
     if args.timeout is not None:
@@ -259,6 +282,18 @@ def main():
     if args.version:
         version, _ = load_local_version()
         print(f"user-scanner current version -> {G}{version}{X}")
+        sys.exit(0)
+
+    if args.web:
+        try:
+            from user_scanner.web.server import start_web_server
+        except ImportError as e:
+            print(f"[{R}!{X}] Web dependencies not installed: {e}")
+            print(f"[{Y}*{X}] Run: pip install \"user-scanner[web]\" or install starlette, uvicorn, jinja2, sse-starlette")
+            sys.exit(1)
+
+        target = args.username or args.email
+        start_web_server(host=args.host, port=args.port, target=target, auto_open=not args.no_browser)
         sys.exit(0)
 
     if args.list_user or args.list_email:
