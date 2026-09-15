@@ -15,8 +15,8 @@ def get_json_data(results: List[Result]) -> list:
     return [r.to_dict() for r in results]
 
 
-def into_csv(results: List[Result]) -> str:
-    return CSV_HEADER + "\n" + "\n".join(result.to_csv() for result in results)
+def into_csv(results: List[Result], include_header: bool=True) -> str:
+    return CSV_HEADER + "\n" + "\n".join(result.to_csv() for result in results) if include_header else "\n".join(result.to_csv() for result in results)
 
 
 def into_pdf(

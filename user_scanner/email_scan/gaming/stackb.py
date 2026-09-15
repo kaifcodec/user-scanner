@@ -3,25 +3,16 @@ import re
 
 import httpx
 
-from user_scanner.core.helpers import get_random_user_agent
+from user_scanner.core.helpers import get_global_timeout
 from user_scanner.core.result import Result
 
 
-async def _check(email: str) -> Result:
+async def validate_stackb(email: str) -> Result:
     show_url = "https://stackb.net"
     login_url = f"{show_url}/login"
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "ru,en-US;q=0.9,en;q=0.8",
-    }
 
     try:
-        async with httpx.AsyncClient(
-            timeout=15.0,
-            headers=headers,
-            follow_redirects=True,
-        ) as client:
+        async with httpx.AsyncClient(timeout=get_global_timeout() or 15.0) as client:
             login_response = await client.get(login_url)
             if login_response.status_code != 200:
                 return Result.error(
@@ -34,8 +25,8 @@ async def _check(email: str) -> Result:
                 login_response.text,
             )
             snapshot_match = re.search(
-                r'<div[^>]*wire:snapshot="([^"]+)"'
-                r'[^>]*x-data="loginFormCaptcha',
+                r'<div(?=[^>]*wire:name="login-form")'
+                r'(?=[^>]*wire:snapshot="([^"]+)")[^>]*>',
                 login_response.text,
             )
             if not csrf_match or not snapshot_match:
@@ -46,7 +37,6 @@ async def _check(email: str) -> Result:
 
             csrf_token = html.unescape(csrf_match.group(1))
             payload = {
-                "_token": csrf_token,
                 "components": [
                     {
                         "snapshot": html.unescape(snapshot_match.group(1)),
@@ -54,19 +44,13 @@ async def _check(email: str) -> Result:
                             "identifier": email,
                             "password": "StackB-not-the-password-12345",
                         },
-                        "calls": [
-                            {"path": "", "method": "submitLogin", "params": []}
-                        ],
+                        "calls": [{"path": "", "method": "submitLogin", "params": []}],
                     }
                 ],
             }
             login_check = await client.post(
                 f"{show_url}/livewire/update",
                 headers={
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "Origin": show_url,
-                    "Referer": login_url,
                     "X-CSRF-TOKEN": csrf_token,
                     "X-Livewire": "true",
                 },
@@ -79,23 +63,12 @@ async def _check(email: str) -> Result:
                     url=show_url,
                 )
 
-            components = login_check.json().get("components", [])
-            login_messages = " ".join(
-                str(dispatch.get("params", {}).get("message", ""))
-                for component in components
-                for dispatch in component.get("effects", {}).get(
-                    "dispatches", []
-                )
-            )
+            login_messages = str(login_check.json().get("components", []))
 
             if "Таких пользователей не нашлось" in login_messages:
                 return Result.available(url=show_url)
             if "Пароль введен неверно" in login_messages:
                 return Result.taken(url=show_url)
             return Result.error("Unexpected login check response", url=show_url)
-    except Exception as exc:
+    except (httpx.HTTPError, ValueError, AttributeError) as exc:
         return Result.error(exc, url=show_url)
-
-
-async def validate_stackb(email: str) -> Result:
-    return await _check(email)
