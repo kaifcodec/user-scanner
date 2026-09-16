@@ -114,11 +114,23 @@ def test_web_hudson_api_missing(client):
     res = client.get("/api/hudson/check")
     assert res.status_code == 400
 
-def test_web_pdf_export(client):
+def test_web_pdf_export(client, monkeypatch):
+    monkeypatch.setattr(
+        "user_scanner.core.formatter.into_pdf",
+        lambda **kwargs: b"%PDF-1.4 mock pdf content"
+    )
     res = client.get("/api/export/pdf/case-synthetic-user")
     assert res.status_code == 200
     assert res.headers["content-type"] == "application/pdf"
     assert res.content.startswith(b"%PDF")
+
+def test_web_pdf_export_missing_dependency(client, monkeypatch):
+    def mock_fail(**kwargs):
+        raise ImportError("ReportLab is required for PDF generation.")
+    monkeypatch.setattr("user_scanner.core.formatter.into_pdf", mock_fail)
+    res = client.get("/api/export/pdf/case-synthetic-user")
+    assert res.status_code == 500
+    assert "ReportLab is required" in res.json()["message"]
 
 def test_web_template_cli_parity_elements(client):
     res = client.get("/")
