@@ -128,6 +128,7 @@ Scan a single username or email address across all available platform modules:
 ```bash
 user-scanner -u johndoe             # Single username scan
 user-scanner -e johndoe@gmail.com   # Single email scan
+user-scanner -u johndoe --email-domains global  # Try johndoe across provider domains
 ```
 
 ### 2. Cross-Scan & Pivot Intelligence

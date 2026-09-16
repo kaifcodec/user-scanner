@@ -60,6 +60,364 @@ LOUD_MODULES: Dict[str, List[str]] = {
     ],
 }
 
+EMAIL_DOMAIN_SCOPES: Dict[str, tuple[str, ...]] = {
+    "global": (
+        "gmail.com",
+        "googlemail.com",
+        "outlook.com",
+        "hotmail.com",
+        "live.com",
+        "msn.com",
+        "yahoo.com",
+        "ymail.com",
+        "rocketmail.com",
+        "icloud.com",
+        "me.com",
+        "mac.com",
+        "proton.me",
+        "protonmail.com",
+        "pm.me",
+        "aol.com",
+        "mail.com",
+        "gmx.com",
+        "fastmail.com",
+        "zoho.com",
+        "zohomail.com",
+        "tuta.com",
+        "tutanota.com",
+        "tutamail.com",
+        "tuta.io",
+        "keemail.me",
+        "hey.com",
+        "hushmail.com",
+        "mailfence.com",
+        "startmail.com",
+        "mailbox.org",
+        "posteo.de",
+    ),
+    "usa": (
+        "comcast.net",
+        "verizon.net",
+        "att.net",
+        "sbcglobal.net",
+        "bellsouth.net",
+        "charter.net",
+        "spectrum.net",
+        "cox.net",
+        "earthlink.net",
+        "juno.com",
+        "netzero.net",
+        "usa.com",
+    ),
+    "canada": (
+        "shaw.ca",
+        "rogers.com",
+        "sympatico.ca",
+        "bell.net",
+        "videotron.ca",
+        "telus.net",
+        "cogeco.ca",
+    ),
+    "uk": (
+        "btinternet.com",
+        "btopenworld.com",
+        "talktalk.net",
+        "virginmedia.com",
+        "sky.com",
+        "blueyonder.co.uk",
+        "ntlworld.com",
+        "tiscali.co.uk",
+        "live.co.uk",
+        "hotmail.co.uk",
+        "yahoo.co.uk",
+    ),
+    "ireland": (
+        "eircom.net",
+        "eir.ie",
+        "hotmail.ie",
+        "yahoo.ie",
+    ),
+    "germany": (
+        "web.de",
+        "gmx.de",
+        "gmx.net",
+        "t-online.de",
+        "freenet.de",
+        "mail.de",
+        "arcor.de",
+        "online.de",
+    ),
+    "austria": (
+        "gmx.at",
+        "aon.at",
+        "chello.at",
+        "inode.at",
+        "utanet.at",
+    ),
+    "switzerland": (
+        "bluewin.ch",
+        "hispeed.ch",
+        "gmx.ch",
+        "sunrise.ch",
+        "swissonline.ch",
+    ),
+    "france": (
+        "orange.fr",
+        "wanadoo.fr",
+        "free.fr",
+        "sfr.fr",
+        "neuf.fr",
+        "laposte.net",
+        "bbox.fr",
+        "numericable.fr",
+        "club-internet.fr",
+    ),
+    "belgium": (
+        "skynet.be",
+        "proximus.be",
+        "telenet.be",
+        "scarlet.be",
+        "voo.be",
+    ),
+    "netherlands": (
+        "ziggo.nl",
+        "kpnmail.nl",
+        "planet.nl",
+        "xs4all.nl",
+        "hetnet.nl",
+        "chello.nl",
+        "upcmail.nl",
+        "live.nl",
+    ),
+    "italy": (
+        "libero.it",
+        "virgilio.it",
+        "alice.it",
+        "tin.it",
+        "tiscali.it",
+        "email.it",
+        "poste.it",
+        "fastwebnet.it",
+    ),
+    "spain": (
+        "telefonica.net",
+        "movistar.es",
+        "terra.es",
+        "orange.es",
+        "ono.com",
+        "hotmail.es",
+        "yahoo.es",
+    ),
+    "portugal": (
+        "sapo.pt",
+        "iol.pt",
+        "netcabo.pt",
+        "clix.pt",
+        "mail.telepac.pt",
+    ),
+    "poland": (
+        "wp.pl",
+        "onet.pl",
+        "op.pl",
+        "interia.pl",
+        "poczta.fm",
+        "o2.pl",
+        "tlen.pl",
+        "gazeta.pl",
+    ),
+    "czechia": (
+        "seznam.cz",
+        "email.cz",
+        "post.cz",
+        "centrum.cz",
+        "volny.cz",
+        "atlas.cz",
+    ),
+    "slovakia": (
+        "azet.sk",
+        "centrum.sk",
+        "post.sk",
+        "zoznam.sk",
+    ),
+    "hungary": (
+        "freemail.hu",
+        "citromail.hu",
+        "indamail.hu",
+        "vipmail.hu",
+    ),
+    "romania": (
+        "yahoo.ro",
+        "email.ro",
+        "home.ro",
+        "rdslink.ro",
+    ),
+    "greece": (
+        "otenet.gr",
+        "forthnet.gr",
+        "hol.gr",
+        "in.gr",
+    ),
+    "turkey": (
+        "mynet.com",
+        "superonline.com",
+        "ttmail.com",
+        "windowslive.com",
+    ),
+    "nordics": (
+        "telia.com",
+        "live.se",
+        "hotmail.se",
+        "spray.se",
+        "bredband.net",
+        "mail.dk",
+        "post.tele.dk",
+        "stofanet.dk",
+        "online.no",
+        "start.no",
+        "luukku.com",
+        "kolumbus.fi",
+        "suomi24.fi",
+    ),
+    "russia": (
+        "mail.ru",
+        "yandex.ru",
+        "ya.ru",
+        "rambler.ru",
+        "bk.ru",
+        "list.ru",
+        "inbox.ru",
+    ),
+    "estonia": (
+        "mail.ee",
+        "hot.ee",
+        "online.ee",
+    ),
+    "latvia": (
+        "inbox.lv",
+        "apollo.lv",
+        "tvnet.lv",
+    ),
+    "lithuania": (
+        "inbox.lt",
+        "mail.lt",
+        "takas.lt",
+        "one.lt",
+    ),
+    "ukraine": (
+        "ukr.net",
+        "i.ua",
+        "meta.ua",
+        "bigmir.net",
+    ),
+    "belarus": (
+        "tut.by",
+        "mail.by",
+    ),
+    "china": (
+        "qq.com",
+        "foxmail.com",
+        "163.com",
+        "126.com",
+        "yeah.net",
+        "sina.com",
+        "sina.cn",
+        "sohu.com",
+        "aliyun.com",
+        "139.com",
+        "189.cn",
+        "21cn.com",
+    ),
+    "japan": (
+        "yahoo.co.jp",
+        "docomo.ne.jp",
+        "ezweb.ne.jp",
+        "au.com",
+        "softbank.ne.jp",
+        "i.softbank.jp",
+        "rakuten.jp",
+        "nifty.com",
+        "biglobe.ne.jp",
+        "ocn.ne.jp",
+        "goo.jp",
+        "excite.co.jp",
+    ),
+    "korea": (
+        "naver.com",
+        "daum.net",
+        "hanmail.net",
+        "nate.com",
+        "kakao.com",
+    ),
+    "india": (
+        "rediffmail.com",
+        "indiatimes.com",
+        "sify.com",
+        "yahoo.co.in",
+        "hotmail.co.in",
+        "airtelmail.in",
+    ),
+    "australia": (
+        "bigpond.com",
+        "bigpond.net.au",
+        "optusnet.com.au",
+        "iinet.net.au",
+        "internode.on.net",
+        "tpg.com.au",
+        "westnet.com.au",
+    ),
+    "new_zealand": (
+        "xtra.co.nz",
+        "vodafone.co.nz",
+        "ihug.co.nz",
+        "slingshot.co.nz",
+    ),
+    "brazil": (
+        "uol.com.br",
+        "bol.com.br",
+        "terra.com.br",
+        "ig.com.br",
+        "globo.com",
+        "r7.com",
+    ),
+    "mexico": (
+        "prodigy.net.mx",
+        "hotmail.com.mx",
+        "yahoo.com.mx",
+    ),
+    "argentina": (
+        "arnet.com.ar",
+        "fibertel.com.ar",
+        "speedy.com.ar",
+        "ciudad.com.ar",
+        "yahoo.com.ar",
+    ),
+    "chile": (
+        "vtr.net",
+        "entelchile.net",
+        "terra.cl",
+        "hotmail.cl",
+        "yahoo.cl",
+    ),
+    "colombia": (
+        "une.net.co",
+        "etb.net.co",
+        "hotmail.com.co",
+        "yahoo.com.co",
+    ),
+    "south_africa": (
+        "webmail.co.za",
+        "mweb.co.za",
+        "vodamail.co.za",
+        "telkomsa.net",
+    ),
+    "israel": (
+        "walla.co.il",
+        "bezeqint.net",
+        "netvision.net.il",
+        "012.net.il",
+    ),
+}
+
 CONFIG_PATH = Path(__file__).parent.parent / "config.json"
 
 
@@ -88,6 +446,30 @@ def is_valid_email(email: str) -> bool:
     if len(local) > 64 or len(domain) > 253:
         return False
     return bool(EMAIL_RE.fullmatch(email))
+
+
+def parse_email_domain_scopes(value: str) -> tuple[str, ...]:
+    requested = tuple(scope.strip().lower() for scope in value.split(",") if scope.strip())
+    unknown = [
+        scope for scope in requested if scope != "all" and scope not in EMAIL_DOMAIN_SCOPES
+    ]
+    if unknown:
+        valid = ", ".join(("all", *sorted(EMAIL_DOMAIN_SCOPES)))
+        raise ValueError(
+            f"Unknown email domain scope '{unknown[0]}'. Valid scopes: {valid}"
+        )
+    seen: set[str] = set()
+    domains = []
+    for scope in requested:
+        scopes = EMAIL_DOMAIN_SCOPES if scope == "all" else (scope,)
+        for scope_name in scopes:
+            for domain in EMAIL_DOMAIN_SCOPES[scope_name]:
+                if domain not in seen:
+                    seen.add(domain)
+                    domains.append(domain)
+    return tuple(domains)
+
+
 def get_site_name(module) -> str:
     name = module.__name__.split(".")[-1].capitalize().replace("_", ".")
     if name == "X":

@@ -21,6 +21,32 @@ def test_get_site_name():
     assert helpers.get_site_name(module("user_scanner.chess_com")) == "Chess.com"
 
 
+def test_parse_email_domain_scopes_dedupes_in_order(monkeypatch):
+    monkeypatch.setitem(helpers.EMAIL_DOMAIN_SCOPES, "test", ("gmail.com", "example.com"))
+
+    domains = helpers.parse_email_domain_scopes("global,test")
+
+    global_domains = helpers.EMAIL_DOMAIN_SCOPES["global"]
+    assert domains[: len(global_domains)] == global_domains
+    assert domains.count("gmail.com") == 1
+    assert domains[-1] == "example.com"
+
+
+def test_parse_email_domain_scopes_all():
+    assert helpers.parse_email_domain_scopes("all") == tuple(
+        dict.fromkeys(
+            domain
+            for domains in helpers.EMAIL_DOMAIN_SCOPES.values()
+            for domain in domains
+        )
+    )
+
+
+def test_parse_email_domain_scopes_rejects_unknown():
+    with pytest.raises(ValueError, match="Unknown email domain scope 'mars'"):
+        helpers.parse_email_domain_scopes("global,mars")
+
+
 @pytest.fixture
 def run_main(monkeypatch):
     def _run(args):
@@ -184,6 +210,16 @@ def test_bulk_usernames_skip_comments_blank_lines(tmp_path, run_main, capsys):
     out = capsys.readouterr().out
 
     assert "Loaded 2 usernames" in out
+    assert exit_code == 0
+
+
+def test_username_email_domains_use_email_modules(run_main, capsys):
+    exit_code = run_main(["-u", "alice", "--email-domains", "usa", "-m", "github"])
+    out = capsys.readouterr().out
+
+    assert "Checking email: alice@comcast.net" in out
+    assert "Checking email: alice@verizon.net" in out
+    assert "Checking email: alice@att.net" in out
     assert exit_code == 0
 
 
