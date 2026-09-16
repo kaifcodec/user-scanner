@@ -452,3 +452,37 @@ def test_web_export_preseeded_backup(client, monkeypatch):
     assert json_res.status_code == 200
 
 
+def test_web_scan_stream_unresolvable_modules(client):
+    res = client.post("/api/scan/stream", json={
+        "targets": ["testuser"],
+        "scan_type": "username",
+        "modules": ["fake_nonexistent_mod_xyz"],
+    })
+    assert res.status_code == 200
+    assert '"event": "error"' in res.text
+    assert "not found for username scan" in res.text
+
+
+def test_web_scan_stream_handles_at_prefix_and_domain_suffix(client, monkeypatch):
+    from user_scanner.core.result import Result
+
+    scanned_targets = []
+
+    async def mock_user_worker(module, target, sem, configs, cat_override=None):
+        scanned_targets.append(target)
+        return Result.available()
+
+    monkeypatch.setattr("user_scanner.web.routes.api._user_async_worker", mock_user_worker)
+
+    res = client.post("/api/scan/stream", json={
+        "targets": ["@testuser"],
+        "scan_type": "username",
+        "modules": ["instagram.com"],
+    })
+    assert res.status_code == 200
+    assert "init" in res.text
+    assert "complete" in res.text
+    assert "testuser" in scanned_targets
+
+
+

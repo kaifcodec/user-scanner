@@ -541,7 +541,11 @@ def main():
             print(f"{Y}[i] Use it independently{X}")
             sys.exit(1)
     else:
-        if args.module:
+        if args.module and args.category:
+            print(f"{R}[✘] Error: Options -m/--module and -c/--category cannot be used together.{X}")
+            print(f"{Y}[i] Specify either individual modules with -m or entire categories with -c.{X}")
+            sys.exit(1)
+        elif args.module:
             raw_module_str = ",".join(args.module) if isinstance(args.module, list) else args.module
             requested_modules = [m.strip() for m in raw_module_str.split(",") if m.strip()]
             

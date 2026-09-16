@@ -133,19 +133,25 @@
             <!-- Specific Module Picker (-m) for Usernames -->
             <div class="input-group" style="margin-top: 10px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label class="input-label">Target Specific Modules (-m)</label>
+                <label class="input-label" style="display: flex; align-items: center; gap: 6px;">
+                  <span>Target Specific Modules (-m)</span>
+                  <span id="user-modules-badge" class="badge-pill badge-cyan" style="display: none; font-size: 0.6rem; padding: 1px 6px;">0 Selected</span>
+                </label>
                 <span id="user-clear-modules-btn" style="cursor: pointer; font-size: 0.65rem; color: var(--text-muted); display: none;">Clear all</span>
               </div>
               <div class="module-search-wrap">
-                <input type="text" id="user-module-search-input" class="modern-input" placeholder="Search modules (e.g. github, twitter...)" autocomplete="off">
+                <input type="text" id="user-module-search-input" class="modern-input" placeholder="Type module (e.g. instagram, github) & press Enter" autocomplete="off">
                 <div id="user-module-suggestions" class="module-suggestions-dropdown" style="display: none;"></div>
               </div>
               <div id="user-selected-modules" class="selected-tags-container"></div>
             </div>
 
             <!-- Category Filter Chips (-c) for Usernames -->
-            <div class="input-group">
-              <label class="input-label">Filter Categories (-c)</label>
+            <div class="input-group" id="user-cat-group">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="input-label" id="user-cat-label">Filter Categories (-c)</label>
+                <span id="user-cat-status-note" style="font-size: 0.65rem; color: var(--text-muted); display: none;">(Bypassed by -m)</span>
+              </div>
               <div id="user-category-chips-group" class="filter-chip-group" style="flex-wrap: wrap; gap: 4px;">
                 <button type="button" class="filter-chip active" data-cat="ALL">ALL</button>
               </div>
@@ -189,19 +195,25 @@
             <!-- Specific Module Picker (-m) for Emails -->
             <div class="input-group" style="margin-top: 10px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label class="input-label">Target Specific Modules (-m)</label>
+                <label class="input-label" style="display: flex; align-items: center; gap: 6px;">
+                  <span>Target Specific Modules (-m)</span>
+                  <span id="email-modules-badge" class="badge-pill badge-cyan" style="display: none; font-size: 0.6rem; padding: 1px 6px;">0 Selected</span>
+                </label>
                 <span id="email-clear-modules-btn" style="cursor: pointer; font-size: 0.65rem; color: var(--text-muted); display: none;">Clear all</span>
               </div>
               <div class="module-search-wrap">
-                <input type="text" id="email-module-search-input" class="modern-input" placeholder="Search email modules (e.g. gravatar, spotify...)" autocomplete="off">
+                <input type="text" id="email-module-search-input" class="modern-input" placeholder="Type module (e.g. gravatar, spotify) & press Enter" autocomplete="off">
                 <div id="email-module-suggestions" class="module-suggestions-dropdown" style="display: none;"></div>
               </div>
               <div id="email-selected-modules" class="selected-tags-container"></div>
             </div>
 
             <!-- Category Filter Chips (-c) for Emails -->
-            <div class="input-group">
-              <label class="input-label">Filter Categories (-c)</label>
+            <div class="input-group" id="email-cat-group">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="input-label" id="email-cat-label">Filter Categories (-c)</label>
+                <span id="email-cat-status-note" style="font-size: 0.65rem; color: var(--text-muted); display: none;">(Bypassed by -m)</span>
+              </div>
               <div id="email-category-chips-group" class="filter-chip-group" style="flex-wrap: wrap; gap: 4px;">
                 <button type="button" class="filter-chip active" data-cat="ALL">ALL</button>
               </div>

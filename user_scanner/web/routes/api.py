@@ -522,8 +522,14 @@ async def scan_stream_view(request: Request):
         if not expanded_targets:
             expanded_targets = targets_list
 
-        # Calculate default concurrency
-        is_primary_email = ("@" in primary_target) or (scan_type == "email")
+        # Calculate default concurrency and target type
+        if scan_type == "email":
+            is_primary_email = True
+        elif scan_type == "username":
+            is_primary_email = False
+        else:
+            is_primary_email = is_valid_email(primary_target)
+
         effective_concurrency = concurrency if concurrency > 0 else (25 if is_primary_email else 60)
         sem = asyncio.Semaphore(effective_concurrency)
 
@@ -539,7 +545,10 @@ async def scan_stream_view(request: Request):
             mods = []
             if requested_modules:
                 for mod_name in requested_modules:
-                    found = find_module(mod_name.replace(".", "_"), is_em, no_nsfw)
+                    clean_mod = mod_name.strip().lower().lstrip("@").removesuffix(".py")
+                    if "." in clean_mod:
+                        clean_mod = clean_mod.split(".")[0]
+                    found = find_module(clean_mod.replace(".", "_"), is_em, no_nsfw)
                     for m in found:
                         s_name = get_site_name(m)
                         if not allow_loud and is_loud(s_name, is_email=is_em):
@@ -564,15 +573,39 @@ async def scan_stream_view(request: Request):
         total_expected_checks = 0
         for t_item in expanded_targets:
             c_t = t_item.strip().lstrip("@")
-            is_em = ("@" in c_t) or (scan_type == "email")
+            if scan_type == "email":
+                is_em = True
+            elif scan_type == "username":
+                is_em = False
+            else:
+                is_em = is_valid_email(c_t)
             t_mods = _resolve_target_modules(is_em)
             target_modules_map[c_t] = t_mods
             total_expected_checks += len(t_mods)
 
+        if requested_modules:
+            any_valid_module = False
+            for mod_name in requested_modules:
+                clean_mod = mod_name.strip().lower().lstrip("@").removesuffix(".py")
+                if "." in clean_mod:
+                    clean_mod = clean_mod.split(".")[0]
+                if find_module(clean_mod.replace(".", "_"), is_primary_email, no_nsfw):
+                    any_valid_module = True
+                    break
+            if not any_valid_module:
+                msg = f"Specified module(s) ({', '.join(requested_modules)}) not found for {'email' if is_primary_email else 'username'} scan."
+                yield f"data: {json.dumps({'event': 'error', 'message': msg})}\n\n"
+                return
+
         # Initialize session state and root nodes
         initial_root_nodes = []
         for idx, t in enumerate(expanded_targets):
-            is_email_t = ("@" in t)
+            if scan_type == "email":
+                is_email_t = True
+            elif scan_type == "username":
+                is_email_t = False
+            else:
+                is_email_t = is_valid_email(t)
             root_id = f"actor_{re.sub(r'[^a-zA-Z0-9_]', '_', t.lower())}"
             root_node = {
                 "data": {

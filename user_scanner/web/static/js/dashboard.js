@@ -316,6 +316,20 @@ function setupMasterAdvancedToggle() {
     }
   }
 
+  advGroup.addEventListener("change", () => {
+    if (!masterToggle.checked) {
+      masterToggle.checked = true;
+      syncMasterState();
+    }
+  });
+
+  advGroup.addEventListener("input", () => {
+    if (!masterToggle.checked) {
+      masterToggle.checked = true;
+      syncMasterState();
+    }
+  });
+
   masterToggle.addEventListener("change", syncMasterState);
   syncMasterState();
 }
@@ -365,6 +379,68 @@ async function fetchModuleCatalog(isEmail = false) {
   }
 }
 
+function syncScopeUI(type) {
+  const isEmail = (type === "email");
+  const modules = isEmail ? emailSelectedModules : userSelectedModules;
+  const badge = document.getElementById(isEmail ? "email-modules-badge" : "user-modules-badge");
+  const clearBtn = document.getElementById(isEmail ? "email-clear-modules-btn" : "user-clear-modules-btn");
+  const catStatusNote = document.getElementById(isEmail ? "email-cat-status-note" : "user-cat-status-note");
+  const catChipsGroup = document.getElementById(isEmail ? "email-category-chips-group" : "user-category-chips-group");
+  const queuedEl = document.getElementById("stat-vectors-queued");
+
+  if (modules.length > 0) {
+    if (badge) {
+      badge.innerText = `${modules.length} Selected`;
+      badge.style.display = "inline-flex";
+    }
+    if (clearBtn) clearBtn.style.display = "inline";
+    if (catStatusNote) {
+      catStatusNote.innerText = `(Bypassed by ${modules.length} module${modules.length > 1 ? 's' : ''})`;
+      catStatusNote.style.display = "inline";
+    }
+    if (catChipsGroup) {
+      catChipsGroup.style.opacity = "0.45";
+      catChipsGroup.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+    }
+    const selectedSet = isEmail ? emailSelectedCategories : userSelectedCategories;
+    selectedSet.clear();
+
+    if ((isEmail && scanType === "email") || (!isEmail && scanType === "username")) {
+      if (queuedEl) queuedEl.innerText = `${modules.length}`;
+    }
+  } else {
+    if (badge) badge.style.display = "none";
+    if (clearBtn) clearBtn.style.display = "none";
+    if (catStatusNote) catStatusNote.style.display = "none";
+    if (catChipsGroup) {
+      catChipsGroup.style.opacity = "1";
+      const selectedSet = isEmail ? emailSelectedCategories : userSelectedCategories;
+      if (selectedSet.size === 0) {
+        selectedSet.add("ALL");
+      }
+      catChipsGroup.querySelectorAll(".filter-chip").forEach(c => {
+        const cCat = c.getAttribute("data-cat");
+        if (selectedSet.has(cCat)) {
+          c.classList.add("active");
+        } else {
+          c.classList.remove("active");
+        }
+      });
+    }
+
+    if ((isEmail && scanType === "email") || (!isEmail && scanType === "username")) {
+      const selectedSet = isEmail ? emailSelectedCategories : userSelectedCategories;
+      let count = isEmail ? emailTotalModules : userTotalModules;
+      if (!selectedSet.has("ALL") && selectedSet.size > 0) {
+        const catalog = isEmail ? emailModuleCatalog : userModuleCatalog;
+        const lowerCats = Array.from(selectedSet).map(s => s.toLowerCase());
+        count = catalog.filter(m => lowerCats.includes((m.category || "").toLowerCase())).length;
+      }
+      if (queuedEl) queuedEl.innerText = `${count}+`;
+    }
+  }
+}
+
 function renderDynamicCategoryChips(type, categoriesMap, totalCount) {
   const isEmail = (type === "email");
   const containerId = isEmail ? "email-category-chips-group" : "user-category-chips-group";
@@ -397,6 +473,15 @@ function renderDynamicCategoryChips(type, categoriesMap, totalCount) {
     const cat = chip.getAttribute("data-cat");
     if (!cat) return;
 
+    // Mutually exclusive: selecting a category CLEARS specific module selection
+    if (isEmail) {
+      emailSelectedModules = [];
+    } else {
+      userSelectedModules = [];
+    }
+    const tagsContainer = document.getElementById(isEmail ? "email-selected-modules" : "user-selected-modules");
+    if (tagsContainer) tagsContainer.innerHTML = "";
+
     const selectedSet = isEmail ? emailSelectedCategories : userSelectedCategories;
     const allChips = container.querySelectorAll(".filter-chip");
 
@@ -426,6 +511,8 @@ function renderDynamicCategoryChips(type, categoriesMap, totalCount) {
         });
       }
     }
+
+    syncScopeUI(type);
   });
 }
 
@@ -466,9 +553,28 @@ function setupModuleSearchSection(type) {
       tag.innerHTML = `<span>${escapeHtml(mod)}</span><span class="module-tag-del" data-mod="${escapeHtml(mod)}">&times;</span>`;
       tagsContainer.appendChild(tag);
     });
-    if (clearBtn) {
-      clearBtn.style.display = list.length > 0 ? "inline" : "none";
-    }
+    syncScopeUI(type);
+  }
+
+  function addModuleQuery(query) {
+    if (!query) return;
+    const parts = query.split(/[\s,]+/).filter(Boolean);
+    const list = getSelectedList();
+    const catalog = getCatalog();
+
+    parts.forEach(p => {
+      const clean = p.trim().toLowerCase().replace(/^@/, "").replace(/\.py$/, "");
+      if (!clean) return;
+      const cleanStem = clean.includes(".") ? clean.split(".")[0] : clean;
+      const matched = catalog.find(m => m.stem.toLowerCase() === cleanStem || m.name.toLowerCase() === cleanStem);
+      const stemToAdd = matched ? matched.stem : cleanStem;
+      if (!list.includes(stemToAdd)) {
+        list.push(stemToAdd);
+      }
+    });
+
+    setSelectedList(list);
+    renderTags();
   }
 
   tagsContainer?.addEventListener("click", (e) => {
@@ -485,57 +591,66 @@ function setupModuleSearchSection(type) {
     renderTags();
   });
 
-  if (input && suggestions) {
-    input.addEventListener("input", () => {
-      const q = input.value.trim().toLowerCase();
-      if (!q) {
-        suggestions.style.display = "none";
-        return;
-      }
-
-      const catalog = getCatalog();
-      const selected = getSelectedList();
-      const matches = catalog.filter(m =>
-        (m.name.toLowerCase().includes(q) || m.stem.toLowerCase().includes(q)) &&
-        !selected.includes(m.stem)
-      ).slice(0, 15);
-
-      if (matches.length === 0) {
-        suggestions.innerHTML = `<div class="module-item" style="color: var(--text-muted); cursor: default;">No matching modules</div>`;
-      } else {
-        suggestions.innerHTML = matches.map(m => `
-          <div class="module-item" data-stem="${escapeHtml(m.stem)}">
-            <span>
-              ${escapeHtml(m.name)} <span style="color: var(--text-muted); font-size: 0.65rem;">(${escapeHtml(m.stem)})</span>
-              ${m.is_loud ? '<span style="color: var(--rose); font-size: 0.6rem; margin-left: 4px;">[LOUD]</span>' : ''}
-            </span>
-            <span class="module-item-cat">${escapeHtml(m.category)}</span>
-          </div>
-        `).join("");
-      }
-      suggestions.style.display = "block";
-    });
-
-    suggestions.addEventListener("click", (e) => {
-      const item = e.target.closest(".module-item");
-      if (item && item.hasAttribute("data-stem")) {
-        const stem = item.getAttribute("data-stem");
-        const list = getSelectedList();
-        if (!list.includes(stem)) {
-          list.push(stem);
-          setSelectedList(list);
-          renderTags();
+  if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const q = input.value.trim();
+        if (q) {
+          addModuleQuery(q);
+          input.value = "";
+          if (suggestions) suggestions.style.display = "none";
         }
-        input.value = "";
-        suggestions.style.display = "none";
       }
     });
 
-    document.addEventListener("click", (e) => {
-      if (!input.contains(e.target) && !suggestions.contains(e.target)) {
-        suggestions.style.display = "none";
-      }
-    });
+    if (suggestions) {
+      input.addEventListener("input", () => {
+        const q = input.value.trim().toLowerCase();
+        if (!q) {
+          suggestions.style.display = "none";
+          return;
+        }
+
+        const catalog = getCatalog();
+        const selected = getSelectedList();
+        const matches = catalog.filter(m =>
+          (m.name.toLowerCase().includes(q) || m.stem.toLowerCase().includes(q)) &&
+          !selected.includes(m.stem)
+        ).slice(0, 15);
+
+        if (matches.length === 0) {
+          suggestions.innerHTML = `<div class="module-item" style="color: var(--text-muted); cursor: default;">No matching modules</div>`;
+        } else {
+          suggestions.innerHTML = matches.map(m => `
+            <div class="module-item" data-stem="${escapeHtml(m.stem)}">
+              <span>
+                ${escapeHtml(m.name)} <span style="color: var(--text-muted); font-size: 0.65rem;">(${escapeHtml(m.stem)})</span>
+                ${m.is_loud ? '<span style="color: var(--rose); font-size: 0.6rem; margin-left: 4px;">[LOUD]</span>' : ''}
+              </span>
+              <span class="module-item-cat">${escapeHtml(m.category)}</span>
+            </div>
+          `).join("");
+        }
+        suggestions.style.display = "block";
+      });
+
+      suggestions.addEventListener("click", (e) => {
+        const item = e.target.closest(".module-item");
+        if (item && item.hasAttribute("data-stem")) {
+          const stem = item.getAttribute("data-stem");
+          addModuleQuery(stem);
+          input.value = "";
+          suggestions.style.display = "none";
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+          suggestions.style.display = "none";
+        }
+      });
+    }
   }
 }
 
@@ -1152,8 +1267,28 @@ async function executeLiveScan() {
       }
     }
     stopPermutations = 1;
-    categoriesParam = emailSelectedCategories.has("ALL") ? "ALL" : Array.from(emailSelectedCategories).join(",");
-    modulesParam = emailSelectedModules;
+
+    // Check if user left unsubmitted text in email module search input
+    const emailModuleInput = document.getElementById("email-module-search-input");
+    if (emailModuleInput && emailModuleInput.value.trim()) {
+      const parts = emailModuleInput.value.trim().split(/[\s,]+/).filter(Boolean);
+      parts.forEach(p => {
+        const clean = p.trim().toLowerCase().replace(/^@/, "").replace(/\.py$/, "");
+        const cleanStem = clean.includes(".") ? clean.split(".")[0] : clean;
+        const matched = emailModuleCatalog.find(m => m.stem.toLowerCase() === cleanStem || m.name.toLowerCase() === cleanStem);
+        const stemToAdd = matched ? matched.stem : cleanStem;
+        if (!emailSelectedModules.includes(stemToAdd)) {
+          emailSelectedModules.push(stemToAdd);
+        }
+      });
+      emailModuleInput.value = "";
+      syncScopeUI("email");
+    }
+
+    modulesParam = [...emailSelectedModules];
+    categoriesParam = (modulesParam.length > 0)
+      ? "ALL"
+      : (emailSelectedCategories.has("ALL") ? "ALL" : Array.from(emailSelectedCategories).join(","));
   } else {
     if (userTargetMode === "single") {
       const userInput = document.getElementById("scan-user-target");
@@ -1173,8 +1308,42 @@ async function executeLiveScan() {
       }
     }
     stopPermutations = parseInt(document.getElementById("scan-user-permutations")?.value || "1", 10);
-    categoriesParam = userSelectedCategories.has("ALL") ? "ALL" : Array.from(userSelectedCategories).join(",");
-    modulesParam = userSelectedModules;
+
+    // Check if user left unsubmitted text in user module search input
+    const userModuleInput = document.getElementById("user-module-search-input");
+    if (userModuleInput && userModuleInput.value.trim()) {
+      const parts = userModuleInput.value.trim().split(/[\s,]+/).filter(Boolean);
+      parts.forEach(p => {
+        const clean = p.trim().toLowerCase().replace(/^@/, "").replace(/\.py$/, "");
+        const cleanStem = clean.includes(".") ? clean.split(".")[0] : clean;
+        const matched = userModuleCatalog.find(m => m.stem.toLowerCase() === cleanStem || m.name.toLowerCase() === cleanStem);
+        const stemToAdd = matched ? matched.stem : cleanStem;
+        if (!userSelectedModules.includes(stemToAdd)) {
+          userSelectedModules.push(stemToAdd);
+        }
+      });
+      userModuleInput.value = "";
+      syncScopeUI("username");
+    }
+
+    modulesParam = [...userSelectedModules];
+    categoriesParam = (modulesParam.length > 0)
+      ? "ALL"
+      : (userSelectedCategories.has("ALL") ? "ALL" : Array.from(userSelectedCategories).join(","));
+  }
+
+  let expectedChecksPerTarget = 0;
+  if (modulesParam.length > 0) {
+    expectedChecksPerTarget = modulesParam.length;
+  } else if (categoriesParam && categoriesParam !== "ALL") {
+    const activeCats = categoriesParam.split(",").map(c => c.trim().toLowerCase());
+    const catalog = isEmail ? emailModuleCatalog : userModuleCatalog;
+    expectedChecksPerTarget = catalog.filter(m => activeCats.includes((m.category || "").toLowerCase())).length;
+    if (expectedChecksPerTarget === 0) {
+      expectedChecksPerTarget = isEmail ? emailTotalModules : userTotalModules;
+    }
+  } else {
+    expectedChecksPerTarget = isEmail ? emailTotalModules : userTotalModules;
   }
 
   isScanning = true;
@@ -1184,9 +1353,8 @@ async function executeLiveScan() {
   btn.innerHTML = `<span class="status-beacon" style="background: #06b6d4;"></span> SCANNING TARGET...`;
   btn.disabled = true;
 
-  const vectorMultiplier = isEmail ? emailTotalModules : userTotalModules;
   telemetry = {
-    queued: vectorMultiplier * targets.length,
+    queued: expectedChecksPerTarget * targets.length,
     checked: 0,
     verified: 0,
     pivots: 0,
@@ -1226,48 +1394,20 @@ async function executeLiveScan() {
     showCanvasStatus(`Initiating scan across platforms for ${targets.length} target${targets.length > 1 ? 's' : ''}...`);
   }
 
-  const masterAdvancedActive = document.getElementById("cfg-master-advanced-toggle")?.checked || false;
-
-  let allowLoud = false;
-  let noNsfw = false;
-  let showAll = false;
-  let concurrency = 0;
-  let timeout = 10.0;
-  let delay = 0.0;
-  let proxiesList = [];
-  let crossScan = false;
-  let crossDepth = 1;
-  let crossSweep = 3;
-  let crossLinks = "all";
-  let crossEmails = "verified";
-  let hudsonScan = false;
-
-  if (masterAdvancedActive) {
-    allowLoud = document.getElementById("cfg-allow-loud")?.checked || false;
-    noNsfw = document.getElementById("cfg-no-nsfw")?.checked || false;
-    showAll = document.getElementById("cfg-show-all")?.checked || false;
-    concurrency = parseInt(document.getElementById("cfg-concurrency")?.value || "0", 10);
-    timeout = parseFloat(document.getElementById("cfg-timeout")?.value || "10");
-    delay = parseFloat(document.getElementById("cfg-delay")?.value || "0");
-    const proxiesRaw = document.getElementById("cfg-proxies")?.value || "";
-    proxiesList = proxiesRaw ? proxiesRaw.split("\n").map(p => p.trim()).filter(Boolean) : [];
-    crossScan = document.getElementById("cfg-cross-scan")?.checked || false;
-    crossDepth = parseInt(document.getElementById("cfg-cross-depth")?.value || "1", 10);
-    crossSweep = parseInt(document.getElementById("cfg-cross-sweep")?.value || "3", 10);
-    crossLinks = document.getElementById("cfg-cross-links")?.value || "all";
-    crossEmails = document.getElementById("cfg-cross-emails")?.value || "verified";
-    hudsonScan = document.getElementById("cfg-hudson-scan")?.checked || false;
-  } else {
-    allowLoud = false;
-    noNsfw = false;
-    showAll = false;
-    concurrency = 0;
-    timeout = 10.0;
-    delay = 0.0;
-    proxiesList = [];
-    crossScan = false;
-    hudsonScan = false;
-  }
+  const allowLoud = document.getElementById("cfg-allow-loud")?.checked || false;
+  const noNsfw = document.getElementById("cfg-no-nsfw")?.checked || false;
+  const showAll = document.getElementById("cfg-show-all")?.checked || false;
+  const concurrency = parseInt(document.getElementById("cfg-concurrency")?.value || "0", 10);
+  const timeout = parseFloat(document.getElementById("cfg-timeout")?.value || "10");
+  const delay = parseFloat(document.getElementById("cfg-delay")?.value || "0");
+  const proxiesRaw = document.getElementById("cfg-proxies")?.value || "";
+  const proxiesList = proxiesRaw ? proxiesRaw.split("\n").map(p => p.trim()).filter(Boolean) : [];
+  const crossScan = document.getElementById("cfg-cross-scan")?.checked || false;
+  const crossDepth = parseInt(document.getElementById("cfg-cross-depth")?.value || "1", 10);
+  const crossSweep = parseInt(document.getElementById("cfg-cross-sweep")?.value || "3", 10);
+  const crossLinks = document.getElementById("cfg-cross-links")?.value || "all";
+  const crossEmails = document.getElementById("cfg-cross-emails")?.value || "verified";
+  const hudsonScan = document.getElementById("cfg-hudson-scan")?.checked || false;
 
   const requestPayload = {
     targets: targets,
@@ -1324,11 +1464,14 @@ async function executeLiveScan() {
           if (payload.event === "init") {
             activeCaseId = payload.case_id;
 
-            if (payload.total_modules) {
-              telemetry.queued = payload.total_modules;
+            const totalChecks = payload.total_checks || payload.total_modules;
+            if (totalChecks) {
+              telemetry.queued = totalChecks;
               const qEl = document.getElementById("stat-vectors-queued");
-              if (qEl) qEl.innerText = `${payload.total_modules}+`;
-              updateProgressDock({ target: currentScanTarget, checked: 0, total: payload.total_modules, remaining: payload.total_modules, percent: 0 });
+              if (qEl) qEl.innerText = `${totalChecks}+`;
+              const hudP = document.getElementById("hud-conf");
+              if (hudP) hudP.innerText = `0 / ${totalChecks}`;
+              updateProgressDock({ target: currentScanTarget, checked: 0, total: totalChecks, remaining: totalChecks, percent: 0 });
             }
 
             if (payload.initial_elements && typeof initGraph === "function") {
@@ -1341,6 +1484,16 @@ async function executeLiveScan() {
 
             if (typeof showCanvasStatus === "function") {
               showCanvasStatus(`Connected. Scanning targets...`);
+            }
+          } else if (payload.event === "error") {
+            console.error("Scan engine error:", payload.message);
+            stopProgressDock(`Error: ${payload.message}`);
+            if (typeof showCanvasStatus === "function") {
+              showCanvasStatus(`Error: ${payload.message}`);
+            }
+            if (stateBadge) {
+              stateBadge.innerText = "ERROR";
+              stateBadge.style.color = "var(--rose)";
             }
           } else if (payload.event === "progress") {
             telemetry.checked = payload.checked || telemetry.checked;
