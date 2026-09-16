@@ -299,7 +299,7 @@ def test_web_cross_scan_username_pivot_triggers_scan(client, monkeypatch):
     assert "discovered_handle" in user_scanned_targets
 
 
-def test_web_exports_from_live_scan(client):
+def test_web_exports_from_live_scan(client, monkeypatch):
     from user_scanner.web.session import save_backup
 
     case_id = "test-live-case-export"
@@ -333,6 +333,11 @@ def test_web_exports_from_live_scan(client):
         "elements": []
     }
     save_backup(case_id, case_data)
+
+    monkeypatch.setattr(
+        "user_scanner.core.formatter.into_pdf",
+        lambda **kwargs: b"%PDF-1.4 mock pdf content"
+    )
 
     # 1. Test PDF Export
     pdf_res = client.get(f"/api/export/pdf/{case_id}")
