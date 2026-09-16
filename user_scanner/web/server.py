@@ -1,5 +1,6 @@
 """Starlette / Uvicorn Server for user-scanner OSINT Workbench."""
 import os
+from typing import Optional
 import webbrowser
 import uvicorn
 from starlette.applications import Starlette
@@ -42,7 +43,7 @@ def create_app() -> Starlette:
     return Starlette(debug=False, routes=routes)
 
 
-def start_web_server(host: str = "127.0.0.1", port: int = 8000, target: str = None, auto_open: bool = True):
+def start_web_server(host: str = "127.0.0.1", port: int = 8000, target: Optional[str] = None, auto_open: bool = True):
     """Starts the web server with high-visibility terminal banner."""
     app = create_app()
 

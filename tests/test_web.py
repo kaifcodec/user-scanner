@@ -1,4 +1,9 @@
 import pytest
+
+pytest.importorskip("starlette")
+pytest.importorskip("jinja2")
+pytest.importorskip("sse_starlette")
+
 from starlette.testclient import TestClient
 from user_scanner.web.server import create_app
 
