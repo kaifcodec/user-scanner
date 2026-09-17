@@ -1079,6 +1079,9 @@ function showProgressDock(targetLabel, totalExpected) {
   const btnExport = document.getElementById("btn-dock-export");
   if (btnExport) btnExport.style.display = "none";
 
+  const btnSponsor = document.getElementById("btn-dock-sponsor");
+  if (btnSponsor) btnSponsor.style.display = "none";
+
   const btnClose = document.getElementById("btn-dock-close");
   if (btnClose) btnClose.style.display = "none";
 
@@ -1182,6 +1185,9 @@ function completeProgressDock(payload) {
   const btnExport = document.getElementById("btn-dock-export");
   if (btnExport) btnExport.style.display = "inline-flex";
 
+  const btnSponsor = document.getElementById("btn-dock-sponsor");
+  if (btnSponsor) btnSponsor.style.display = "inline-flex";
+
   const btnClose = document.getElementById("btn-dock-close");
   if (btnClose) btnClose.style.display = "inline-flex";
 
@@ -1214,6 +1220,9 @@ function stopProgressDock(reason = "Scan stopped by operator") {
 
   const btnExport = document.getElementById("btn-dock-export");
   if (btnExport) btnExport.style.display = "inline-flex";
+
+  const btnSponsor = document.getElementById("btn-dock-sponsor");
+  if (btnSponsor) btnSponsor.style.display = "inline-flex";
 
   const btnClose = document.getElementById("btn-dock-close");
   if (btnClose) btnClose.style.display = "inline-flex";

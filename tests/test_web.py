@@ -507,4 +507,24 @@ def test_web_scan_stream_handles_at_prefix_and_domain_suffix(client, monkeypatch
     assert "testuser" in scanned_targets
 
 
+def test_web_sponsor_integration_elements(client):
+    res = client.get("/")
+    assert res.status_code == 200
+    html = res.text
+
+    # 1. Top navigation sponsor pill
+    assert "sponsor-nav-btn" in html
+    assert "https://github.com/sponsors/kaifcodec" in html
+
+    # 2. Floating scan progress dock sponsor action
+    assert "btn-dock-sponsor" in html
+    assert "dock-btn-sponsor" in html
+
+    # 3. Export drawer sponsor card
+    assert "sponsor-drawer-card" in html
+    assert "btn-sponsor-action" in html
+    assert "Support Active Development" in html
+
+
+
 

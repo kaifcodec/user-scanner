@@ -2726,5 +2726,142 @@ body {
   font-family: var(--font-mono);
 }
 
+/* Tasteful GitHub Sponsors Integration */
+.sponsor-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: #fb7185;
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  border-radius: 20px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sponsor-nav-btn:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: #f43f5e;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.35);
+  transform: translateY(-1px);
+}
+
+.sponsor-nav-btn svg {
+  color: #f43f5e;
+  transition: transform 0.2s ease;
+}
+
+.sponsor-nav-btn:hover svg {
+  color: #ffffff;
+  transform: scale(1.15);
+}
+
+.dock-btn-sponsor {
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+  text-decoration: none;
+}
+
+.dock-btn-sponsor:hover {
+  background: rgba(244, 63, 94, 0.3);
+  border-color: #f43f5e;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.35);
+}
+
+.sponsor-drawer-card {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.05) 0%, rgba(15, 23, 42, 0.4) 100%);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s ease;
+}
+
+.sponsor-drawer-card:hover {
+  border-color: rgba(244, 63, 94, 0.45);
+}
+
+.sponsor-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sponsor-heart-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f43f5e;
+}
+
+.sponsor-card-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.3px;
+}
+
+.sponsor-card-desc {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.btn-sponsor-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  width: fit-content;
+  margin-top: 2px;
+}
+
+.btn-sponsor-action:hover {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: #f43f5e;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
+}
+
+/* Light theme overrides */
+[data-theme="light"] .sponsor-card-title {
+  color: #0f172a;
+}
+[data-theme="light"] .sponsor-card-desc {
+  color: #64748b;
+}
+[data-theme="light"] .sponsor-drawer-card {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.04) 0%, rgba(241, 245, 249, 0.8) 100%);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+
 
 
