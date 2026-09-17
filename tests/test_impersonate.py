@@ -87,3 +87,16 @@ def test_exception_becomes_error_result(monkeypatch):
 
     assert res.status == Status.ERROR
     assert res.url == "SHOWN"
+
+
+def test_get_warm_session_and_timeout(monkeypatch):
+    _reset(monkeypatch)
+
+    session = impersonate.get_warm_session(warmup_url="https://site/")
+    assert session is not None
+    assert len(FakeSession.instances) == 1
+    assert FakeSession.instances[0].calls[0][0] == "https://site/"
+
+    timeout = impersonate.get_impersonate_timeout()
+    assert timeout == impersonate.DEFAULT_TIMEOUT
+

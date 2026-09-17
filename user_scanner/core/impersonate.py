@@ -59,6 +59,19 @@ def impersonate_request(
     return session.request(method, url, **kwargs)
 
 
+def get_warm_session(
+    impersonate: str = DEFAULT_IMPERSONATE,
+    warmup_url: Optional[str] = None,
+) -> cffi.Session:
+    """Return the cached browser-impersonating session for the current proxy."""
+    return _get_warm_session(impersonate, get_proxy(), warmup_url)
+
+
+def get_impersonate_timeout() -> float:
+    """Return the effective timeout for impersonated requests."""
+    return _timeout()
+
+
 async def impersonate_request_async(
     url: str,
     method: Literal["GET", "POST"] = "GET",
