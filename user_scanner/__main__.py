@@ -34,6 +34,8 @@ from user_scanner.core.helpers import (
     load_modules,
     set_proxy_manager,
     find_category,
+    EMAIL_DOMAIN_SCOPES,
+    parse_email_domain_scopes,
 )
 from user_scanner.core.orchestrator import (
     run_user_category,
@@ -106,6 +108,17 @@ def main():
         "--list-email",
         action="store_true",
         help="List all available modules for email scanning",
+    )
+
+    parser.add_argument(
+        "--list-email-domains",
+        action="store_true",
+        help="List available email provider domain scopes",
+    )
+
+    parser.add_argument(
+        "--email-domains",
+        help="Generate emails from username input using named provider scopes (comma-separated)",
     )
 
     parser.add_argument(
@@ -261,6 +274,13 @@ def main():
         print(f"user-scanner current version -> {G}{version}{X}")
         sys.exit(0)
 
+    if args.list_email_domains:
+        print(f"\n{Fore.CYAN}Email domain scopes:{Style.RESET_ALL}")
+        print("  - all: every scope below")
+        for scope, domains in sorted(EMAIL_DOMAIN_SCOPES.items()):
+            print(f"  - {scope}: {', '.join(domains)}")
+        return
+
     if args.list_user or args.list_email:
         categories = load_categories(args.list_email, args.no_nsfw)
         sorted_cats = sorted(categories.items(), key=lambda x: x[0].lower())
@@ -338,6 +358,21 @@ def main():
                     )
                     print(f"  - {name}{loud}")
         return
+
+    if args.email_domains and (args.email or args.email_file):
+        print(f"{R}[✘] Error: --email-domains can only be used with username input.{X}")
+        sys.exit(1)
+
+    email_domains = ()
+    if args.email_domains:
+        try:
+            email_domains = parse_email_domain_scopes(args.email_domains)
+        except ValueError as e:
+            print(f"{R}[✘] Error: {e}{X}")
+            sys.exit(1)
+        if not email_domains:
+            print(f"{R}[✘] Error: --email-domains requires at least one scope.{X}")
+            sys.exit(1)
 
     if not (args.username or args.email or args.username_file or args.email_file):
         parser.print_help()
@@ -444,7 +479,7 @@ def main():
             print(
                 f"{C}[+] Loaded {len(usernames)} {'username' if len(usernames) == 1 else 'usernames'} from {args.username_file}{X}"
             )
-            is_email = False
+            is_email = bool(email_domains)
             targets_found = usernames
         except FileNotFoundError:
             print(f"{R}[✘] Error: File not found: {args.username_file}{X}")
@@ -453,8 +488,8 @@ def main():
             print(f"{R}[✘] Error reading username file: {e}{X}")
             sys.exit(1)
     else:
-        is_email = args.email is not None
-        if is_email and not is_valid_email(args.email):
+        is_email = args.email is not None or bool(email_domains)
+        if args.email and not is_valid_email(args.email):
             print(R + "[✘] Error: Invalid email format." + X)
             sys.exit(1)
 
@@ -465,18 +500,37 @@ def main():
 
     targets = []
     for target_name in targets_found:
-        temp_targets = list(islice(expand_patterns_random(target_name), args.stop))
+        username_targets = list(islice(expand_patterns_random(target_name), args.stop))
+        temp_targets = username_targets
+        if email_domains:
+            temp_targets = [
+                f"{username}@{domain}"
+                for username in username_targets
+                for domain in email_domains
+            ]
         targets.extend(temp_targets)
-        if len(temp_targets) > 1:
+        if len(username_targets) > 1:
             total = count_patterns(target_name)
-            if total > len(temp_targets):
+            if total > len(username_targets):
                 print(
-                    C + f"[+] Scanning {len(temp_targets)} of {total} permutations" + Style.RESET_ALL
+                    C + f"[+] Scanning {len(username_targets)} of {total} permutations" + Style.RESET_ALL
                 )
             else:
                 print(
-                    C + f"[+] Scanning {len(temp_targets)} permutations" + Style.RESET_ALL
+                    C + f"[+] Scanning {len(username_targets)} permutations" + Style.RESET_ALL
                 )
+
+    if email_domains:
+        valid_targets = []
+        for target in targets:
+            if is_valid_email(target):
+                valid_targets.append(target)
+            else:
+                print(f"{Y}[!] Skipping invalid generated email: {target}{X}")
+        targets = valid_targets
+        if not targets:
+            print(f"{R}[✘] Error: No valid generated emails found.{X}")
+            sys.exit(1)
 
     results = []
     show_all = args.all

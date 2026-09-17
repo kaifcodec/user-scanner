@@ -17,6 +17,8 @@
 | `-c, --category CATEGORY`   | Scan all platforms in a specific category (comma-separated for multiple); also narrows `--cross-scan` |
 | `-lu, --list-user`          | List all available modules for username scanning            |
 | `-le, --list-email`         | List all available modules for email scanning               |
+| `--list-email-domains`      | List available email provider domain scopes                 |
+| `--email-domains SCOPES`    | With username input, generate emails from named provider scopes such as `global,canada`, `usa`, or `all` and scan email modules |
 | `-v, --verbose`             | Enable verbose output to show urls of the websites          |
 | `--all`                     | Show all results including Not Found/Not Registered/Error/Skipped |
 | `-m, --module MODULE`       | Scan a specific module (comma-separated for multiple); also narrows `--cross-scan` |
