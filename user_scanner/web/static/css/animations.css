@@ -1,0 +1,51 @@
+@keyframes radar-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes blip-fade {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes card-sprout {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card-enter-anim {
+  animation: card-sprout 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Pulsing border when hit */
+@keyframes neon-pulse {
+  0% {
+    box-shadow: 0 0 0 rgba(6, 182, 212, 0);
+  }
+  50% {
+    box-shadow: 0 0 14px var(--cyan-glow);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(6, 182, 212, 0);
+  }
+}
+
+.pulse-anim {
+  animation: neon-pulse 1s ease-in-out;
+}

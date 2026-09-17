@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User-Scanner — OSINT Reconnaissance Platform</title>
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('us-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+</head>
+<body data-user-mods="{{ stats.user_raw }}" data-email-mods="{{ stats.email_raw }}" data-user-base="{{ stats.user_base }}" data-email-base="{{ stats.email_base }}" data-total-base="{{ stats.total_base }}">
+
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <div class="brand-wrapper">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+      </div>
+      <div class="brand-title">
+        USER<span class="highlight">-SCANNER</span>
+      </div>
+      <span class="badge-tag badge-version">v{{ version }}</span>
+      <span class="badge-tag badge-subtle">OSINT Suite</span>
+    </div>
+
+    <div class="nav-actions">
+      <div class="telemetry-row">
+        <div class="telemetry-pill">
+          <span class="status-beacon"></span>
+          <span>Engine: <strong>Active</strong></span>
+        </div>
+        <div class="telemetry-pill">
+          <span>Coverage: <strong id="coverage-total-count">{{ stats.total_rounded }} Supported Sites</strong></span>
+        </div>
+      </div>
+
+      <a href="https://github.com/sponsors/kaifcodec" target="_blank" rel="noopener noreferrer" class="sponsor-nav-btn" title="Support user-scanner development on GitHub Sponsors">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <span>Sponsor</span>
+      </a>
+
+      <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">
+        <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main 3-Column Layout -->
+  <main class="dashboard-grid">
+
+    <!-- Left Column: Scanner Setup -->
+    <aside class="panel-sidebar">
+      <div class="section-box">
+        <div class="section-title">
+          <span>Target Configuration</span>
+          <span style="color: var(--emerald); font-family: var(--font-mono); font-size: 0.68rem;">Ready</span>
+        </div>
+
+        <!-- Mode Navigation Tabs -->
+        <div class="primary-scan-tabs" style="margin-bottom: 12px;">
+          <button type="button" id="tab-btn-user-scan" class="primary-scan-tab active">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>Username Search</span>
+          </button>
+          <button type="button" id="tab-btn-email-scan" class="primary-scan-tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            <span>Email Search</span>
+          </button>
+        </div>
+
+        <form id="scan-form">
+          <!-- Username Scan Section -->
+          <div id="section-user-scan" class="scan-section active">
+            <div class="subtab-group" style="margin-bottom: 10px;">
+              <button type="button" id="user-subtab-single" class="subtab-btn active">Single Target (-u)</button>
+              <button type="button" id="user-subtab-bulk" class="subtab-btn">Bulk Target List (-uf)</button>
+            </div>
+
+            <!-- Single Username Input -->
+            <div id="user-single-target-box">
+              <div class="input-group">
+                <label class="input-label">Target Username (-u)</label>
+                <input type="text" id="scan-user-target" class="modern-input" placeholder="e.g. target_username" value="{{ prefill_target }}" autocomplete="off" spellcheck="false">
+              </div>
+
+              <div class="input-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <label class="input-label">Permutations Limit (-s)</label>
+                  <span id="user-perm-count-label" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--cyan);">1 target</span>
+                </div>
+                <input type="number" id="scan-user-permutations" class="modern-input" min="1" max="25" value="1" title="Generate up to N username mutations">
+              </div>
+            </div>
+
+            <!-- Bulk Usernames Input -->
+            <div id="user-bulk-target-box" style="display: none;">
+              <div class="input-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <label class="input-label">Bulk Usernames (-uf)</label>
+                  <span id="user-bulk-count-label" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--cyan);">0 usernames</span>
+                </div>
+                <textarea id="scan-user-bulk-targets" class="modern-input bulk-textarea" rows="4" placeholder="Enter usernames (one per line)&#10;target_alpha&#10;target_beta" spellcheck="false"></textarea>
+              </div>
+
+              <div class="input-group">
+                <label class="file-upload-label" for="file-user-bulk-targets">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  <span>Import Username List (.txt)</span>
+                </label>
+                <input type="file" id="file-user-bulk-targets" accept=".txt,.csv" style="display: none;">
+              </div>
+            </div>
+
+            <!-- Specific Module Picker (-m) for Usernames -->
+            <div class="input-group" style="margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="input-label" style="display: flex; align-items: center; gap: 6px;">
+                  <span>Target Specific Modules (-m)</span>
+                  <span id="user-modules-badge" class="badge-pill badge-cyan" style="display: none; font-size: 0.6rem; padding: 1px 6px;">0 Selected</span>
+                </label>
+                <span id="user-clear-modules-btn" style="cursor: pointer; font-size: 0.65rem; color: var(--text-muted); display: none;">Clear all</span>
+              </div>
+              <div class="module-search-wrap">
+                <input type="text" id="user-module-search-input" class="modern-input" placeholder="Type module (e.g. instagram, github) & press Enter" autocomplete="off">
+                <div id="user-module-suggestions" class="module-suggestions-dropdown" style="display: none;"></div>
+              </div>
+              <div id="user-selected-modules" class="selected-tags-container"></div>
+            </div>
+
+            <!-- Category Filter Chips (-c) for Usernames -->
+            <div class="input-group" id="user-cat-group">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="input-label" id="user-cat-label">Filter Categories (-c)</label>
+                <span id="user-cat-status-note" style="font-size: 0.65rem; color: var(--text-muted); display: none;">(Bypassed by -m)</span>
+              </div>
+              <div id="user-category-chips-group" class="filter-chip-group" style="flex-wrap: wrap; gap: 4px;">
+                <button type="button" class="filter-chip active" data-cat="ALL">ALL</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Email Scan Section -->
+          <div id="section-email-scan" class="scan-section" style="display: none;">
+            <div class="subtab-group" style="margin-bottom: 10px;">
+              <button type="button" id="email-subtab-single" class="subtab-btn active">Single Target (-e)</button>
+              <button type="button" id="email-subtab-bulk" class="subtab-btn">Bulk Target List (-ef)</button>
+            </div>
+
+            <!-- Single Email Input -->
+            <div id="email-single-target-box">
+              <div class="input-group">
+                <label class="input-label">Target Email Address (-e)</label>
+                <input type="email" id="scan-email-target" class="modern-input" placeholder="e.g. subject@company.com" autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+
+            <!-- Bulk Emails Input -->
+            <div id="email-bulk-target-box" style="display: none;">
+              <div class="input-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <label class="input-label">Bulk Emails (-ef)</label>
+                  <span id="email-bulk-count-label" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--cyan);">0 emails</span>
+                </div>
+                <textarea id="scan-email-bulk-targets" class="modern-input bulk-textarea" rows="4" placeholder="Enter emails (one per line)&#10;user1@gmail.com&#10;user2@proton.me" spellcheck="false"></textarea>
+              </div>
+
+              <div class="input-group">
+                <label class="file-upload-label" for="file-email-bulk-targets">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  <span>Import Email List (.txt)</span>
+                </label>
+                <input type="file" id="file-email-bulk-targets" accept=".txt,.csv" style="display: none;">
+              </div>
+            </div>
+
+            <!-- Specific Module Picker (-m) for Emails -->
+            <div class="input-group" style="margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="input-label" style="display: flex; align-items: center; gap: 6px;">
+                  <span>Target Specific Modules (-m)</span>
+                  <span id="email-modules-badge" class="badge-pill badge-cyan" style="display: none; font-size: 0.6rem; padding: 1px 6px;">0 Selected</span>
+                </label>
+                <span id="email-clear-modules-btn" style="cursor: pointer; font-size: 0.65rem; color: var(--text-muted); display: none;">Clear all</span>
+              </div>
+              <div class="module-search-wrap">
+                <input type="text" id="email-module-search-input" class="modern-input" placeholder="Type module (e.g. gravatar, spotify) & press Enter" autocomplete="off">
+                <div id="email-module-suggestions" class="module-suggestions-dropdown" style="display: none;"></div>
+              </div>
+              <div id="email-selected-modules" class="selected-tags-container"></div>
+            </div>
+
+            <!-- Category Filter Chips (-c) for Emails -->
+            <div class="input-group" id="email-cat-group">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="input-label" id="email-cat-label">Filter Categories (-c)</label>
+                <span id="email-cat-status-note" style="font-size: 0.65rem; color: var(--text-muted); display: none;">(Bypassed by -m)</span>
+              </div>
+              <div id="email-category-chips-group" class="filter-chip-group" style="flex-wrap: wrap; gap: 4px;">
+                <button type="button" class="filter-chip active" data-cat="ALL">ALL</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Advanced Options Accordion -->
+          <div class="accordion-card">
+            <button type="button" id="adv-accordion-toggle" class="accordion-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>Advanced Options</span>
+              </div>
+              <svg class="accordion-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+
+            <div id="adv-accordion-content" class="accordion-body" style="display: none;">
+              <!-- Master Toggle -->
+              <div class="master-toggle-card">
+                <label class="cyber-switch-label" style="font-weight: 700; color: var(--cyan);">
+                  <span>Enable Custom Parameters</span>
+                  <label class="cyber-switch">
+                    <input type="checkbox" id="cfg-master-advanced-toggle">
+                    <span class="cyber-slider"></span>
+                  </label>
+                </label>
+                <div id="master-toggle-status-text" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                  Default mode: safe scan (skips notification triggers, excludes adult platforms, optimal concurrency).
+                </div>
+              </div>
+
+              <!-- Inner Controls -->
+              <div id="adv-controls-group" class="adv-controls-dimmed">
+                <div class="sub-section-title">Notification &amp; Content Filters</div>
+                <div class="control-row">
+                  <label class="cyber-switch-label" title="Enable modules that may trigger notification emails/SMS to the target">
+                    <span>Allow Loud Modules (--allow-loud)</span>
+                    <label class="cyber-switch">
+                      <input type="checkbox" id="cfg-allow-loud">
+                      <span class="cyber-slider"></span>
+                    </label>
+                  </label>
+                </div>
+
+                <div class="control-row">
+                  <label class="cyber-switch-label" title="Exclude adult platforms from the scan">
+                    <span>Exclude Adult Platforms (--no-nsfw)</span>
+                    <label class="cyber-switch">
+                      <input type="checkbox" id="cfg-no-nsfw">
+                      <span class="cyber-slider"></span>
+                    </label>
+                  </label>
+                </div>
+
+                <div class="control-row">
+                  <label class="cyber-switch-label" title="Include negative and error results in output">
+                    <span>Show All Results (--all)</span>
+                    <label class="cyber-switch">
+                      <input type="checkbox" id="cfg-show-all">
+                      <span class="cyber-slider"></span>
+                    </label>
+                  </label>
+                </div>
+
+                <div class="sub-section-title">Performance &amp; Network Tuning</div>
+                <div class="control-grid-2">
+                  <div class="input-group" style="margin-bottom: 6px;">
+                    <label class="input-label" style="font-size: 0.65rem;">Concurrency (-C)</label>
+                    <input type="number" id="cfg-concurrency" class="modern-input" min="0" max="100" placeholder="Auto" title="Max concurrent requests (0 = automatic)">
+                  </div>
+                  <div class="input-group" style="margin-bottom: 6px;">
+                    <label class="input-label" style="font-size: 0.65rem;">Timeout (-t sec)</label>
+                    <input type="number" id="cfg-timeout" class="modern-input" min="1" max="60" value="10" title="Request timeout in seconds">
+                  </div>
+                </div>
+                <div class="input-group" style="margin-bottom: 10px;">
+                  <label class="input-label" style="font-size: 0.65rem;">Request Delay (-d sec)</label>
+                  <input type="number" id="cfg-delay" class="modern-input" min="0" max="10" step="0.1" value="0.0" title="Inter-request delay in seconds">
+                </div>
+
+                <div class="sub-section-title">Proxy Settings (-P, --validate-proxies)</div>
+                <div class="input-group" style="margin-bottom: 6px;">
+                  <textarea id="cfg-proxies" class="modern-input bulk-textarea" rows="2" placeholder="http://user:pass@host:port&#10;socks5://127.0.0.1:9050" spellcheck="false"></textarea>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px;">
+                  <button type="button" id="btn-validate-proxies" class="btn-proxy-test">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    <span>Validate Proxies</span>
+                  </button>
+                  <span id="proxy-validate-badge" class="proxy-status-pill" style="display: none;"></span>
+                </div>
+
+                <div class="sub-section-title">Cross-Scan Pivoting (--cross-scan)</div>
+                <div class="control-row" style="margin-bottom: 6px;">
+                  <label class="cyber-switch-label" title="Recursively follow discovered handles and email addresses">
+                    <span>Enable Cross-Scan</span>
+                    <label class="cyber-switch">
+                      <input type="checkbox" id="cfg-cross-scan">
+                      <span class="cyber-slider"></span>
+                    </label>
+                  </label>
+                </div>
+                <div class="control-grid-2">
+                  <div class="input-group" style="margin-bottom: 6px;">
+                    <label class="input-label" style="font-size: 0.65rem;">Depth (--cross-depth)</label>
+                    <select id="cfg-cross-depth" class="modern-input" style="padding: 4px 6px;">
+                      <option value="1" selected>1 Hop</option>
+                      <option value="2">2 Hops</option>
+                    </select>
+                  </div>
+                  <div class="input-group" style="margin-bottom: 6px;">
+                    <label class="input-label" style="font-size: 0.65rem;">Sweep (--cross-sweep)</label>
+                    <select id="cfg-cross-sweep" class="modern-input" style="padding: 4px 6px;">
+                      <option value="1">Top 1</option>
+                      <option value="3" selected>Top 3</option>
+                      <option value="5">Top 5</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="control-grid-2">
+                  <div class="input-group" style="margin-bottom: 10px;">
+                    <label class="input-label" style="font-size: 0.65rem;">Links (--cross-links)</label>
+                    <select id="cfg-cross-links" class="modern-input" style="padding: 4px 6px;">
+                      <option value="all" selected>All</option>
+                      <option value="matched">Matched</option>
+                      <option value="verified">Verified</option>
+                    </select>
+                  </div>
+                  <div class="input-group" style="margin-bottom: 10px;">
+                    <label class="input-label" style="font-size: 0.65rem;">Emails (--cross-emails)</label>
+                    <select id="cfg-cross-emails" class="modern-input" style="padding: 4px 6px;">
+                      <option value="verified" selected>Verified</option>
+                      <option value="all">All</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="sub-section-title">Hudson Rock Breach Intelligence (--hudson)</div>
+                <div class="control-row">
+                  <label class="cyber-switch-label" title="Query Hudson Rock Cavalier database for compromised device records">
+                    <span>Hudson Rock Breach Check</span>
+                    <label class="cyber-switch">
+                      <input type="checkbox" id="cfg-hudson-scan">
+                      <span class="cyber-slider"></span>
+                    </label>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-run-scan" class="btn-cyber btn-glow-cyan" style="margin-top: 14px; width: 100%;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="2" x2="12" y2="6"></line>
+              <line x1="12" y1="18" x2="12" y2="22"></line>
+              <line x1="2" y1="12" x2="6" y2="12"></line>
+              <line x1="18" y1="12" x2="22" y2="12"></line>
+            </svg>
+            <span id="btn-run-scan-text">Scan Username</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Live Telemetry Card -->
+      <div class="section-box" style="margin-top: 14px;">
+        <div class="section-title">
+          <span>Scan Telemetry</span>
+          <span id="scan-state-badge" class="b-metric">IDLE</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary);">
+          <div style="display: flex; justify-content: space-between;">
+            <span>Sites Queued:</span>
+            <strong id="stat-vectors-queued" style="color: var(--cyan);">{{ stats.user_rounded }}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Checks Completed:</span>
+            <strong id="stat-completed-checks">0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Accounts Found:</span>
+            <strong id="stat-verified-count" style="color: var(--emerald);">0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Linked Identifiers:</span>
+            <strong id="stat-pivots-count" style="color: #ec4899;">0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Infostealer Matches:</span>
+            <strong id="stat-hudson-count" style="color: var(--rose);">0</strong>
+          </div>
+          <div id="telemetry-progress-container" style="display: none; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border-subtle);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>Scan Progress:</span>
+              <strong id="telemetry-progress-percent" style="color: var(--cyan);">0.0% (0 left)</strong>
+            </div>
+            <div style="height: 6px; background: rgba(100, 116, 139, 0.2); border-radius: 4px; overflow: hidden;">
+              <div id="telemetry-progress-fill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #06b6d4, #10b981); transition: width 0.2s ease;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Column: Relationship Canvas -->
+    <section class="canvas-wrapper">
+
+      <button id="toggle-left-btn" class="sidebar-toggle-btn toggle-left" title="Toggle Sidebar">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <button id="toggle-right-btn" class="sidebar-toggle-btn toggle-right" title="Toggle Inspector">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+
+      <!-- Canvas Controls -->
+      <div class="canvas-top-bar">
+        <div class="canvas-top-left">
+          <div class="canvas-search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="canvas-search" class="canvas-search-input" placeholder="Filter entities, platforms, emails...">
+          </div>
+
+          <div class="filter-chip-group">
+            <button class="filter-chip active" data-category="ALL">All</button>
+            <button class="filter-chip" data-category="ACTOR">Target</button>
+            <button class="filter-chip" data-category="DEV">Dev</button>
+            <button class="filter-chip" data-category="SOCIAL">Social</button>
+            <button class="filter-chip" data-category="GAMING">Gaming</button>
+            <button class="filter-chip" data-category="FINANCE">Finance</button>
+            <button class="filter-chip" data-category="PIVOTS">Pivots</button>
+          </div>
+        </div>
+
+        <div class="canvas-top-right">
+          <div class="canvas-control-group">
+            <select id="layout-select" class="canvas-select" style="min-width: 160px;">
+              <option value="concentric" selected>Concentric Layout</option>
+              <option value="cose">Force-Directed Layout</option>
+              <option value="breadthfirst">Tree Layout</option>
+              <option value="circle">Circular Layout</option>
+            </select>
+          </div>
+
+          <div class="canvas-control-group">
+            <button id="btn-zoom-in" class="canvas-tool-btn" title="Zoom In">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+            </button>
+            <button id="btn-zoom-out" class="canvas-tool-btn" title="Zoom Out">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+            </button>
+            <button id="btn-fit-graph" class="canvas-tool-btn" title="Fit to Screen">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+            </button>
+            <button id="btn-reset-layout" class="canvas-tool-btn" title="Reset Layout">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            </button>
+            <button id="btn-export-png" class="canvas-tool-btn" title="Export High-Res PNG">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            </button>
+            <button id="btn-theater-mode" class="canvas-tool-btn" title="Full Width View">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Live Scan Progress & Execution Dock -->
+      <div id="scan-progress-dock" class="scan-progress-dock" style="display: none;">
+        <div class="dock-header">
+          <div class="dock-status-group">
+            <span id="dock-radar-beacon" class="dock-beacon beacon-pulse"></span>
+            <span id="dock-status-text" class="dock-status-label">INITIALIZING OSINT PIPELINE...</span>
+            <span id="dock-target-badge" class="dock-target-badge">@target</span>
+          </div>
+          <div class="dock-metrics-group">
+            <span id="dock-counts-text" class="dock-counts">0 / 0 checks</span>
+            <span id="dock-remaining-text" class="dock-remaining">0 scans left</span>
+            <span id="dock-percent-text" class="dock-percent">0.0%</span>
+          </div>
+          <div class="dock-actions-group">
+            <button type="button" id="btn-dock-stop" class="dock-action-btn dock-btn-stop" title="Stop scan immediately">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
+              <span>Stop</span>
+            </button>
+            <button type="button" id="btn-dock-export" class="dock-action-btn dock-btn-export" style="display: none;" title="Go to export panel">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Export</span>
+            </button>
+            <a href="https://github.com/sponsors/kaifcodec" target="_blank" rel="noopener noreferrer" id="btn-dock-sponsor" class="dock-action-btn dock-btn-sponsor" style="display: none;" title="Support user-scanner development on GitHub Sponsors">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              <span>Sponsor</span>
+            </a>
+            <button type="button" id="btn-dock-close" class="dock-action-btn dock-btn-close" style="display: none;" title="Dismiss status banner">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+        </div>
+        <div class="dock-progress-track">
+          <div id="dock-progress-fill" class="dock-progress-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Floating HUD -->
+      <div class="floating-hud">
+        <div class="hud-column">
+          <span class="hud-caption">Target</span>
+          <span id="hud-actor" class="hud-value cyan">--</span>
+        </div>
+        <div class="hud-column">
+          <span class="hud-caption">Accounts Found</span>
+          <span id="hud-ip" class="hud-value emerald">0 Verified</span>
+        </div>
+        <div class="hud-column">
+          <span class="hud-caption">Platforms Checked</span>
+          <span id="hud-conf" class="hud-value emerald">0 / 0</span>
+        </div>
+        <div class="hud-column">
+          <span class="hud-caption">Status</span>
+          <span id="hud-geo" class="hud-value">Ready</span>
+        </div>
+        <div class="hud-column">
+          <span class="hud-caption">Scan Date</span>
+          <span id="hud-scan-date" class="hud-value cyan">--</span>
+        </div>
+      </div>
+
+      <!-- Graph Viewport -->
+      <div id="cy"></div>
+
+      <!-- Canvas Status Banner -->
+      <div id="canvas-status-banner" class="canvas-status-banner"></div>
+
+      <!-- Canvas Legend -->
+      <div class="floating-legend">
+        <div class="legend-node"><div class="legend-dot" style="background: #f43f5e;"></div> Target Entity</div>
+        <div class="legend-node"><div class="legend-dot" style="background: #10b981;"></div> Developer</div>
+        <div class="legend-node"><div class="legend-dot" style="background: #06b6d4;"></div> Social Media</div>
+        <div class="legend-node"><div class="legend-dot" style="background: #a855f7;"></div> Gaming</div>
+        <div class="legend-node"><div class="legend-dot" style="background: #f59e0b;"></div> Finance</div>
+        <div class="legend-node"><div class="legend-dot" style="background: #ec4899;"></div> Discovered Email</div>
+        <div class="legend-node"><div class="legend-dot" style="background: #10b981; border: 1.5px dashed #34d399;"></div> Connected Link</div>
+      </div>
+
+      <!-- Stepper Modal Overlay -->
+      <div id="stepper-modal" class="stepper-overlay">
+        <div class="stepper-card">
+          <div class="stepper-header">
+            <div class="stepper-title">
+              <span class="status-beacon"></span>
+              Scan Execution Pipeline
+            </div>
+            <span id="stepper-pct" style="font-family: var(--font-mono); color: var(--emerald); font-weight: 700;">0%</span>
+          </div>
+
+          <div id="stepper-logs-content" class="stepper-logs"></div>
+
+          <div class="stepper-progress">
+            <div class="stepper-bar-bg">
+              <div id="stepper-progress-fill" class="stepper-bar-fill"></div>
+            </div>
+          </div>
+
+          <button id="btn-close-stepper" class="btn-cyber btn-glow-cyan" onclick="closeStepperModal()" style="margin-top: 16px; display: none;">
+            View Relationship Graph
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Inspector & Analytics Panel -->
+    <aside class="panel-drawer">
+      <nav class="nav-tabs">
+        <div class="tab-pill active" data-tab="tab-inspector">Inspector</div>
+        <div class="tab-pill" data-tab="tab-analytics">Analytics</div>
+        <div class="tab-pill" data-tab="tab-hudson">Infostealer</div>
+        <div class="tab-pill" data-tab="tab-exports">Export Data</div>
+      </nav>
+
+      <!-- Tab 1: Inspector -->
+      <div id="tab-inspector" class="tab-body active">
+        <div class="section-title">Entity Details</div>
+        <div id="node-inspector-content">
+          <div style="color: #64748b; font-size: 0.8rem; padding: 24px 12px; text-align: center;">
+            Select any entity or platform node in the relationship graph to inspect account details, metadata, and connected links.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Analytics -->
+      <div id="tab-analytics" class="tab-body">
+        <div class="section-title">Digital Footprint Distribution</div>
+        <p style="font-size: 0.72rem; color: #94a3b8; line-height: 1.4; margin-bottom: 12px;">
+          Categorization summary across developer repositories, social networks, gaming communities, and financial services.
+        </p>
+
+        <div id="footprint-summary" class="analytics-narrative" style="margin-bottom: 16px;">
+          Execute a scan to generate footprint distribution metrics.
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">Category Breakdown</div>
+        <div id="category-breakdown-list" style="display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 0.78rem;">
+          <div class="detail-box">DEV: <span id="cat-count-dev" style="color: var(--emerald); font-weight: bold;">--</span></div>
+          <div class="detail-box">SOCIAL: <span id="cat-count-social" style="color: var(--cyan); font-weight: bold;">--</span></div>
+          <div class="detail-box">COMMUNITY: <span id="cat-count-community" style="color: var(--blue); font-weight: bold;">--</span></div>
+          <div class="detail-box">GAMING: <span id="cat-count-gaming" style="color: var(--purple); font-weight: bold;">--</span></div>
+          <div class="detail-box">FINANCE: <span id="cat-count-finance" style="color: var(--amber); font-weight: bold;">--</span></div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Hudson Rock Infostealer Intelligence -->
+      <div id="tab-hudson" class="tab-body">
+        <div class="section-title">Hudson Rock Breach Telemetry</div>
+        <p style="font-size: 0.72rem; color: #94a3b8; line-height: 1.4; margin-bottom: 12px;">
+          Telemetry from Hudson Rock Cavalier v2 database indexing infostealer malware infection records (RedLine, Vidar, Lumma, MetaStealer).
+        </p>
+
+        <div id="hudson-status-card" class="detail-box" style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.75rem;">Status:</span>
+          <span id="hudson-badge-status" class="badge-pill" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8;">IDLE</span>
+        </div>
+
+        <div id="hudson-results-container">
+          <div style="color: #64748b; font-size: 0.8rem; padding: 24px 12px; text-align: center;">
+            Enable "Hudson Rock Breach Check" in Advanced Settings to query malware telemetry for the target.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Export Reports & Data -->
+      <div id="tab-exports" class="tab-body">
+        <div class="section-title">Export Reports &amp; Data</div>
+        <p style="font-size: 0.72rem; color: #94a3b8; line-height: 1.4; margin-bottom: 14px;">
+          Export findings in native user-scanner formats matching the CLI (-o / -f): executive PDF reports, CSV audits, and structured JSON results.
+        </p>
+
+        <!-- Dynamic Export Status Banner -->
+        <div id="export-status-card" class="export-status-card is-locked">
+          <div class="export-status-header">
+            <span id="export-status-badge" class="badge-pill export-badge-locked">LOCKED</span>
+            <span id="export-status-title">Scan Required</span>
+          </div>
+          <p id="export-status-desc">
+            Exports are locked while a scan is in progress or before a target is scanned. Complete a scan to unlock reports.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a id="btn-pdf-export" class="btn-cyber btn-export-pdf is-locked" href="javascript:void(0)" aria-disabled="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>Download PDF Report (-f pdf)</span>
+            <span class="btn-lock-indicator">🔒 Locked</span>
+          </a>
+          <a id="btn-csv-export" class="btn-cyber btn-export-csv is-locked" href="javascript:void(0)" aria-disabled="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg>
+            <span>Export CSV Audit (-f csv)</span>
+            <span class="btn-lock-indicator">🔒 Locked</span>
+          </a>
+          <a id="btn-json-export" class="btn-cyber btn-export-json is-locked" href="javascript:void(0)" aria-disabled="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span>Export JSON Results (-f json)</span>
+            <span class="btn-lock-indicator">🔒 Locked</span>
+          </a>
+        </div>
+
+        <!-- Sponsor Card in Export Drawer -->
+        <div class="sponsor-drawer-card">
+          <div class="sponsor-card-header">
+            <div class="sponsor-heart-badge">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <span class="sponsor-card-title">Support Active Development</span>
+          </div>
+          <p class="sponsor-card-desc">
+            Maintaining {{ stats.total_rounded }} detection modules against constant website changes requires continuous research. If user-scanner assists your investigations, consider supporting development.
+          </p>
+          <a href="https://github.com/sponsors/kaifcodec" target="_blank" rel="noopener noreferrer" class="btn-sponsor-action">
+            <span>Sponsor on GitHub</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          </a>
+        </div>
+
+        <div class="detail-item" style="margin-top: 20px;">
+          <div class="detail-lbl">Native Engine</div>
+          <div class="detail-box">Standard user-scanner core formatter</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-lbl">Evidence Structure</div>
+          <div class="detail-box">Verified profiles, media avatars &amp; footprint table</div>
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- Scan Complete Sponsor Alert Toast -->
+  <div id="scan-complete-sponsor-toast" class="sponsor-toast" style="display: none;" role="alert" aria-live="polite">
+    <button type="button" class="sponsor-toast-close" id="btn-close-sponsor-toast" aria-label="Close sponsor alert">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <div class="sponsor-toast-header">
+      <div class="sponsor-toast-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </div>
+      <div class="sponsor-toast-badge">OSINT RECON COMPLETE</div>
+    </div>
+    <div class="sponsor-toast-title" id="sponsor-toast-title">Scan Complete — Verified Accounts Found</div>
+    <div class="sponsor-toast-desc" id="sponsor-toast-desc">
+      user-scanner actively maintains {{ stats.total_rounded }} detection modules with regular community updates. If this scan assisted your investigation, please consider sponsoring development.
+    </div>
+    <div class="sponsor-toast-actions">
+      <a href="https://github.com/sponsors/kaifcodec" target="_blank" rel="noopener noreferrer" class="btn-toast-sponsor" id="btn-toast-sponsor">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <span>Sponsor on GitHub</span>
+      </a>
+      <button type="button" class="btn-toast-dismiss" id="btn-toast-dismiss">Maybe Later</button>
+    </div>
+  </div>
+
+  <script src="/static/js/graph.js"></script>
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

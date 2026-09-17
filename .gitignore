@@ -11,6 +11,8 @@ output/
 result.json
 *.csv
 validated_proxies.txt
+scan_backups.json
+user_scanner/web/data/
 
 # Local-only files (scratch, private notes, AI working files)
 docs/local/
