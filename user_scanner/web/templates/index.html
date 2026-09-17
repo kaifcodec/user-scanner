@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="/static/css/dashboard.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
 </head>
-<body>
+<body data-user-mods="{{ stats.user_raw }}" data-email-mods="{{ stats.email_raw }}" data-user-base="{{ stats.user_base }}" data-email-base="{{ stats.email_base }}" data-total-base="{{ stats.total_base }}">
 
   <!-- Top Navigation Bar -->
   <header class="top-nav">
@@ -41,7 +41,7 @@
           <span>Engine: <strong>Active</strong></span>
         </div>
         <div class="telemetry-pill">
-          <span>Coverage: <strong>715+ Supported Sites</strong></span>
+          <span>Coverage: <strong id="coverage-total-count">{{ stats.total_rounded }} Supported Sites</strong></span>
         </div>
       </div>
 
@@ -392,7 +392,7 @@
         <div style="display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary);">
           <div style="display: flex; justify-content: space-between;">
             <span>Sites Queued:</span>
-            <strong id="stat-vectors-queued" style="color: var(--cyan);">550+</strong>
+            <strong id="stat-vectors-queued" style="color: var(--cyan);">{{ stats.user_rounded }}</strong>
           </div>
           <div style="display: flex; justify-content: space-between;">
             <span>Checks Completed:</span>
@@ -694,7 +694,7 @@
             <span class="sponsor-card-title">Support Active Development</span>
           </div>
           <p class="sponsor-card-desc">
-            Maintaining 450+ detection modules against constant website changes requires continuous research. If user-scanner assists your investigations, consider supporting development.
+            Maintaining {{ stats.total_rounded }} detection modules against constant website changes requires continuous research. If user-scanner assists your investigations, consider supporting development.
           </p>
           <a href="https://github.com/sponsors/kaifcodec" target="_blank" rel="noopener noreferrer" class="btn-sponsor-action">
             <span>Sponsor on GitHub</span>
@@ -715,6 +715,33 @@
     </aside>
 
   </main>
+
+  <!-- Scan Complete Sponsor Alert Toast -->
+  <div id="scan-complete-sponsor-toast" class="sponsor-toast" style="display: none;" role="alert" aria-live="polite">
+    <button type="button" class="sponsor-toast-close" id="btn-close-sponsor-toast" aria-label="Close sponsor alert">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <div class="sponsor-toast-header">
+      <div class="sponsor-toast-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </div>
+      <div class="sponsor-toast-badge">OSINT RECON COMPLETE</div>
+    </div>
+    <div class="sponsor-toast-title" id="sponsor-toast-title">Scan Complete — Verified Accounts Found</div>
+    <div class="sponsor-toast-desc" id="sponsor-toast-desc">
+      user-scanner actively maintains {{ stats.total_rounded }} detection modules with regular community updates. If this scan assisted your investigation, please consider sponsoring development.
+    </div>
+    <div class="sponsor-toast-actions">
+      <a href="https://github.com/sponsors/kaifcodec" target="_blank" rel="noopener noreferrer" class="btn-toast-sponsor" id="btn-toast-sponsor">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <span>Sponsor on GitHub</span>
+      </a>
+      <button type="button" class="btn-toast-dismiss" id="btn-toast-dismiss">Maybe Later</button>
+    </div>
+  </div>
 
   <script src="/static/js/graph.js"></script>
   <script src="/static/js/dashboard.js"></script>

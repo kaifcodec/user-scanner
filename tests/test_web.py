@@ -525,6 +525,32 @@ def test_web_sponsor_integration_elements(client):
     assert "btn-sponsor-action" in html
     assert "Support Active Development" in html
 
+    # 4. Scan complete sponsor alert toast
+    assert "scan-complete-sponsor-toast" in html
+    assert "sponsor-toast" in html
+    assert "btn-close-sponsor-toast" in html
+    assert "btn-toast-sponsor" in html
+    assert "btn-toast-dismiss" in html
+    assert "sponsor-toast-title" in html
+    assert "sponsor-toast-desc" in html
+
+    # 5. Dynamic Module Calculation Dataset Attributes & Coverage
+    assert "data-user-mods" in html
+    assert "data-email-mods" in html
+    assert "data-user-base" in html
+    assert "data-email-base" in html
+    assert "data-total-base" in html
+    assert "coverage-total-count" in html
 
 
-
+def test_catalog_stats_dynamic_counting():
+    from user_scanner.web.routes.ui import get_catalog_stats
+    stats = get_catalog_stats()
+    assert stats["user_raw"] > 0
+    assert stats["email_raw"] > 0
+    assert stats["user_base"] == (stats["user_raw"] // 5) * 5
+    assert stats["email_base"] == (stats["email_raw"] // 5) * 5
+    assert stats["total_base"] == stats["user_base"] + stats["email_base"]
+    assert stats["user_rounded"] == f"{stats['user_base']}+"
+    assert stats["email_rounded"] == f"{stats['email_base']}+"
+    assert stats["total_rounded"] == f"{stats['total_base']}+"

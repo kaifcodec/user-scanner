@@ -21,8 +21,25 @@ let emailTargetMode = "single";
 // Catalog and module selection state
 let userModuleCatalog = [];
 let emailModuleCatalog = [];
-let userTotalModules = 550;
-let emailTotalModules = 120;
+
+// Dynamically extract module counts and rounded baseline floors from body dataset
+const bodyDataset = (typeof document !== "undefined" && document.body) ? document.body.dataset : {};
+let userTotalModules = parseInt(bodyDataset.userMods, 10) || 532;
+let emailTotalModules = parseInt(bodyDataset.emailMods, 10) || 188;
+let userBaseFloor = parseInt(bodyDataset.userBase, 10) || (Math.floor(userTotalModules / 5) * 5);
+let emailBaseFloor = parseInt(bodyDataset.emailBase, 10) || (Math.floor(emailTotalModules / 5) * 5);
+let totalCoverageFloor = parseInt(bodyDataset.totalBase, 10) || (userBaseFloor + emailBaseFloor);
+
+function updateGlobalCoverageCounter() {
+  userBaseFloor = Math.floor(userTotalModules / 5) * 5;
+  emailBaseFloor = Math.floor(emailTotalModules / 5) * 5;
+  totalCoverageFloor = userBaseFloor + emailBaseFloor;
+  const covEl = document.getElementById("coverage-total-count");
+  if (covEl) {
+    covEl.innerText = `${totalCoverageFloor}+ Supported Sites`;
+  }
+}
+
 let userSelectedCategories = new Set(["ALL"]);
 let emailSelectedCategories = new Set(["ALL"]);
 let userSelectedModules = [];
@@ -32,7 +49,7 @@ let validatedProxies = [];
 let hudsonResults = [];
 
 let telemetry = {
-  queued: 550,
+  queued: userBaseFloor,
   checked: 0,
   verified: 0,
   pivots: 0,
@@ -88,6 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupScanForm();
   setupExportControls();
   setupProgressDock();
+  setupSponsorToast();
 
   // Pre-load catalogs for responsive tab switching
   fetchModuleCatalog(false);
@@ -146,7 +164,7 @@ function switchPrimaryScanTab(type) {
       btnSubmitText.innerText = "Scan Email";
     }
     if (queuedEl) {
-      queuedEl.innerText = `${emailTotalModules}+`;
+      queuedEl.innerText = `${emailBaseFloor}+`;
     }
     if (emailModuleCatalog.length === 0) {
       fetchModuleCatalog(true);
@@ -166,7 +184,7 @@ function switchPrimaryScanTab(type) {
       btnSubmitText.innerText = "Scan Username";
     }
     if (queuedEl) {
-      queuedEl.innerText = `${userTotalModules}+`;
+      queuedEl.innerText = `${userBaseFloor}+`;
     }
     if (userModuleCatalog.length === 0) {
       fetchModuleCatalog(false);
@@ -360,18 +378,20 @@ async function fetchModuleCatalog(isEmail = false) {
     if (isEmail) {
       emailModuleCatalog = catalog;
       emailTotalModules = data.total_modules || catalog.length;
+      updateGlobalCoverageCounter();
       renderDynamicCategoryChips("email", data.categories, emailTotalModules);
-      if (scanType === "email") {
+      if (scanType === "email" && emailSelectedCategories.has("ALL") && emailSelectedModules.length === 0) {
         const queuedEl = document.getElementById("stat-vectors-queued");
-        if (queuedEl) queuedEl.innerText = `${emailTotalModules}+`;
+        if (queuedEl) queuedEl.innerText = `${emailBaseFloor}+`;
       }
     } else {
       userModuleCatalog = catalog;
       userTotalModules = data.total_modules || catalog.length;
+      updateGlobalCoverageCounter();
       renderDynamicCategoryChips("username", data.categories, userTotalModules);
-      if (scanType === "username") {
+      if (scanType === "username" && userSelectedCategories.has("ALL") && userSelectedModules.length === 0) {
         const queuedEl = document.getElementById("stat-vectors-queued");
-        if (queuedEl) queuedEl.innerText = `${userTotalModules}+`;
+        if (queuedEl) queuedEl.innerText = `${userBaseFloor}+`;
       }
     }
   } catch (err) {
@@ -435,8 +455,11 @@ function syncScopeUI(type) {
         const catalog = isEmail ? emailModuleCatalog : userModuleCatalog;
         const lowerCats = Array.from(selectedSet).map(s => s.toLowerCase());
         count = catalog.filter(m => lowerCats.includes((m.category || "").toLowerCase())).length;
+        if (queuedEl) queuedEl.innerText = `${count}`;
+      } else {
+        const base = isEmail ? emailBaseFloor : userBaseFloor;
+        if (queuedEl) queuedEl.innerText = `${base}+`;
       }
-      if (queuedEl) queuedEl.innerText = `${count}+`;
     }
   }
 }
@@ -1232,6 +1255,87 @@ function stopProgressDock(reason = "Scan stopped by operator") {
   if (telPct) telPct.innerText = `STOPPED (${telemetry.checked} checks complete)`;
 }
 
+// Scan-complete sponsor alert toast controls
+function setupSponsorToast() {
+  const toast = document.getElementById("scan-complete-sponsor-toast");
+  const closeBtn = document.getElementById("btn-close-sponsor-toast");
+  const dismissBtn = document.getElementById("btn-toast-dismiss");
+  const sponsorBtn = document.getElementById("btn-toast-sponsor");
+
+  const hideToast = () => {
+    if (toast) {
+      toast.classList.remove("is-visible");
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 300);
+    }
+  };
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      try {
+        sessionStorage.setItem("us_sponsor_toast_dismissed", "true");
+      } catch (e) {
+        // ignore
+      }
+      hideToast();
+    });
+  }
+
+  if (dismissBtn) {
+    dismissBtn.addEventListener("click", () => {
+      try {
+        sessionStorage.setItem("us_sponsor_toast_dismissed", "true");
+      } catch (e) {
+        // ignore
+      }
+      hideToast();
+    });
+  }
+
+  if (sponsorBtn) {
+    sponsorBtn.addEventListener("click", () => {
+      hideToast();
+    });
+  }
+}
+
+function showSponsorToast(hits = 0, totalChecked = 0) {
+  try {
+    if (sessionStorage.getItem("us_sponsor_toast_dismissed") === "true") {
+      return;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const toast = document.getElementById("scan-complete-sponsor-toast");
+  if (!toast) return;
+
+  const titleEl = document.getElementById("sponsor-toast-title");
+  const descEl = document.getElementById("sponsor-toast-desc");
+
+  if (titleEl) {
+    if (hits > 0) {
+      titleEl.innerText = `Scan Complete — ${hits} Verified Account${hits === 1 ? "" : "s"} Found`;
+    } else {
+      titleEl.innerText = `Scan Complete — ${totalChecked || "Multiple"} Sites Checked`;
+    }
+  }
+
+  if (descEl) {
+    const totalCount = (Math.floor(userTotalModules / 5) * 5) + (Math.floor(emailTotalModules / 5) * 5);
+    descEl.innerText = `user-scanner actively maintains ${totalCount}+ detection modules with regular community updates. If this scan assisted your investigation, please consider sponsoring development.`;
+  }
+
+  toast.style.display = "flex";
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      toast.classList.add("is-visible");
+    });
+  });
+}
+
 // Scan execution
 function setupScanForm() {
   const form = document.getElementById("scan-form");
@@ -1477,7 +1581,13 @@ async function executeLiveScan() {
             if (totalChecks) {
               telemetry.queued = totalChecks;
               const qEl = document.getElementById("stat-vectors-queued");
-              if (qEl) qEl.innerText = `${totalChecks}+`;
+              if (qEl) {
+                if (totalChecks >= 500) {
+                  qEl.innerText = `${Math.floor(totalChecks / 5) * 5}+`;
+                } else {
+                  qEl.innerText = `${totalChecks}`;
+                }
+              }
               const hudP = document.getElementById("hud-conf");
               if (hudP) hudP.innerText = `0 / ${totalChecks}`;
               updateProgressDock({ target: currentScanTarget, checked: 0, total: totalChecks, remaining: totalChecks, percent: 0 });
@@ -1533,7 +1643,13 @@ async function executeLiveScan() {
             if (payload.total_modules) {
               telemetry.queued = payload.total_modules;
               const qEl = document.getElementById("stat-vectors-queued");
-              if (qEl) qEl.innerText = `${payload.total_modules}+`;
+              if (qEl) {
+                if (payload.total_modules >= 500) {
+                  qEl.innerText = `${Math.floor(payload.total_modules / 5) * 5}+`;
+                } else {
+                  qEl.innerText = `${payload.total_modules}`;
+                }
+              }
             }
             updateTelemetryUI();
             const targetLabel = payload.target.includes("@") ? payload.target : `@${payload.target}`;
@@ -1574,6 +1690,10 @@ async function executeLiveScan() {
 
             completeProgressDock(payload);
             unlockExports(payload.case_id, payload.total_hits, payload.total_checked);
+
+            setTimeout(() => {
+              showSponsorToast(payload.total_hits !== undefined ? payload.total_hits : telemetry.verified, payload.total_checked !== undefined ? payload.total_checked : telemetry.checked);
+            }, 600);
 
             if (typeof relayoutGraph === "function") {
               setTimeout(() => {
