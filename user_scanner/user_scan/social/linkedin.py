@@ -39,7 +39,9 @@ def validate_linkedin(user: str) -> Result:
 
 def _extract(text: str) -> tuple[dict, dict]:
     nodes = list(_ld_nodes(text))
-    person = next((node for node in nodes if node.get("@type") == "Person"), {})
+    person: dict = next(
+        (node for node in nodes if node.get("@type") == "Person"), {}
+    )
     extra: dict = {}
     media: dict = {}
 
