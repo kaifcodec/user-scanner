@@ -65,8 +65,6 @@ LOUD_MODULES: Dict[str, List[str]] = {
         "jobs.cz",
         "pulser",
         "hercul",
-        "seduo.cz",
-        "seduo.sk",
         "payhip",
     ],
 }
