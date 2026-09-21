@@ -100,3 +100,28 @@ async def test_execute_scan_module_normalization(mock_run_scan):
     
     # It should normalize to an underscore
     assert module_name == "Made_porn"
+
+
+@pytest.mark.anyio
+@patch("user_scanner.mcp.handlers.run_cross_scan")
+@patch("user_scanner.mcp.handlers._run_scan")
+async def test_execute_scan_cross_scan_runs_off_event_loop(mock_run_scan, mock_cross_scan):
+    """run_cross_scan uses asyncio.run() internally, so it must not run on the event loop thread."""
+    import asyncio
+    import threading
+
+    loop_thread = threading.get_ident()
+    seen = {}
+
+    def fake_cross_scan(results, configs, cross_configs):
+        seen["thread"] = threading.get_ident()
+        # Mirrors the orchestrators, which call asyncio.run() internally.
+        asyncio.run(asyncio.sleep(0))
+        return [Result.taken()]
+
+    mock_run_scan.return_value = [Result.available()]
+    mock_cross_scan.side_effect = fake_cross_scan
+
+    await execute_scan({"username": "testuser", "cross_scan": True}, is_email=False)
+
+    assert seen["thread"] != loop_thread

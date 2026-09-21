@@ -113,7 +113,9 @@ async def execute_scan(arguments: dict, is_email: bool) -> list[types.TextConten
                         modules=(module_name,) if module_name else (),
                         categories=(category,) if category else (),
                     )
-                    cross_results = run_cross_scan(results, config, cross_configs)
+                    cross_results = await asyncio.to_thread(
+                        run_cross_scan, results, config, cross_configs
+                    )
                     results.extend(cross_results)
         finally:
             # Restore defaults so the next request starts clean
