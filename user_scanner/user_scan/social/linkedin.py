@@ -17,7 +17,6 @@ HEADERS = {"User-Agent": "Twitterbot/1.0"}
 
 def validate_linkedin(user: str) -> Result:
     url = f"https://www.linkedin.com/in/{user}"
-    show_url = f"{url}/"
 
     def inner(response: httpx.Response) -> Result:
         status = response.status_code
@@ -34,12 +33,15 @@ def validate_linkedin(user: str) -> Result:
         return Result.error(f"[{status}] Status didn't match. Report this on Github.")
 
     return generic_validate(
-        url, inner, show_url=show_url, headers=HEADERS, follow_redirects=True
+        url, inner, show_url=f"{url}/", headers=HEADERS, follow_redirects=True
     )
 
 
 def _extract(text: str) -> tuple[dict, dict]:
-    person = _find_person(text)
+    nodes = list(_ld_nodes(text))
+    person: dict = next(
+        (node for node in nodes if node.get("@type") == "Person"), {}
+    )
     extra: dict = {}
     media: dict = {}
 
@@ -86,10 +88,10 @@ def _extract(text: str) -> tuple[dict, dict]:
     if awards := list(dict.fromkeys(awards)):
         extra["awards"] = "; ".join(awards)
 
-    if articles := _find_articles(text):
+    if articles := _find_articles(nodes):
         extra["articles"] = "; ".join(articles)
 
-    if last_published := _latest_published(text):
+    if last_published := _latest_published(nodes):
         extra["last_posted"] = last_published
 
     if similar := _similar_profiles(text):
@@ -111,16 +113,9 @@ def _extract(text: str) -> tuple[dict, dict]:
     return extra, media
 
 
-def _find_person(text: str) -> dict:
-    for node in _ld_nodes(text):
-        if node.get("@type") == "Person":
-            return node
-    return {}
-
-
-def _find_articles(text: str) -> list[str]:
+def _find_articles(nodes: list[dict]) -> list[str]:
     articles = []
-    for node in _ld_nodes(text):
+    for node in nodes:
         if node.get("@type") != "Article" or not (headline := node.get("headline")):
             continue
         date = (node.get("datePublished") or "")[:10]
@@ -128,17 +123,15 @@ def _find_articles(text: str) -> list[str]:
     return list(dict.fromkeys(articles))
 
 
-def _latest_published(text: str) -> str | None:
+def _latest_published(nodes: list[dict]) -> str | None:
     # Newest publish date across long-form Articles and Activity-feed posts
     # (DiscussionForumPosting); the ISO-8601 prefix sorts chronologically.
     dates = [
         node["datePublished"]
-        for node in _ld_nodes(text)
+        for node in nodes
         if node.get("@type") in ("Article", "DiscussionForumPosting") and node.get("datePublished")
     ]
-    if not dates:
-        return None
-    return max(dates)[:10]
+    return max(dates)[:10] if dates else None
 
 
 def _similar_profiles(text: str) -> list[str]:
@@ -209,6 +202,7 @@ def _clean_html(value: str | None) -> str:
 
 
 def _og(text: str, prop: str) -> str | None:
-    match = re.search(rf'<meta[^>]+property="{re.escape(prop)}"[^>]+content="([^"]*)"', text) or \
-        re.search(rf'<meta[^>]+name="{re.escape(prop)}"[^>]+content="([^"]*)"', text)
+    match = re.search(
+        rf'<meta[^>]+property="{re.escape(prop)}"[^>]+content="([^"]*)"', text
+    )
     return html.unescape(match.group(1)) if match else None

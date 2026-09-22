@@ -168,6 +168,11 @@ _AT = r"^/@(?P<user>[^/?#]+)/?$"
 _HOST_ROUTES: Tuple[Tuple[Tuple[str, ...], str, Tuple[str, ...]], ...] = (
     (("x.com", "twitter.com"), "x", (_BARE,)),
     (("linkedin.com",), "linkedin", (r"^/in/(?P<user>[^/?#]+)/?$",)),
+    (
+        ("linkedin.com",),
+        "linkedin_company",
+        (r"^/company/(?P<user>[^/?#]+)/?$",),
+    ),
     (("github.com",), "github", (_BARE,)),
     (("gist.github.com",), "githubgist", (_BARE,)),
     (("gitlab.com",), "gitlab", (_BARE,)),
@@ -275,11 +280,12 @@ _SUBDOMAIN_ROUTES: Tuple[Tuple[str, str], ...] = (
     ("deviantart.com", "deviantart"),
 )
 
-_ROUTES = {
-    host: (module, tuple(re.compile(p) for p in patterns))
-    for hosts, module, patterns in _HOST_ROUTES
-    for host in hosts
-}
+_ROUTES: dict[str, list[tuple[str, tuple[re.Pattern, ...]]]] = {}
+for hosts, module, patterns in _HOST_ROUTES:
+    for host in hosts:
+        _ROUTES.setdefault(host, []).append(
+            (module, tuple(re.compile(pattern) for pattern in patterns))
+        )
 
 
 class PivotKind(Enum):
@@ -461,16 +467,16 @@ def resolve_url(url: str) -> Tuple[Optional[str], Optional[str]]:
         return subdomain
 
     for candidate in _host_candidates(host):
-        route = _ROUTES.get(candidate)
-        if not route:
+        routes = _ROUTES.get(candidate)
+        if not routes:
             continue
-        module, patterns = route
-        for pattern in patterns:
-            match = pattern.match(path)
-            if match:
-                user = _clean_handle(match.group("user"), module)
-                if user:
-                    return module, user
+        for module, patterns in routes:
+            for pattern in patterns:
+                match = pattern.match(path)
+                if match:
+                    user = _clean_handle(match.group("user"), module)
+                    if user:
+                        return module, user
         # A routed host whose path fits no profile shape is one of that site's
         # own pages, so the domain fallback must not fire for it.
         return None, None
@@ -508,6 +514,13 @@ def _pivots_from_result(result: Result) -> Iterator[Pivot]:
 
         module = _platform_key_module(key)
         if module and not _URL_RE.search(value):
+            if module == "linkedin" and value.startswith(("/in/", "/company/")):
+                linked_module, handle = resolve_url(f"https://linkedin.com{value}")
+                if handle:
+                    yield Pivot(
+                        handle, PivotKind.LINK, source_site, key, linked_module
+                    )
+                continue
             handle = _clean_handle(value, module)
             if handle:
                 yield Pivot(handle, PivotKind.LINK, source_site, key, module)

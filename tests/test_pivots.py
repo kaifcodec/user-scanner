@@ -32,6 +32,10 @@ def make_result(site_name="Gravatar", extra=None, found=True, **kwargs):
         ("https://github.com/johndoe", ("github", "johndoe")),
         ("https://www.linkedin.com/in/johndoe/", ("linkedin", "johndoe")),
         ("https://br.linkedin.com/in/johndoe", ("linkedin", "johndoe")),
+        (
+            "https://www.linkedin.com/company/acme-inc/",
+            ("linkedin_company", "acme-inc"),
+        ),
         ("https://x.com/JohnDoe2", ("x", "JohnDoe2")),
         ("https://twitter.com/JohnDoe2", ("x", "JohnDoe2")),
         ("https://stackoverflow.com/users/12345/johndoe", ("stackoverflow", "johndoe")),
@@ -139,6 +143,20 @@ def test_platform_keys_are_read_through_their_suffixes(key, expected_site):
 
     (pivot,) = extract_pivots([result])
     assert pivot.site == expected_site
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("/in/jane-doe", ("linkedin", "jane-doe")),
+        ("/company/acme-inc", ("linkedin_company", "acme-inc")),
+    ],
+)
+def test_linkedin_handle_keeps_its_namespace_in_the_path(value, expected):
+    result = make_result(site_name="Luma", extra={"linkedin_handle": value})
+
+    (pivot,) = extract_pivots([result])
+    assert (pivot.site, pivot.username) == expected
 
 
 def test_an_identifier_field_is_not_read_as_a_handle():
