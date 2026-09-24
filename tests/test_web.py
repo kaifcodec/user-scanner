@@ -554,3 +554,73 @@ def test_catalog_stats_dynamic_counting():
     assert stats["user_rounded"] == f"{stats['user_base']}+"
     assert stats["email_rounded"] == f"{stats['email_base']}+"
     assert stats["total_rounded"] == f"{stats['total_base']}+"
+
+
+def test_web_cases_modal_and_stepper_removal(client):
+    res = client.get("/")
+    assert res.status_code == 200
+    html = res.text
+
+    # Cases history modal elements
+    assert "btn-open-cases" in html
+    assert "cases-modal" in html
+    assert "cases-modal-card" in html
+    assert "cases-list-container" in html
+
+    # Dead stepper modal and dead inline JS removed
+    assert "stepper-modal" not in html
+    assert "closeStepperModal" not in html
+
+    # Dynamic category breakdown list
+    assert "category-breakdown-list" in html
+
+
+def test_web_scan_stream_proxy_and_timeout_reset(client, monkeypatch):
+    from user_scanner.core.helpers import get_global_timeout, get_proxy
+
+    # Mock async worker to return fast
+    async def mock_worker(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr("user_scanner.web.routes.api._user_async_worker", mock_worker)
+
+    # 1. Scan with timeout and proxy
+    res1 = client.post("/api/scan/stream", json={
+        "targets": ["testuser1"],
+        "timeout": 42.0,
+        "proxies": ["http://127.0.0.1:8080"],
+    })
+    assert res1.status_code == 200
+    assert get_global_timeout() == 42.0
+    assert get_proxy() is not None
+
+    # 2. Subsequent scan without timeout and without proxies resets global state
+    res2 = client.post("/api/scan/stream", json={
+        "targets": ["testuser2"],
+    })
+    assert res2.status_code == 200
+    assert get_global_timeout() is None
+    assert get_proxy() is None
+
+
+def test_web_delete_case_lifecycle(client):
+    from user_scanner.web.session import save_scan_session, get_scan_session
+
+    cid = "case-to-delete-test"
+    save_scan_session(cid, {
+        "case_id": cid,
+        "target": "target_to_del",
+        "elements": [],
+        "total_hits": 0,
+    })
+
+    assert get_scan_session(cid) is not None
+
+    del_res = client.delete(f"/api/cases/{cid}")
+    assert del_res.status_code == 200
+    assert del_res.json()["status"] == "success"
+
+    assert get_scan_session(cid) is None
+    check_res = client.get(f"/api/cases/{cid}")
+    assert check_res.status_code == 404
+

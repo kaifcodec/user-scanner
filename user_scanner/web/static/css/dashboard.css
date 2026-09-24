@@ -3043,3 +3043,245 @@ body {
   background: rgba(100, 116, 139, 0.16);
   color: #0f172a;
 }
+
+/* ==========================================================================
+   Investigation Cases & History Modal
+   ========================================================================== */
+.cases-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 17, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.cases-modal-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 24px rgba(6, 182, 212, 0.15);
+}
+
+.cases-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+}
+
+.cases-modal-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cyan);
+}
+
+.cases-modal-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.cases-modal-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
+}
+
+.cases-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.cases-modal-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cases-modal-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.cases-loading-state {
+  text-align: center;
+  padding: 36px 20px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cases-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.case-item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.case-item-card:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.case-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.case-item-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.case-badge-type {
+  font-size: 0.62rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(6, 182, 212, 0.12);
+  color: var(--cyan);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.case-item-date {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.case-item-metrics {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.case-metric-pill {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.case-metric-pill.emerald {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: var(--emerald);
+}
+
+.case-metric-pill.cyan {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: rgba(6, 182, 212, 0.25);
+  color: var(--cyan);
+}
+
+.case-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-delete-case {
+  color: #f43f5e !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+  background: rgba(244, 63, 94, 0.08) !important;
+}
+
+.btn-delete-case:hover {
+  background: rgba(244, 63, 94, 0.18) !important;
+  border-color: #f43f5e !important;
+}
+
+.btn-sm {
+  padding: 5px 12px !important;
+  font-size: 0.72rem !important;
+}
+
+/* Category breakdown card hover */
+.category-breakdown-card:hover {
+  border-color: rgba(6, 182, 212, 0.45) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Responsive Grid Improvements */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 260px 1fr 280px;
+  }
+  .telemetry-row {
+    display: none;
+  }
+  .sponsor-nav-btn span {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    overflow-y: auto;
+  }
+  .panel-sidebar, .panel-drawer {
+    height: 480px;
+    max-height: 50vh;
+  }
+  .canvas-workspace {
+    height: 500px;
+    min-height: 500px;
+  }
+  .cases-modal-card {
+    max-height: 90vh;
+  }
+}

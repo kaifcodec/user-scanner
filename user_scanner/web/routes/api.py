@@ -492,9 +492,8 @@ async def scan_stream_view(request: Request):
     cross_depth = int(body.get("cross_depth", 1))
     cross_sweep = int(body.get("cross_sweep", 3))
 
-    # Apply global timeout and proxy manager
-    if timeout:
-        set_global_timeout(timeout)
+    # Apply global timeout and proxy manager (or reset previous state)
+    set_global_timeout(timeout if timeout else None)
 
     if proxies:
         if isinstance(proxies, str):
@@ -504,6 +503,8 @@ async def scan_stream_view(request: Request):
             logger.info(f"Loaded {len(proxies)} proxies for scan session")
         except Exception as ex:
             logger.warning(f"Could not load proxies: {ex}")
+    else:
+        set_proxy_manager(proxies=None)
 
     async def event_generator():
         start_time = time.time()

@@ -50,6 +50,14 @@
         <span>Sponsor</span>
       </a>
 
+      <button id="btn-open-cases" class="btn-ghost-sm" title="Saved Cases & Scan History" aria-label="Cases History" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.76rem; font-weight: 600; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; transition: all 0.2s;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <span>History / Cases</span>
+      </button>
+
       <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">
         <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
@@ -563,31 +571,6 @@
         <div class="legend-node"><div class="legend-dot" style="background: #ec4899;"></div> Discovered Email</div>
         <div class="legend-node"><div class="legend-dot" style="background: #10b981; border: 1.5px dashed #34d399;"></div> Connected Link</div>
       </div>
-
-      <!-- Stepper Modal Overlay -->
-      <div id="stepper-modal" class="stepper-overlay">
-        <div class="stepper-card">
-          <div class="stepper-header">
-            <div class="stepper-title">
-              <span class="status-beacon"></span>
-              Scan Execution Pipeline
-            </div>
-            <span id="stepper-pct" style="font-family: var(--font-mono); color: var(--emerald); font-weight: 700;">0%</span>
-          </div>
-
-          <div id="stepper-logs-content" class="stepper-logs"></div>
-
-          <div class="stepper-progress">
-            <div class="stepper-bar-bg">
-              <div id="stepper-progress-fill" class="stepper-bar-fill"></div>
-            </div>
-          </div>
-
-          <button id="btn-close-stepper" class="btn-cyber btn-glow-cyan" onclick="closeStepperModal()" style="margin-top: 16px; display: none;">
-            View Relationship Graph
-          </button>
-        </div>
-      </div>
     </section>
 
     <!-- Right Column: Inspector & Analytics Panel -->
@@ -621,12 +604,10 @@
         </div>
 
         <div class="section-title" style="margin-top: 20px;">Category Breakdown</div>
-        <div id="category-breakdown-list" style="display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 0.78rem;">
-          <div class="detail-box">DEV: <span id="cat-count-dev" style="color: var(--emerald); font-weight: bold;">--</span></div>
-          <div class="detail-box">SOCIAL: <span id="cat-count-social" style="color: var(--cyan); font-weight: bold;">--</span></div>
-          <div class="detail-box">COMMUNITY: <span id="cat-count-community" style="color: var(--blue); font-weight: bold;">--</span></div>
-          <div class="detail-box">GAMING: <span id="cat-count-gaming" style="color: var(--purple); font-weight: bold;">--</span></div>
-          <div class="detail-box">FINANCE: <span id="cat-count-finance" style="color: var(--amber); font-weight: bold;">--</span></div>
+        <div id="category-breakdown-list" class="category-breakdown-container" style="display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 0.78rem;">
+          <div style="color: #64748b; font-size: 0.78rem; padding: 12px; text-align: center;">
+            No accounts identified yet. Run a scan to see category breakdown.
+          </div>
         </div>
       </div>
 
@@ -740,6 +721,33 @@
         <span>Sponsor on GitHub</span>
       </a>
       <button type="button" class="btn-toast-dismiss" id="btn-toast-dismiss">Maybe Later</button>
+    </div>
+  </div>
+
+  <!-- Investigation Cases & History Modal -->
+  <div id="cases-modal" class="cases-modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="cases-modal-title">
+    <div class="cases-modal-card">
+      <div class="cases-modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="cases-modal-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 id="cases-modal-title" class="cases-modal-title">Investigation Cases &amp; History</h3>
+            <p class="cases-modal-sub">Stored OSINT scan sessions, network graphs, and exportable findings</p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-cases" class="cases-modal-close" aria-label="Close Cases Modal">&times;</button>
+      </div>
+      <div class="cases-modal-body">
+        <div id="cases-loading" class="cases-loading-state">
+          <span class="status-beacon"></span> Loading stored investigation cases...
+        </div>
+        <div id="cases-list-container" class="cases-list-container" style="display: none;"></div>
+      </div>
     </div>
   </div>
 

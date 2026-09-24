@@ -106,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupExportControls();
   setupProgressDock();
   setupSponsorToast();
+  setupCasesManager();
 
   // Pre-load catalogs for responsive tab switching
   fetchModuleCatalog(false);
@@ -237,6 +238,7 @@ function setupSubtabs() {
       reader.onload = (event) => {
         uBulkInput.value = event.target.result;
         uBulkInput.dispatchEvent(new Event("input"));
+        e.target.value = "";
       };
       reader.readAsText(file);
     });
@@ -290,6 +292,7 @@ function setupSubtabs() {
       reader.onload = (event) => {
         eBulkInput.value = event.target.result;
         eBulkInput.dispatchEvent(new Event("input"));
+        e.target.value = "";
       };
       reader.readAsText(file);
     });
@@ -1522,6 +1525,28 @@ async function executeLiveScan() {
   const crossEmails = document.getElementById("cfg-cross-emails")?.value || "verified";
   const hudsonScan = document.getElementById("cfg-hudson-scan")?.checked || false;
 
+  const hudsonBadge = document.getElementById("hudson-badge-status");
+  if (hudsonBadge) {
+    if (hudsonScan) {
+      hudsonBadge.innerText = "QUERYING...";
+      hudsonBadge.style.background = "rgba(6, 182, 212, 0.2)";
+      hudsonBadge.style.color = "var(--cyan)";
+    } else {
+      hudsonBadge.innerText = "IDLE";
+      hudsonBadge.style.background = "rgba(100, 116, 139, 0.2)";
+      hudsonBadge.style.color = "#94a3b8";
+    }
+  }
+
+  const hudsonResults = document.getElementById("hudson-results-container");
+  if (hudsonResults) {
+    hudsonResults.innerHTML = `
+      <div style="color: #64748b; font-size: 0.8rem; padding: 24px 12px; text-align: center;">
+        ${hudsonScan ? 'Querying Hudson Rock breach telemetry for this target...' : 'Enable "Hudson Rock Breach Check" in Advanced Settings to query malware telemetry for the target.'}
+      </div>
+    `;
+  }
+
   const requestPayload = {
     targets: targets,
     scan_type: scanType,
@@ -1835,6 +1860,76 @@ function updateTelemetryUI() {
   document.getElementById("cat-count-community") && (document.getElementById("cat-count-community").innerText = String(telemetry.categories.COMMUNITY || 0));
   document.getElementById("cat-count-gaming") && (document.getElementById("cat-count-gaming").innerText = String(telemetry.categories.GAMING || 0));
   document.getElementById("cat-count-finance") && (document.getElementById("cat-count-finance").innerText = String(telemetry.categories.FINANCE || 0));
+
+  renderCategoryBreakdown(telemetry.categories);
+}
+
+const UI_CATEGORY_COLORS = {
+  DEV: "#10B981",
+  SOCIAL: "#06B6D4",
+  GAMING: "#A855F7",
+  FINANCE: "#F59E0B",
+  COMMUNITY: "#3B82F6",
+  CREATIVE: "#EC4899",
+  CREATOR: "#10B981",
+  CRM: "#6366F1",
+  DATING: "#F43F5E",
+  DONATION: "#F59E0B",
+  EMAIL: "#EC4899",
+  ENTERTAINMENT: "#A855F7",
+  FITNESS: "#10B981",
+  HOSTING: "#3B82F6",
+  JOBS: "#06B6D4",
+  LEARNING: "#06B6D4",
+  MUSIC: "#EC4899",
+  NEWS: "#3B82F6",
+  POLITICAL: "#F59E0B",
+  SHOPPING: "#F59E0B",
+  SPORTS: "#10B981",
+  TRAVEL: "#06B6D4",
+  WOMEN_HEALTH: "#EC4899",
+  ADULT: "#E11D48",
+  OTHER: "#64748B",
+  GENERAL: "#64748B"
+};
+
+function renderCategoryBreakdown(cats) {
+  const container = document.getElementById("category-breakdown-list");
+  if (!container) return;
+
+  const entries = Object.entries(cats || {})
+    .filter(([_, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  if (entries.length === 0) {
+    container.innerHTML = `
+      <div style="color: #64748b; font-size: 0.78rem; padding: 12px; text-align: center;">
+        No accounts identified yet. Run a scan to see category breakdown.
+      </div>
+    `;
+    return;
+  }
+
+  const total = entries.reduce((sum, [_, count]) => sum + count, 0) || 1;
+
+  container.innerHTML = entries.map(([cat, count]) => {
+    const color = UI_CATEGORY_COLORS[cat.toUpperCase()] || "#06B6D4";
+    const pct = Math.round((count / total) * 100);
+    return `
+      <div class="category-breakdown-card" onclick="if(typeof filterGraphByType==='function') filterGraphByType('${escapeHtml(cat)}')" title="Click to isolate ${escapeHtml(cat)} on graph" style="cursor: pointer; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px; transition: all 0.2s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--text-primary); font-size: 0.76rem;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color};"></span>
+            ${escapeHtml(cat)}
+          </span>
+          <span style="color: ${color}; font-weight: 700; font-size: 0.78rem;">${count} <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">(${pct}%)</span></span>
+        </div>
+        <div style="width: 100%; height: 4px; background: rgba(255, 255, 255, 0.06); border-radius: 2px; overflow: hidden;">
+          <div style="width: ${pct}%; height: 100%; background: ${color}; transition: width 0.35s ease;"></div>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 // Analytics summary
@@ -1848,6 +1943,8 @@ function renderAnalyticsSummary(caseData) {
   const topCats = Object.entries(cats)
     .filter(([k, v]) => v > 0)
     .sort((a, b) => b[1] - a[1]);
+
+  renderCategoryBreakdown(cats);
 
   if (topCats.length === 0) {
     narrative.innerText = `Scan for @${currentScanTarget} completed across ${telemetry.checked} platforms. No verified accounts were identified.`;
@@ -1953,6 +2050,46 @@ function displayNodeDetails(data) {
       <div style="margin-top: 16px;">
         <button class="btn-cyber btn-glow-cyan" style="width: 100%; padding: 8px 12px;" onclick="pivotToNewScan('${escapeHtml(emailVal)}')">
           Scan This Email ➔
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  if (nodeType === "PIVOT_USER" || nodeType === "REBRANDED_ALIAS") {
+    const handle = meta.target || (data.label || "").replace(/^Pivot:\s*@?/, "").replace(/^@/, "");
+    inspector.innerHTML = `
+      <div class="profile-hero-card">
+        <div class="profile-hero-top">
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar-fallback" style="background: rgba(168, 85, 247, 0.2); color: #a855f7;">⬢</div>
+            <span class="avatar-status-pip" style="background: #a855f7;" title="Pivot Handle"></span>
+          </div>
+          <div class="profile-hero-info">
+            <div class="profile-platform-title">Discovered Pivot Handle</div>
+            <div class="profile-handle-sub" style="color: #c084fc;">@${escapeHtml(handle)}</div>
+            <div class="profile-badge-row">
+              <span class="badge-pill" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35);">CROSS-SCAN PIVOT</span>
+              ${meta.round ? `<span class="badge-pill badge-cyan">Round ${escapeHtml(meta.round)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="inspector-section-label">Pivot Target Handle</div>
+      <div class="pivot-chip">
+        <div class="pivot-chip-left" style="color: #c084fc;">@${escapeHtml(handle)}</div>
+        <button class="btn-copy-chip" onclick="copyTextToClipboard('${escapeHtml(handle)}', this)">Copy</button>
+      </div>
+
+      <div class="detail-item" style="margin-top: 12px;">
+        <div class="detail-lbl">Investigation Action</div>
+        <div class="detail-box">Extracted via automated multi-hop pivot analysis. Launch an autonomous investigation focusing on this username.</div>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <button class="btn-cyber btn-glow-cyan" style="width: 100%; padding: 8px 12px;" onclick="pivotToNewScan('${escapeHtml(handle)}')">
+          Scan This Username ➔
         </button>
       </div>
     `;
@@ -2189,4 +2326,192 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+// ==========================================================================
+// Cases & History Modal Manager (/api/cases)
+// ==========================================================================
+function setupCasesManager() {
+  const btnOpen = document.getElementById("btn-open-cases");
+  const btnClose = document.getElementById("btn-close-cases");
+  const modal = document.getElementById("cases-modal");
+
+  if (btnOpen && modal) {
+    btnOpen.addEventListener("click", () => {
+      openCasesModal();
+    });
+  }
+
+  if (btnClose && modal) {
+    btnClose.addEventListener("click", () => {
+      closeCasesModal();
+    });
+  }
+
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        closeCasesModal();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.style.display !== "none") {
+        closeCasesModal();
+      }
+    });
+  }
+}
+
+function openCasesModal() {
+  const modal = document.getElementById("cases-modal");
+  if (!modal) return;
+  modal.style.display = "flex";
+  fetchAndRenderCases();
+}
+
+function closeCasesModal() {
+  const modal = document.getElementById("cases-modal");
+  if (!modal) return;
+  modal.style.display = "none";
+}
+
+async function fetchAndRenderCases() {
+  const loading = document.getElementById("cases-loading");
+  const container = document.getElementById("cases-list-container");
+  if (!container) return;
+
+  if (loading) loading.style.display = "block";
+  container.style.display = "none";
+
+  try {
+    const res = await fetch("/api/cases");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const cases = await res.json();
+
+    if (loading) loading.style.display = "none";
+    container.style.display = "block";
+
+    if (!Array.isArray(cases) || cases.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.85rem;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 8px; opacity: 0.5; display: block;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <div>No saved investigation cases found.</div>
+          <div style="font-size: 0.75rem; margin-top: 4px; color: #64748b;">Execute a username or email scan to create sessions.</div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = cases.map(c => {
+      const targetStr = c.target || c.threat_actor || "Unknown Target";
+      const isEmail = targetStr.includes("@");
+      const targetDisplay = isEmail ? targetStr : `@${targetStr}`;
+      const dateFormatted = c.last_scan_date ? new Date(c.last_scan_date).toLocaleString() : "Recent";
+      const hits = c.total_hits || 0;
+      const modules = c.total_modules || 0;
+
+      return `
+        <div class="case-item-card" id="case-card-${escapeHtml(c.case_id)}">
+          <div class="case-item-header">
+            <div class="case-item-target">
+              <span class="case-badge-type">${isEmail ? 'EMAIL' : 'USER'}</span>
+              <strong style="color: var(--text-primary); font-size: 0.92rem;">${escapeHtml(targetDisplay)}</strong>
+            </div>
+            <span class="case-item-date">${escapeHtml(dateFormatted)}</span>
+          </div>
+
+          <div class="case-item-metrics">
+            <span class="case-metric-pill emerald">
+              <strong>${hits}</strong> Verified Account${hits === 1 ? '' : 's'}
+            </span>
+            <span class="case-metric-pill cyan">
+              <strong>${modules}</strong> Scanned
+            </span>
+            <span class="case-metric-pill">
+              ${escapeHtml(c.category || 'Live Scan')}
+            </span>
+          </div>
+
+          <div class="case-item-actions">
+            <button class="btn-cyber btn-glow-cyan btn-sm" onclick="loadCaseIntoSession('${escapeHtml(c.case_id)}')">
+              Load Case Graph
+            </button>
+            <button class="btn-ghost-sm btn-delete-case" onclick="deleteCaseFromHistory('${escapeHtml(c.case_id)}')">
+              Delete
+            </button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    if (loading) loading.style.display = "none";
+    container.style.display = "block";
+    container.innerHTML = `
+      <div style="text-align: center; padding: 24px; color: #f43f5e; font-size: 0.85rem;">
+        Failed to load cases: ${escapeHtml(err.message)}
+      </div>
+    `;
+  }
+}
+
+async function loadCaseIntoSession(caseId) {
+  if (!caseId) return;
+  try {
+    const res = await fetch(`/api/cases/${caseId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const caseData = await res.json();
+
+    closeCasesModal();
+
+    currentScanTarget = caseData.target || caseData.threat_actor || caseId;
+    activeCaseId = caseId;
+
+    if (caseData.elements && typeof initGraph === 'function') {
+      initGraph("cy", caseData.elements);
+    }
+
+    telemetry = {
+      queued: caseData.total_modules || (caseData.elements ? caseData.elements.length : 0),
+      checked: caseData.total_modules || (caseData.elements ? caseData.elements.length : 0),
+      verified: caseData.total_hits || 0,
+      pivots: 0,
+      hudson: 0,
+      categories: caseData.category_counts || {}
+    };
+
+    updateTelemetryUI();
+    renderAnalyticsSummary(caseData);
+    unlockExports(caseId, telemetry.verified, telemetry.checked);
+
+    if (typeof showCanvasStatus === 'function') {
+      showCanvasStatus(`Loaded case: @${currentScanTarget} (${telemetry.verified} verified accounts)`);
+    }
+  } catch (err) {
+    alert(`Failed to load case: ${err.message}`);
+  }
+}
+
+async function deleteCaseFromHistory(caseId) {
+  if (!caseId) return;
+  if (!confirm(`Are you sure you want to delete case "${caseId}"?`)) return;
+
+  try {
+    const res = await fetch(`/api/cases/${caseId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const card = document.getElementById(`case-card-${caseId}`);
+    if (card) card.remove();
+
+    const container = document.getElementById("cases-list-container");
+    if (container && container.querySelectorAll(".case-item-card").length === 0) {
+      fetchAndRenderCases();
+    }
+  } catch (err) {
+    alert(`Failed to delete case: ${err.message}`);
+  }
 }

@@ -219,7 +219,8 @@ window.applyGraphTheme = applyGraphTheme;
  */
 function getConcentricLevel(node) {
   const type = (node.data('type') || '').toUpperCase();
-  if (type === 'THREAT_ACTOR') return 100;
+  if (type === 'TARGET' || type === 'THREAT_ACTOR') return 100;
+  if (type === 'PIVOT_USER' || type === 'REBRANDED_ALIAS') return 85;
   if (type === 'SOCIAL_ACCOUNT') {
     const cat = (node.data('category') || '').toUpperCase();
     if (cat === 'DEV') return 75;
@@ -309,7 +310,7 @@ function getLayoutConfig(name) {
       return {
         name: 'breadthfirst',
         directed: true,
-        roots: cy ? cy.nodes('[type = "THREAT_ACTOR"]') : undefined,
+        roots: cy ? cy.nodes('[type = "TARGET"], [type = "THREAT_ACTOR"]') : undefined,
         spacingFactor: 1.5,
         padding: 70,
         animate: true,
@@ -411,13 +412,13 @@ function filterGraphByType(category) {
   const matches = cy.nodes().filter(n => {
     const type = (n.data('type') || '').toUpperCase();
     const cat = (n.data('category') || '').toUpperCase();
-    if (category === 'ACTOR') return type === 'THREAT_ACTOR';
+    if (category === 'ACTOR') return type === 'TARGET' || type === 'THREAT_ACTOR';
     if (category === 'DEV') return cat === 'DEV';
     if (category === 'SOCIAL') return cat === 'SOCIAL';
     if (category === 'COMMUNITY') return cat === 'COMMUNITY';
     if (category === 'GAMING') return cat === 'GAMING';
     if (category === 'FINANCE') return cat === 'FINANCE';
-    if (category === 'PIVOTS') return type === 'EMAIL' || (n.data('id') || '').startsWith('piv_');
+    if (category === 'PIVOTS') return type === 'EMAIL' || type === 'PIVOT_USER' || (n.data('id') || '').includes('piv');
     return false;
   });
 
@@ -496,6 +497,8 @@ function searchNodeInGraph(query) {
     if (window.onGraphNodeSelected) {
       window.onGraphNodeSelected(matches[0].data());
     }
+  } else {
+    showCanvasStatus("No entities matching: " + q);
   }
 }
 
@@ -677,17 +680,22 @@ function scheduleGradualZoomOut() {
  */
 function exportGraphImage() {
   if (!cy) return;
+  const isLight = currentGraphTheme === 'light';
   const pngBlob = cy.png({
     full: true,
     scale: 2.5,
-    bg: '#020611',
+    bg: isLight ? '#f8fafc' : '#020611',
     maxWidth: 3840,
     maxHeight: 2160
   });
   
+  const target = (typeof currentScanTarget !== 'undefined' && currentScanTarget)
+    ? currentScanTarget.replace(/[^a-zA-Z0-9_-]/g, '_')
+    : 'investigation';
+  const dateStr = new Date().toISOString().split('T')[0];
   const link = document.createElement('a');
   link.href = pngBlob;
-  link.download = `user_scanner_graph.png`;
+  link.download = `user_scanner_graph_${target}_${dateStr}.png`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
