@@ -89,36 +89,19 @@ def process(response) -> Result:
         return Result.error(f"Unexpected status code {response.status_code}")
 
     soup = BeautifulSoup(response.text, "html.parser")
-    meta = soup.find("meta", attrs={"name": "description"})
-    meta_content = meta.get("content", "") if meta else ""
-    availability_time = soup.find("time", id="availability-time")
-
     profiles = _extract_profiles(soup)
 
-    if availability_time is not None or "Status: Available" in meta_content:
-        extra = {}
-        if profiles:
-            extra["history"] = _format_history(profiles)
-        return Result.available(extra=extra or None)
-
-    if "Status: Taken" in meta_content or profiles:
-        extra = {}
-        if profiles:
-            extra["history"] = _format_history(profiles)
-        else:
-            extra["history"] = "Could not extract name history"
+    if profiles:
+        extra = {"history": _format_history(profiles)}
 
         media = {}
         avatar = soup.select_one(".card-body img, img.card-img")
         if avatar and avatar.get("src"):
             media["avatar"] = urljoin(SHOW_URL, avatar["src"])
 
-        return Result.taken(extra=extra or None, media=media or None)
+        return Result.taken(extra=extra, media=media or None)
 
-    if not profiles and "Status:" not in meta_content:
-        return Result.error("Could not determine name status")
-
-    return Result.error("Could not determine name status from response")
+    return Result.available()
 
 
 def validate_namemc(user: str) -> Result:
