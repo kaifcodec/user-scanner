@@ -70,6 +70,7 @@ LOUD_MODULES: Dict[str, List[str]] = {
         "pulser",
         "hercul",
         "payhip",
+        "weawow",
     ],
 }
 
