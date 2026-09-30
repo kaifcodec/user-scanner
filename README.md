@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.5.2-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.5.2.1-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
@@ -26,7 +26,7 @@
 
 A powerful **2-in-1 OSINT suite** engineered for deep **Email and Username Intelligence**.
 
-With **1080+ total scan vectors**—including **200+ email-integrated sites** and **880+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, full metadata of usernames and verify account registrations in seconds.
+With **2720+ total scan vectors**—including **210+ email-integrated sites** and **2510+ username platforms**—you can map digital footprints, analyze target behavior, uncover interests, full metadata of usernames and verify account registrations in seconds.
 
 ---
 
@@ -70,7 +70,7 @@ With **1080+ total scan vectors**—including **200+ email-integrated sites** an
 
 ## ✨ Key Features
 
-- 🔎 **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 1080+ platforms.
+- 🔎 **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 2710+ platforms.
 - 👤 **Rich Metadata Scraping:** Scrapes avatars, bio descriptions, follower counts, UID numbers, seller statuses, and account attributes.
 - 🔀 **Cross-Scan & Pivot Engine:** Mines handles, profile links, and exposed email addresses from initial scans, automatically pivoting across secondary target vectors.
 - 🤖 **Model Context Protocol (MCP) Server:** Native AI agent integration for Claude Desktop, Cursor, Antigravity, and LLMs to run autonomous OSINT scans and recursive pivots.
@@ -272,7 +272,7 @@ asyncio.run(main())
 
 ## 💖 Support the Project
 
-Web platforms constantly update authentication flows. Maintaining over 1080+ scan modules requires around-the-clock commitment to keep the suite reliable and free for the cybersecurity community.
+Web platforms constantly update authentication flows. Maintaining over 2710+ scan modules requires around-the-clock commitment to keep the suite reliable and free for the cybersecurity community.
 
 If `user-scanner` has saved you hours of manual pivoting or aided your investigations, consider supporting the project:
 

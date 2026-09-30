@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "user-scanner"
-version = "1.5.2"
+version = "1.5.2.1"
 description = "Advanced OSINT suite for email and username reconnaissance with rich profile metadata and cross-scan analysis"
 readme = "README.md"
 license = {file = "LICENSE"}
