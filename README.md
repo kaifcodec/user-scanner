@@ -68,6 +68,11 @@ With **2720+ total scan vectors**—including **210+ email-integrated sites** an
 
 ---
 
+<p align="center">
+  🔍 <strong>Looking for Phone Number OSINT?</strong> Check out our other project <a href="https://github.com/kaifcodec/phonsint"><strong>phonsint</strong></a> to uncover accounts, masked emails, and profile photos with zero SMS alerts. 
+  <a href="https://github.com/kaifcodec/phonsint"><strong>Explore phonsint →</strong></a>
+</p>
+
 ## ✨ Key Features
 
 - 🔎 **Deep Email & Username OSINT:** Look up email registrations and perform advanced username profiling across 2710+ platforms.
