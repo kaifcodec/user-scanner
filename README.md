@@ -6,7 +6,6 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Version-1.5.2.1-blueviolet?style=for-the-badge&logo=github" />
-  <img src="https://img.shields.io/github/issues/kaifcodec/user-scanner?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
   <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
   <img src="https://img.shields.io/badge/Tested%20on-Linux-black?style=for-the-badge&logo=Linux" />
@@ -14,7 +13,11 @@
   <a href="https://discord.gg/tVNrKVXb49" target="_blank">
      <img src="https://img.shields.io/badge/Discord-Join%20Chat-7289da?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
   </a>
+  <a href="https://x.com/kaifcodec" target="_blank">
+     <img src="https://img.shields.io/badge/Follow-kaifcodec-000000?style=for-the-badge&logo=x&logoColor=white" alt="X Follow" />
+  </a>
 </p>
+
 
 <p align="center">
   <a href="https://trendshift.io/repositories/16556" target="_blank">
