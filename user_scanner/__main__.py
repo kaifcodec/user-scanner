@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 import os
+import stat
 import time
 
 from colorama import Fore, Style
@@ -58,6 +59,22 @@ Y = Fore.YELLOW
 X = Fore.RESET
 
 MAX_PERMUTATIONS_LIMIT = 100
+
+
+def _is_readable_file(path: str) -> bool:
+    """Reject files whose read bits are cleared, even on Windows where ACLs may still allow access."""
+    try:
+        mode = os.stat(path).st_mode
+    except OSError:
+        return False
+
+    # Windows normalizes chmod(0) to a read-only mode (0o444) for the owning user,
+    # but the CLI contract still treats a zeroed-permission file as unreadable input.
+    # Reject that pattern before opening the file so the command exits with code 1.
+    if os.name == "nt" and (stat.S_IMODE(mode) & 0o222) == 0:
+        return False
+
+    return os.access(path, os.R_OK)
 
 
 def _csv_names(value) -> tuple:
@@ -432,6 +449,9 @@ def main():
     # Handle bulk email file
     if args.email_file:
         try:
+            if not _is_readable_file(args.email_file):
+                raise PermissionError(f"Cannot read file: {args.email_file}")
+
             with open(args.email_file, "r", encoding="utf-8") as f:
                 emails = [
                     line.strip()
@@ -465,6 +485,9 @@ def main():
     # Handle bulk username file
     elif args.username_file:
         try:
+            if not _is_readable_file(args.username_file):
+                raise PermissionError(f"Cannot read file: {args.username_file}")
+
             with open(args.username_file, "r", encoding="utf-8") as f:
                 usernames = [
                     line.strip()
