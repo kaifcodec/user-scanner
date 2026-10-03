@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from urllib.parse import quote
 
 from user_scanner.core.orchestrator import generic_validate
@@ -42,9 +42,10 @@ def validate_artbreeder(user: str) -> Result:
                 pass
 
         if isinstance(created_at := _value(profile, "created_at"), int):
-            extra["joined"] = datetime.fromtimestamp(created_at / 1000, UTC).date().isoformat()
+            extra["joined"] = datetime.fromtimestamp(created_at / 1000, timezone.utc).date().isoformat()
 
-        if role := {1: "AB Team", 2: "Moderator"}.get(_value(profile, "role")):
+        role_id = _value(profile, "role")
+        if isinstance(role_id, int) and (role := {1: "AB Team", 2: "Moderator"}.get(role_id)):
             extra["role"] = role
 
         if subscription_match := re.search(r"subscription:\{.*?product:\{(.*?)\}\}", profile):
