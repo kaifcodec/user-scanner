@@ -125,3 +125,125 @@ async def test_execute_scan_cross_scan_runs_off_event_loop(mock_run_scan, mock_c
     await execute_scan({"username": "testuser", "cross_scan": True}, is_email=False)
 
     assert seen["thread"] != loop_thread
+
+
+@pytest.mark.anyio
+async def test_cancelling_mcp_scan_defers_cleanup_until_worker_terminates(monkeypatch):
+    import asyncio
+    import sys
+    import threading
+    from user_scanner.core import helpers
+    from user_scanner.mcp import handlers
+
+    started = threading.Event()
+    release = threading.Event()
+    finished = threading.Event()
+    observations = {}
+    original_stdout = sys.stdout
+
+    def worker(*args):
+        observations["initial_proxy"] = helpers.get_proxy()
+        started.set()
+        try:
+            assert release.wait(5)
+            observations["late_proxy"] = helpers.get_proxy()
+            observations["stdout_restored"] = sys.stdout is original_stdout
+            return []
+        finally:
+            finished.set()
+
+    monkeypatch.setattr(handlers, "_run_scan", worker)
+
+    handlers._scan_lock = asyncio.Lock()
+    task = asyncio.create_task(
+        handlers.execute_scan(
+            {"username": "audit", "proxies": ["http://127.0.0.1:12345"]},
+            is_email=False,
+        )
+    )
+
+    assert await asyncio.to_thread(started.wait, 5)
+    task.cancel()
+
+    await asyncio.sleep(0.05)
+    assert not finished.is_set(), "Worker should still be alive"
+    assert handlers._scan_lock.locked(), "Lock must remain held while worker is alive"
+    assert helpers.get_proxy() == "http://127.0.0.1:12345", "Proxy must not be cleared while worker is alive"
+
+    release.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert finished.is_set()
+    assert not handlers._scan_lock.locked()
+    assert helpers.get_proxy() is None
+    assert observations == {
+        "initial_proxy": "http://127.0.0.1:12345",
+        "late_proxy": "http://127.0.0.1:12345",
+        "stdout_restored": False,
+    }
+
+
+@pytest.mark.anyio
+async def test_cancelling_mcp_cross_scan_defers_cleanup(monkeypatch):
+    import asyncio
+    import sys
+    import threading
+    from user_scanner.core import helpers
+    from user_scanner.mcp import handlers
+
+    started = threading.Event()
+    release = threading.Event()
+    finished = threading.Event()
+    observations = {}
+    original_stdout = sys.stdout
+
+    def fake_run_scan(*args):
+        return [Result.taken()]
+
+    def fake_cross_scan(*args):
+        observations["initial_proxy"] = helpers.get_proxy()
+        started.set()
+        try:
+            assert release.wait(5)
+            observations["late_proxy"] = helpers.get_proxy()
+            observations["stdout_restored"] = sys.stdout is original_stdout
+            return []
+        finally:
+            finished.set()
+
+    monkeypatch.setattr(handlers, "_run_scan", fake_run_scan)
+    monkeypatch.setattr(handlers, "run_cross_scan", fake_cross_scan)
+
+    handlers._scan_lock = asyncio.Lock()
+    task = asyncio.create_task(
+        handlers.execute_scan(
+            {
+                "username": "audit",
+                "cross_scan": True,
+                "proxies": ["http://127.0.0.1:12345"],
+            },
+            is_email=False,
+        )
+    )
+
+    assert await asyncio.to_thread(started.wait, 5)
+    task.cancel()
+
+    await asyncio.sleep(0.05)
+    assert not finished.is_set(), "Cross-scan worker should still be alive"
+    assert handlers._scan_lock.locked(), "Lock must remain held during cross-scan cancellation"
+    assert helpers.get_proxy() == "http://127.0.0.1:12345"
+
+    release.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert finished.is_set()
+    assert not handlers._scan_lock.locked()
+    assert helpers.get_proxy() is None
+    assert observations == {
+        "initial_proxy": "http://127.0.0.1:12345",
+        "late_proxy": "http://127.0.0.1:12345",
+        "stdout_restored": False,
+    }
