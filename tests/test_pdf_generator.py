@@ -99,9 +99,11 @@ def test_pdf_no_reportlab_import_error(monkeypatch):
 def test_fetch_and_resize_image_routes_through_proxy(monkeypatch):
     from unittest.mock import MagicMock
     import httpx
+    import user_scanner.core.pdf_generator as pdf_gen
     from user_scanner.core.helpers import set_proxy_manager, set_global_timeout
     from user_scanner.core.pdf_generator import fetch_and_resize_image
 
+    monkeypatch.setattr(pdf_gen, "PIL_AVAILABLE", True)
     recorded_kwargs = {}
 
     def mock_get(url, **kwargs):
@@ -128,9 +130,11 @@ def test_fetch_and_resize_image_routes_through_proxy(monkeypatch):
 def test_fetch_and_resize_image_no_proxy(monkeypatch):
     from unittest.mock import MagicMock
     import httpx
+    import user_scanner.core.pdf_generator as pdf_gen
     from user_scanner.core.helpers import set_proxy_manager, set_global_timeout
     from user_scanner.core.pdf_generator import fetch_and_resize_image
 
+    monkeypatch.setattr(pdf_gen, "PIL_AVAILABLE", True)
     recorded_kwargs = {}
 
     def mock_get(url, **kwargs):
@@ -152,8 +156,11 @@ def test_fetch_and_resize_image_no_proxy(monkeypatch):
 
 def test_fetch_and_resize_image_proxy_failure_returns_none(monkeypatch):
     import httpx
+    import user_scanner.core.pdf_generator as pdf_gen
     from user_scanner.core.helpers import set_proxy_manager
     from user_scanner.core.pdf_generator import fetch_and_resize_image
+
+    monkeypatch.setattr(pdf_gen, "PIL_AVAILABLE", True)
 
     def mock_get(url, **kwargs):
         raise httpx.ProxyError("Proxy connection refused")
@@ -166,4 +173,12 @@ def test_fetch_and_resize_image_proxy_failure_returns_none(monkeypatch):
         assert res is None
     finally:
         set_proxy_manager(proxies=None)
+
+
+def test_fetch_and_resize_image_without_pil_returns_none(monkeypatch):
+    import user_scanner.core.pdf_generator as pdf_gen
+
+    monkeypatch.setattr(pdf_gen, "PIL_AVAILABLE", False)
+    assert pdf_gen.fetch_and_resize_image("https://example.com/avatar.png") is None
+
 
