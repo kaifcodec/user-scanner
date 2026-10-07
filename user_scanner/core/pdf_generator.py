@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import List, Any, Optional
 
 import httpx
+from user_scanner.core.helpers import get_global_timeout, get_proxy
 
 try:
     from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn  # type: ignore[import-untyped,import-not-found]
@@ -65,13 +66,17 @@ def clean_metadata(extra: Any) -> List[tuple]:
 def fetch_and_resize_image(url: str, max_size: tuple = (600, 600), timeout: float = 5.0) -> Optional[Any]:
     if not PIL_AVAILABLE:
         return None
+    global_timeout = get_global_timeout()
+    effective_timeout = global_timeout if global_timeout is not None else timeout
+    proxy = get_proxy()
     try:
         resp = httpx.get(
             url,
             headers={
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
             },
-            timeout=timeout,
+            proxy=proxy,
+            timeout=effective_timeout,
             follow_redirects=True,
         )
         if resp.status_code == 200:

@@ -165,7 +165,7 @@ def main():
     parser.add_argument(
         "--no-pdf-media",
         action="store_true",
-        help="Disable profile photo media fetching in PDF report generation",
+        help="Disable profile photo media fetching in PDF report generation (useful for metered proxies or saving bandwidth)",
     )
 
     parser.add_argument("-o", "--output", type=str, help="Output file path")
@@ -174,7 +174,7 @@ def main():
         "-P",
         "--proxy-file",
         type=str,
-        help="Path to proxy list file (one proxy per line)",
+        help="Path to proxy list file (one proxy per line). Tip: use --no-pdf-media to conserve bandwidth on metered proxies",
     )
 
     parser.add_argument(
