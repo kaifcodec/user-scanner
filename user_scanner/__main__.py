@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 import os
+import tempfile
 import time
 
 from colorama import Fore, Style
@@ -737,16 +738,36 @@ def main():
                 if os.path.exists(t_output):
                     try:
                         with open(t_output, "r", encoding="utf-8") as f:
-                            old = json.load(f)
-                            if isinstance(old, list):
+                            content = f.read().strip()
+                            if content:
+                                old = json.loads(content)
+                                if not isinstance(old, list):
+                                    raise ValueError(
+                                        f"Expected JSON array, got {type(old).__name__}"
+                                    )
                                 data = old
-                    except (json.JSONDecodeError, Exception):
-                        pass
+                    except Exception as e:
+                        print(f"\n{R}[✘] Failed to append to existing JSON file at {t_output}: {e}{X}")
+                        continue
 
                 data.extend(new_items)
-                with open(t_output, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2, ensure_ascii=False)
-                print(G + f"\n[+] JSON Results saved to {t_output}" + Style.RESET_ALL)
+                try:
+                    dir_name = os.path.dirname(os.path.abspath(t_output))
+                    os.makedirs(dir_name, exist_ok=True)
+                    temp_file = tempfile.NamedTemporaryFile(
+                        "w", dir=dir_name, delete=False, encoding="utf-8"
+                    )
+                    try:
+                        with temp_file as f:
+                            json.dump(data, f, indent=2, ensure_ascii=False)
+                        os.replace(temp_file.name, t_output)
+                    except Exception:
+                        if os.path.exists(temp_file.name):
+                            os.remove(temp_file.name)
+                        raise
+                    print(G + f"\n[+] JSON Results saved to {t_output}" + Style.RESET_ALL)
+                except Exception as e:
+                    print(f"\n{R}[✘] Failed to save JSON report to {t_output}: {e}{X}")
 
             elif args.format == "csv":
                 try:
