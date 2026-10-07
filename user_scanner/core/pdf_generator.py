@@ -1,9 +1,12 @@
 import concurrent.futures
-import io
-import json
 import html
+import io
+import ipaddress
+import json
+import socket
+import urllib.parse
 from datetime import datetime
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Union
 
 import httpx
 from user_scanner.core.helpers import get_global_timeout, get_proxy
@@ -63,58 +66,139 @@ def clean_metadata(extra: Any) -> List[tuple]:
     return [(k, v) for k, v in extra.items() if not any(x in k.lower() for x in IMAGE_HEURISTIC_KEYS)]
 
 
+def is_safe_ip(ip: Union[ipaddress.IPv4Address, ipaddress.IPv6Address]) -> bool:
+    """Check if an IP address is a safe, publicly-routable destination."""
+    if (
+        ip.is_loopback
+        or ip.is_private
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
+    ):
+        return False
+    if isinstance(ip, ipaddress.IPv6Address):
+        if ip.ipv4_mapped:
+            return is_safe_ip(ip.ipv4_mapped)
+        if ip.sixtofour:
+            return is_safe_ip(ip.sixtofour)
+    return True
+
+
+def is_safe_media_url(url: str) -> bool:
+    """Validate that a URL uses HTTP/HTTPS and resolves exclusively to safe public IPs."""
+    if not url or not isinstance(url, str):
+        return False
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        if parsed.scheme.lower() not in ("http", "https"):
+            return False
+
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        hostname = hostname.strip("[]").lower()
+        if hostname == "localhost":
+            return False
+
+        # Try parsing directly as an IP address
+        try:
+            ip = ipaddress.ip_address(hostname)
+            return is_safe_ip(ip)
+        except ValueError:
+            pass
+
+        # Resolve hostname to all associated IPs via DNS
+        addrinfo = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
+        if not addrinfo:
+            return False
+
+        for entry in addrinfo:
+            sockaddr = entry[4]
+            ip_str = sockaddr[0]
+            ip = ipaddress.ip_address(ip_str)
+            if not is_safe_ip(ip):
+                return False
+
+        return True
+    except Exception:
+        return False
+
+
 def fetch_and_resize_image(url: str, max_size: tuple = (600, 600), timeout: float = 5.0) -> Optional[Any]:
     if not PIL_AVAILABLE:
         return None
     global_timeout = get_global_timeout()
     effective_timeout = global_timeout if global_timeout is not None else timeout
     proxy = get_proxy()
+    max_redirects = 5
+    current_url = url
+
     try:
-        resp = httpx.get(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
-            },
-            proxy=proxy,
-            timeout=effective_timeout,
-            follow_redirects=True,
-        )
-        if resp.status_code == 200:
-            content_type = resp.headers.get("Content-Type", "")
-            if SVGLIB_AVAILABLE and ("svg" in content_type.lower() or url.lower().endswith(".svg")):
-                try:
-                    drawing = svg2rlg(io.BytesIO(resp.content))
-                    if drawing and hasattr(drawing, "width") and hasattr(drawing, "height") and drawing.width > 0 and drawing.height > 0:
-                        s = min(max_size[0] / drawing.width, max_size[1] / drawing.height)
-                        if s < 1.0:
-                            drawing.scale(s, s)
-                            drawing.width = drawing.width * s
-                            drawing.height = drawing.height * s
-                        return drawing
-                except Exception:
-                    pass
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+        }
+        resp = None
 
-            img_raw = PILImage.open(io.BytesIO(resp.content))
-            img = img_raw.convert("RGB")
+        for _ in range(max_redirects + 1):
+            if not is_safe_media_url(current_url):
+                return None
 
-            # Crop to 1:1 square
-            min_dim = min(img.width, img.height)
-            left = (img.width - min_dim) / 2
-            top = (img.height - min_dim) / 2
-            right = (img.width + min_dim) / 2
-            bottom = (img.height + min_dim) / 2
-            cropped = img.crop((left, top, right, bottom))
+            resp = httpx.get(
+                current_url,
+                headers=headers,
+                proxy=proxy,
+                timeout=effective_timeout,
+                follow_redirects=False,
+            )
 
-            # Scale down only if larger than max_size limit (600x600)
-            if cropped.width > max_size[0] or cropped.height > max_size[1]:
-                final_img = cropped.resize(max_size, PILImage.Resampling.LANCZOS)
-            else:
-                final_img = cropped
+            if resp.is_redirect:
+                location = resp.headers.get("Location")
+                if not location:
+                    return None
+                current_url = urllib.parse.urljoin(current_url, location)
+                continue
+            break
 
-            img_byte_arr = io.BytesIO()
-            final_img.save(img_byte_arr, format="JPEG", quality=90)
-            img_byte_arr.seek(0)
-            return img_byte_arr
+        if resp is None or resp.status_code != 200:
+            return None
+
+        content_type = resp.headers.get("Content-Type", "")
+        if SVGLIB_AVAILABLE and ("svg" in content_type.lower() or current_url.lower().endswith(".svg")):
+            try:
+                drawing = svg2rlg(io.BytesIO(resp.content), resolve_entities=False)
+                if drawing and hasattr(drawing, "width") and hasattr(drawing, "height") and drawing.width > 0 and drawing.height > 0:
+                    s = min(max_size[0] / drawing.width, max_size[1] / drawing.height)
+                    if s < 1.0:
+                        drawing.scale(s, s)
+                        drawing.width = drawing.width * s
+                        drawing.height = drawing.height * s
+                    return drawing
+            except Exception:
+                pass
+
+        img_raw = PILImage.open(io.BytesIO(resp.content))
+        img = img_raw.convert("RGB")
+
+        # Crop to 1:1 square
+        min_dim = min(img.width, img.height)
+        left = (img.width - min_dim) / 2
+        top = (img.height - min_dim) / 2
+        right = (img.width + min_dim) / 2
+        bottom = (img.height + min_dim) / 2
+        cropped = img.crop((left, top, right, bottom))
+
+        # Scale down only if larger than max_size limit (600x600)
+        if cropped.width > max_size[0] or cropped.height > max_size[1]:
+            final_img = cropped.resize(max_size, PILImage.Resampling.LANCZOS)
+        else:
+            final_img = cropped
+
+        img_byte_arr = io.BytesIO()
+        final_img.save(img_byte_arr, format="JPEG", quality=90)
+        img_byte_arr.seek(0)
+        return img_byte_arr
     except Exception:
         pass
     return None
