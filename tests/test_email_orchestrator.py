@@ -1,13 +1,23 @@
 def test_set_concurrency():
+    import pytest
     from user_scanner.core.email_orchestrator import set_concurrency
     import user_scanner.core.email_orchestrator as email_orchestrator
     
     original_max = email_orchestrator.MAX_CONCURRENT_REQUESTS
-    set_concurrency(5)
-    assert email_orchestrator.MAX_CONCURRENT_REQUESTS == 5
-    
-    # restore
-    set_concurrency(original_max)
+    try:
+        set_concurrency(5)
+        assert email_orchestrator.MAX_CONCURRENT_REQUESTS == 5
+
+        set_concurrency(1)
+        assert email_orchestrator.MAX_CONCURRENT_REQUESTS == 1
+
+        with pytest.raises(ValueError, match="Concurrency must be at least 1"):
+            set_concurrency(0)
+
+        with pytest.raises(ValueError, match="Concurrency must be at least 1"):
+            set_concurrency(-5)
+    finally:
+        set_concurrency(original_max)
 
 
 def test_run_email_batch_multiple_categories_grouped(capsys, monkeypatch):

@@ -56,6 +56,8 @@ httpx.Client.__init__ = _patched_client_init  # type: ignore[method-assign]
 MAX_CONCURRENT_REQUESTS = 25
 
 def set_concurrency(val: int):
+    if val < 1:
+        raise ValueError(f"Concurrency must be at least 1, got {val}")
     global MAX_CONCURRENT_REQUESTS
     MAX_CONCURRENT_REQUESTS = val
 

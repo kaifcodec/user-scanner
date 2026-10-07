@@ -65,6 +65,14 @@ async def execute_scan(arguments: dict, is_email: bool) -> list[types.TextConten
     if category and module_name:
         raise ValueError("Cannot specify both 'category' and 'module'. Choose one.")
 
+    if concurrency is not None:
+        try:
+            conc_val = int(concurrency)
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Invalid concurrency value: {concurrency}") from e
+        if conc_val < 1:
+            raise ValueError(f"Concurrency must be at least 1, got {concurrency}")
+
     # Normalise module name the same way the CLI does (__main__.py:518)
     if module_name:
         module_name = module_name.replace(".", "_")

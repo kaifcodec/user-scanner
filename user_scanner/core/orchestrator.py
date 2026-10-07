@@ -28,6 +28,8 @@ MAX_CONCURRENT_REQUESTS = 60
 _shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=max(MAX_CONCURRENT_REQUESTS * 2, 250))
 
 def set_concurrency(val: int):
+    if val < 1:
+        raise ValueError(f"Concurrency must be at least 1, got {val}")
     global MAX_CONCURRENT_REQUESTS, _shared_executor
     MAX_CONCURRENT_REQUESTS = val
     _shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=max(val * 2, 250))

@@ -52,16 +52,26 @@ def test_run_checks_category_threaded(monkeypatch, tmp_path):
 
 
 def test_set_concurrency():
+    import pytest
     from user_scanner.core.orchestrator import set_concurrency
     import user_scanner.core.orchestrator as orchestrator
     
     original_max = orchestrator.MAX_CONCURRENT_REQUESTS
-    set_concurrency(10)
-    assert orchestrator.MAX_CONCURRENT_REQUESTS == 10
-    assert orchestrator._shared_executor._max_workers == max(10 * 2, 250)
-    
-    # restore
-    set_concurrency(original_max)
+    try:
+        set_concurrency(10)
+        assert orchestrator.MAX_CONCURRENT_REQUESTS == 10
+        assert orchestrator._shared_executor._max_workers == max(10 * 2, 250)
+
+        set_concurrency(1)
+        assert orchestrator.MAX_CONCURRENT_REQUESTS == 1
+
+        with pytest.raises(ValueError, match="Concurrency must be at least 1"):
+            set_concurrency(0)
+
+        with pytest.raises(ValueError, match="Concurrency must be at least 1"):
+            set_concurrency(-5)
+    finally:
+        set_concurrency(original_max)
 
 
 def test_run_batch_multiple_categories_grouped(capsys, monkeypatch):

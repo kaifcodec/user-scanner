@@ -231,6 +231,18 @@ def test_username_file_unreadable(tmp_path, run_main):
     assert code == 1
 
 
+def test_cli_concurrency_positive_bound(run_main, capsys):
+    code_zero = run_main(["-u", "alice", "-C", "0", "-m", "github"])
+    assert code_zero == 2
+    err_zero = capsys.readouterr().err
+    assert "must be at least 1" in err_zero
+
+    code_neg = run_main(["-u", "alice", "--concurrency", "-5", "-m", "github"])
+    assert code_neg == 2
+    err_neg = capsys.readouterr().err
+    assert "must be at least 1" in err_neg
+
+
 @patch("httpx.AsyncClient")
 def test_validate_proxy_all_invalid(mock_client):
     instance = MagicMock()

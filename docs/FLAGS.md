@@ -28,7 +28,7 @@
 | `-s, --stop STOP`           | Limit the number of permutations generated                  |
 | `-d, --delay DELAY`         | Delay (in seconds) between requests                         |
 | `-t, --timeout TIMEOUT`     | Override default request timeout in seconds                 |
-| `-C, --concurrency CONC`    | Override default concurrency limit                          |
+| `-C, --concurrency CONC`    | Override default concurrency limit (must be at least 1)     |
 | `-f, --format {csv,json,pdf}`| Select output format                                       |
 | `-o, --output OUTPUT`       | Save results to a file (Can be used directly without `-f`)  |
 | `-U, --update`              | Update the tool to the latest version                       |
