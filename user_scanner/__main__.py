@@ -154,7 +154,7 @@ def main():
         "-C",
         "--concurrency",
         type=int,
-        help="Override default concurrency limit (default: 60 for username, 25 for email scan)",
+        help="Override default concurrency limit (minimum: 1, default: 60 for username, 25 for email scan)",
     )
 
     parser.add_argument(
@@ -260,6 +260,8 @@ def main():
         set_global_timeout(args.timeout)
 
     if args.concurrency is not None:
+        if args.concurrency < 1:
+            parser.error(f"argument -C/--concurrency: must be at least 1, got {args.concurrency}")
         from user_scanner.core.email_orchestrator import set_concurrency as set_email_concurrency
         from user_scanner.core.orchestrator import set_concurrency as set_user_concurrency
         set_email_concurrency(args.concurrency)

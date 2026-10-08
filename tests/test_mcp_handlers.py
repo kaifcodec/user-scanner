@@ -36,6 +36,32 @@ async def test_execute_scan_category_and_module_together():
 
 
 @pytest.mark.anyio
+async def test_execute_scan_invalid_concurrency():
+    from user_scanner.mcp.handlers import _scan_lock
+
+    for invalid_c in [0, -1, -10]:
+        with pytest.raises(ValueError, match="Concurrency must be at least 1"):
+            await execute_scan({"username": "testuser", "concurrency": invalid_c}, is_email=False)
+        assert not _scan_lock.locked()
+
+    with pytest.raises(ValueError, match="Invalid concurrency value"):
+        await execute_scan({"username": "testuser", "concurrency": "not_an_int"}, is_email=False)
+    assert not _scan_lock.locked()
+
+
+def test_tool_schema_concurrency_minimum():
+    from user_scanner.mcp.schemas import get_tool_list
+
+    tools = get_tool_list()
+    scan_tools = [t for t in tools if t.name in ("scan_username", "scan_email")]
+    assert len(scan_tools) == 2
+    for t in scan_tools:
+        conc_prop = t.inputSchema["properties"]["concurrency"]
+        assert conc_prop["type"] == "integer"
+        assert conc_prop["minimum"] == 1
+
+
+@pytest.mark.anyio
 @patch("user_scanner.mcp.handlers._run_scan")
 @patch("user_scanner.mcp.handlers.set_global_timeout")
 @patch("user_scanner.mcp.handlers.set_proxy_manager")
