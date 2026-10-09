@@ -49,11 +49,11 @@ async def _check(email: str) -> Result:
 
             if response.status_code == 200:
                 data = response.json()
-                msg = data.get("msg", "")
+                msg = str(data.get("msg", ""))
 
-                if msg in ["Incorrect password", "not set password"]:
+                if msg in ["Incorrect password", "not set password", "密码错误", "未设置密码"] or "密码" in msg:
                     return Result.taken(url=show_url)
-                elif msg == "The user does not exist.":
+                elif msg in ["The user does not exist.", "用户不存在。", "用户不存在"] or "不存在" in msg:
                     return Result.available(url=show_url)
 
                 return Result.error("Unexpected response body, report it via GitHub issues", url=show_url)

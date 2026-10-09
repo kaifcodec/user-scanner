@@ -38,7 +38,9 @@ async def _check(email: str) -> Result:
 
             if response.status_code == 400:
                 data = response.json()
-                if data.get("code") == "EMAIL_NOT_FOUND":
+                msg = str(data.get("message", "")).lower()
+                code = str(data.get("code", ""))
+                if code == "EMAIL_NOT_FOUND" or "no account with this email" in msg:
                     return Result.available(url=show_url)
 
             return Result.error(

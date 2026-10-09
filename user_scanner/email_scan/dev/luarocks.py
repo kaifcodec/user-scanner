@@ -1,9 +1,8 @@
-import httpx
 import re
+import httpx
 from user_scanner.core.result import Result
 
 async def _check(email: str) -> Result:
-    url_login = "https://luarocks.org/login"
     url_forgot = "https://luarocks.org/user/forgot_password"
     show_url = "https://luarocks.org"
 
@@ -18,30 +17,41 @@ async def _check(email: str) -> Result:
         'Sec-GPC': "1",
         'Accept-Language': "en-US,en;q=0.9",
         'Origin': "https://luarocks.org",
-        'Referer': url_forgot
+        'Referer': url_forgot,
     }
 
     try:
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-
-            # Hit login endpoint directly to grab token cookie and search form csrf
-            init_res = await client.get(url_login, headers=headers)
+            # Hit forgot password page directly to grab session cookie and form CSRF token
+            init_res = await client.get(url_forgot, headers=headers)
+            if init_res.status_code == 429:
+                return Result.error("Rate limited by LuaRocks (429)", url=show_url)
             if init_res.status_code != 200:
-                return Result.error(f"Failed to load validation frame: {init_res.status_code}")
+                return Result.error(f"Failed to load validation frame: {init_res.status_code}", url=show_url)
 
-            csrf_match = re.search(r'name="csrf_token" value="([^"]+)"', init_res.text)
+            # Match CSRF token irrespective of attribute order (name before value or value before name)
+            csrf_match = re.search(
+                r'name=["\']csrf_token["\'][^>]*value=["\']([^"\']+)["\']', init_res.text
+            ) or re.search(
+                r'value=["\']([^"\']+)["\'][^>]*name=["\']csrf_token["\']', init_res.text
+            )
             if not csrf_match:
-                return Result.error("Could not parse LuaRocks state CSRF token")
+                return Result.error("Could not parse LuaRocks state CSRF token", url=show_url)
 
             csrf_token = csrf_match.group(1)
 
             # Push password reset form validation check
             payload = {
                 'csrf_token': csrf_token,
-                'email': email
+                'email': email,
             }
 
             response = await client.post(url_forgot, data=payload, headers=headers)
+            if response.status_code == 429:
+                return Result.error("Rate limited by LuaRocks (429)", url=show_url)
+            if response.status_code == 403:
+                return Result.error("Access forbidden by LuaRocks (403)", url=show_url)
+
             response_text = response.text.lower()
 
             # Parse structural text outputs using broad substrings to prevent template entity escaping bugs
@@ -49,13 +59,21 @@ async def _check(email: str) -> Result:
                 return Result.taken(url=show_url)
 
             # Checking for standard, stripped, and HTML-escaped string formats simultaneously
-            if "don't know anyone" in response_text or "don&#39;t know anyone" in response_text or "know anyone with that email" in response_text:
+            if (
+                "don't know anyone" in response_text
+                or "don&#39;t know anyone" in response_text
+                or "don&#039;t know anyone" in response_text
+                or "know anyone with that email" in response_text
+            ):
                 return Result.available(url=show_url)
 
-            return Result.error("Unexpected target response markup signature")
+            return Result.error(
+                f"Unexpected target response markup signature (status: {response.status_code})",
+                url=show_url,
+            )
 
     except Exception as e:
-        return Result.error(str(e))
+        return Result.error(str(e), url=show_url)
 
 async def validate_luarocks(email: str) -> Result:
     return await _check(email)
