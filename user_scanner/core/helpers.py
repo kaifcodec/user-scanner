@@ -27,6 +27,7 @@ EMAIL_RE = re.compile(rf"{_EMAIL_LOCAL}@(?:{_EMAIL_LABEL}\.)+[A-Za-z]{{2,63}}")
 LOUD_MODULES: Dict[str, List[str]] = {
     "user": [],
     "email": [
+        "ravelry",
         "leetcode",
         "netflix",
         "sexvid",
