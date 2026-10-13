@@ -125,6 +125,18 @@ nix run github:kaifcodec/user-scanner/main -- --help
 nix shell github:kaifcodec/user-scanner/main
 ```
 
+### 🧰 Via OTinstaller (Linux)
+
+[OTinstaller](https://github.com/OSINTVerseHQ/OTinstaller) is a third-party tool manager that installs the PyPI release into its own virtualenv. It isn't maintained here, so please report problems with it [on the OTinstaller tracker](https://github.com/OSINTVerseHQ/OTinstaller/issues).
+
+```bash
+pipx install otinstaller
+otinstaller install user-scanner
+
+# u:johndoe is passed as --username johndoe; other flags can follow it
+otinstaller run user-scanner -- u:johndoe
+```
+
 ---
 
 ## 💻 Usage Guide
