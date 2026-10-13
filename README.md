@@ -131,6 +131,7 @@ nix shell github:kaifcodec/user-scanner/main
 
 ```bash
 pipx install otinstaller
+otinstaller init
 otinstaller install user-scanner
 
 # u:johndoe is passed as --username johndoe; other flags can follow it
