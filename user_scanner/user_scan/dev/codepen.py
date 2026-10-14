@@ -2,7 +2,7 @@ import html
 import re
 from urllib.parse import quote
 
-from user_scanner.core.orchestrator import generic_validate, make_request
+from user_scanner.core.impersonate import impersonate_request, impersonate_validate
 from user_scanner.core.result import Result
 
 
@@ -49,7 +49,7 @@ def _enrichment(
         return extra, {}
 
     try:
-        response = make_request(
+        response = impersonate_request(
             "https://codepen.io/graphql",
             method="POST",
             headers={"referer": profile_url, "x-csrf-token": csrf_token},
@@ -100,4 +100,4 @@ def validate_codepen(user: str) -> Result:
         extra, media = _enrichment(user, document, url)
         return Result.taken(extra=extra, media=media)
 
-    return generic_validate(url, process, show_url=url, follow_redirects=True)
+    return impersonate_validate(url, process, show_url=url, allow_redirects=True)
