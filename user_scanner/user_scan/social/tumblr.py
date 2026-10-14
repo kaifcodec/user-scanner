@@ -74,6 +74,29 @@ def _find_blog(html: str, user: str) -> dict | None:
     The page carries sibling blog objects for recommendation rails, so the
     first match is not necessarily the requested one.
     """
+    # 1. Primary modern method: parse ___INITIAL_STATE___
+    m = re.search(r'<script[^>]*id="___INITIAL_STATE___"[^>]*>(.*?)</script>', html, re.DOTALL)
+    if m:
+        try:
+            state = json.loads(m.group(1))
+            for q in state.get("queries", {}).get("queries", []):
+                qkey = q.get("queryKey")
+                if isinstance(qkey, list) and len(qkey) >= 2 and qkey[0] == "blog-info":
+                    if str(qkey[1]).lower() == user.lower():
+                        blog_data = q.get("state", {}).get("data")
+                        if isinstance(blog_data, dict):
+                            return blog_data
+
+            objects = state.get("PeeprRoute", {}).get("initialTimeline", {}).get("objects", [])
+            for obj in objects:
+                if isinstance(obj, dict):
+                    blog = obj.get("blog")
+                    if isinstance(blog, dict) and blog.get("name", "").lower() == user.lower():
+                        return blog
+        except Exception:
+            pass
+
+    # 2. Fallback to scanning for "blog": markers
     decoder = json.JSONDecoder()
     index = html.find(BLOG_MARKER)
     while index != -1:
