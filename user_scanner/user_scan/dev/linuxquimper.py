@@ -1,6 +1,5 @@
 import urllib.parse
 
-from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import Result, generic_validate
 
 
@@ -9,7 +8,7 @@ def validate_linuxquimper(user: str) -> Result:
     url = f"https://forum.linuxquimper.org/u/{encoded_user}.json"
     show_url = f"https://forum.linuxquimper.org/u/{encoded_user}"
     headers = {
-        "User-Agent": get_random_user_agent(),
+        "User-Agent": "user-scanner/1.0",
         "Accept": "application/json",
     }
 
