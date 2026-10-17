@@ -60,13 +60,13 @@ With **2720+ total scan vectors**—including **210+ email-integrated sites** an
 ---
 
 <p align="center">
-  <a href="https://goodfirstissues.org/?ref=user-scanner&utm_source=github&utm_medium=banner&utm_campaign=user-scanner" target="_blank">
-    <img width="750" style="max-width: 100%; height: auto;" alt="banner-github" src="https://github.com/user-attachments/assets/dafc6cbd-22e9-4294-a2c2-473f59f389bc" />
+  <a href="https://proxy-seller.com/?partner=A711D0DB08424F5A" target="_blank">
+    <img width="750" style="max-width: 100%; height: auto;" alt="Proxy-Seller Banner" src="https://github.com/user-attachments/assets/d6f7db09-f532-4b51-82fb-8d3d976fe1d5" />
   </a>
   <br>
-  <em><strong>Find beginner-friendly open-source issues and make your first pull request today.</strong></em>
+  <strong>Get reliable proxies for web scraping and automation. Use promo code <em>KAIF15</em> for 15% OFF!</strong>
   <br>
-  <a href="https://goodfirstissues.org/?ref=user-scanner&utm_source=github&utm_medium=banner&utm_campaign=user-scanner" target="_blank"><strong>Get Started →</strong></a>
+  <a href="https://proxy-seller.com/?partner=A711D0DB08424F5A" target="_blank"><strong>Get Started with 15% OFF →</strong></a>
 </p>
 
 ---
