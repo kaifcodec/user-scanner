@@ -1,6 +1,7 @@
 import httpx
 import json
 from colorama import Fore, Style
+from user_scanner.cli.tips import print_hudson_remediation_tip
 from user_scanner.core.helpers import load_config, _get_config_path
 
 # Color configs
@@ -93,8 +94,7 @@ def run_hudson_scan(target: str, is_email: bool = False):
                     if top_logins:
                         print(f"    - Sample Logins Found: {', '.join(top_logins[:3])}...")
 
-                print(f"\n{Y}[!] Recommendation: All credentials saved on infected computers are at risk.{X}")
-                print(f"{Y}[!] Visit https://www.hudsonrock.com/free-tools for more info.{X}")
+                print_hudson_remediation_tip()
 
             elif response.status_code == 404:
                 print(f"{G}[✔] No data found for this {param} in Hudson Rock database.{X}")

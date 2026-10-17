@@ -10,6 +10,7 @@ from itertools import islice
 from dataclasses import replace
 
 from user_scanner.cli.banner import print_banner
+from user_scanner.cli.tips import print_loud_skip_tip, print_proxy_tip
 from user_scanner.core import formatter
 from user_scanner.core.cross_scan import (
     DEFAULT_DEPTH,
@@ -794,10 +795,9 @@ def main():
         print(f"\n{R}[✘] No results found for the given target(s).{X}")
     else:
         print(f"\n{C}[i] Scan complete.\n  Total hits:{X} {total_found}")
-        if total_skipped > 0:
-            print(f"  {C}Skipped:{X} {total_skipped}")
-            print(f"  {Y}Reason for skip: Module(s) notify{X} (but only if target exists there) {Y}the target with password reset email(s){X}")
-            print(f"  {Y}Use {G}--allow-loud{X}{Y} to include those module(s) to be scanned{X}")
+        print_loud_skip_tip(total_skipped)
+
+    print_proxy_tip(results, has_proxy=bool(args.proxy_file))
 
 if __name__ == "__main__":
     main()
