@@ -33,9 +33,10 @@ def validate_kik(user: str) -> Result:
 
         # Taken state: Kik serves the profile picture CDN URL only for
         # accounts that actually exist.
-        if avatar and "profilepics.cf.kik.com" in avatar:
+        if (avatar and "profilepics.cf.kik.com" in avatar) or fullname:
             extra = {"fullname": fullname} if fullname else {}
-            return Result.taken(extra=extra, media={"avatar": avatar})
+            media = {"avatar": avatar} if avatar else {}
+            return Result.taken(extra=extra, media=media)
 
         # Available state: both the avatar slot and the display name are
         # blank — verified against a nonexistent handle.
