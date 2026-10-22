@@ -242,6 +242,8 @@ Add `user-scanner` to your client configuration (e.g. `claude_desktop_config.jso
 | `scan_email` | Deep email verification & account discovery across platforms | Target scoping, automated link pivoting (`cross_scan`), custom proxies, loudness toggles |
 | `list_available_modules` | Dynamic catalog & module discovery | Allows AI agents to query all supported platforms and categories dynamically |
 
+An unknown `category` or `module` name is rejected with an error that suggests the closest valid names, so a typo never comes back as a scan with no findings. Use `list_available_modules` to see the full catalog.
+
 ---
 
 ## 📚 Documentation Hub

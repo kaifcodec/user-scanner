@@ -59,7 +59,8 @@ def get_tool_list() -> list[types.Tool]:
             "description": (
                 "Optional category to restrict the scan to (e.g. 'social', "
                 "'gaming', 'dev'). Use list_available_modules to see options. "
-                "Cannot be used with 'module'."
+                "An unknown category is rejected with an error that suggests "
+                "close matches. Cannot be used with 'module'."
             ),
         },
         "module": {
@@ -67,7 +68,8 @@ def get_tool_list() -> list[types.Tool]:
             "description": (
                 "Optional specific site/module to restrict the scan to "
                 "(e.g. 'github'). Use list_available_modules to see options. "
-                "Cannot be used with 'category'."
+                "An unknown module is rejected with an error that suggests "
+                "close matches. Cannot be used with 'category'."
             ),
         },
         "allow_loud": {

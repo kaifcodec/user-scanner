@@ -49,6 +49,89 @@ async def test_execute_scan_invalid_concurrency():
     assert not _scan_lock.locked()
 
 
+@pytest.mark.anyio
+async def test_execute_scan_unknown_module_is_an_error():
+    from user_scanner.mcp.handlers import _scan_lock
+
+    with pytest.raises(ValueError, match="Unknown username module 'githb'") as exc_info:
+        await execute_scan({"username": "testuser", "module": "githb"}, is_email=False)
+    assert "Did you mean: 'github'" in str(exc_info.value)
+    assert "list_available_modules" in str(exc_info.value)
+    assert not _scan_lock.locked()
+
+    with pytest.raises(ValueError, match="Unknown email module 'no_such_site_xyz'") as exc_info:
+        await execute_scan({"email": "test@example.com", "module": "no_such_site_xyz"}, is_email=True)
+    assert "Did you mean" not in str(exc_info.value)
+    assert "list_available_modules" in str(exc_info.value)
+    assert not _scan_lock.locked()
+
+
+@pytest.mark.anyio
+async def test_execute_scan_unknown_category_is_an_error():
+    from user_scanner.mcp.handlers import _scan_lock
+
+    # Category names are exact, like the CLI: a different-case spelling is
+    # rejected and the correctly cased name is the first suggestion.
+    with pytest.raises(ValueError, match="Unknown username category 'Social'") as exc_info:
+        await execute_scan({"username": "testuser", "category": "Social"}, is_email=False)
+    assert "Did you mean: 'social'" in str(exc_info.value)
+    assert not _scan_lock.locked()
+
+    with pytest.raises(ValueError, match="Unknown email category 'gamming'") as exc_info:
+        await execute_scan({"email": "test@example.com", "category": "gamming"}, is_email=True)
+    assert "'gaming'" in str(exc_info.value)
+    assert not _scan_lock.locked()
+
+
+@pytest.mark.anyio
+async def test_execute_scan_unknown_category_respects_no_nsfw():
+    # 'adult' exists, but not once no_nsfw excludes it
+    with pytest.raises(ValueError, match="Unknown username category 'adult'"):
+        await execute_scan(
+            {"username": "testuser", "category": "adult", "no_nsfw": True}, is_email=False
+        )
+
+
+@pytest.mark.anyio
+@patch("user_scanner.mcp.handlers._run_scan")
+@patch("user_scanner.mcp.handlers.set_proxy_manager")
+async def test_execute_scan_unknown_scope_never_starts_a_scan(mock_set_proxy, mock_run_scan):
+    with pytest.raises(ValueError, match="Unknown username module"):
+        await execute_scan(
+            {"username": "testuser", "module": "githb", "proxies": ["http://127.0.0.1:8080"]},
+            is_email=False,
+        )
+    mock_set_proxy.assert_not_called()
+    mock_run_scan.assert_not_called()
+
+
+@pytest.mark.anyio
+@patch("user_scanner.mcp.handlers._run_scan")
+async def test_execute_scan_known_scopes_still_run(mock_run_scan):
+    mock_run_scan.return_value = [Result.available()]
+
+    # Module names resolve case-insensitively, exactly like the CLI's -m flag
+    await execute_scan({"username": "testuser", "module": "GitHub"}, is_email=False)
+    assert mock_run_scan.call_args[0][4] == "GitHub"
+
+    await execute_scan({"username": "testuser", "category": "social"}, is_email=False)
+    assert mock_run_scan.call_args[0][3] == "social"
+
+    await execute_scan({"email": "test@example.com", "module": "github"}, is_email=True)
+    assert mock_run_scan.call_args[0][4] == "github"
+
+
+def test_run_scan_rejects_unknown_scope():
+    """The thread-side scan must not quietly return [] for a bad scope either."""
+    from user_scanner.mcp.handlers import _run_scan
+
+    config = ScanConfig(allow_loud=False, no_nsfw=False, timeout=None)
+    with pytest.raises(ValueError, match="Unknown username module 'githb'"):
+        _run_scan("testuser", config, False, None, "githb")
+    with pytest.raises(ValueError, match="Unknown email category 'gamming'"):
+        _run_scan("test@example.com", config, True, "gamming", None)
+
+
 def test_tool_schema_concurrency_minimum():
     from user_scanner.mcp.schemas import get_tool_list
 
@@ -113,13 +196,15 @@ async def test_execute_scan_argument_mapping(
 async def test_execute_scan_module_normalization(mock_run_scan):
     mock_run_scan.return_value = [Result.available()]
     
-    # Passing a module name with a dot (e.g. from the list_available_modules output)
+    # Passing a module name with a dot (e.g. from the list_available_modules output).
+    # Made.porn is an email module, so scan as email: a name that resolves to
+    # nothing is an error now.
     arguments = {
-        "username": "testuser",
+        "email": "test@example.com",
         "module": "Made.porn", 
     }
     
-    await execute_scan(arguments, is_email=False)
+    await execute_scan(arguments, is_email=True)
     
     call_args = mock_run_scan.call_args[0]
     module_name = call_args[4]
