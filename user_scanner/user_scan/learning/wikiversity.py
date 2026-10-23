@@ -26,7 +26,7 @@ def validate_wikiversity(user: str) -> Result:
                 return Result.available(url=show_url)
 
             if "userid" in user_data:
-                extra = {}
+                extra: dict[str, object] = {}
                 extra["id"] = user_data.get("userid")
                 if "registration" in user_data and user_data.get("registration"):
                     extra["joined"] = user_data.get("registration")

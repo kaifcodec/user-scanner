@@ -1,11 +1,10 @@
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
 def validate_gentoo_wiki(user: str) -> Result:
     url = "https://wiki.gentoo.org/api.php"
     show_url = f"https://wiki.gentoo.org/wiki/User:{user}"
-    headers = {"User-Agent": get_random_user_agent()}
     params = {
         "action": "query",
         "format": "json",
@@ -27,7 +26,7 @@ def validate_gentoo_wiki(user: str) -> Result:
                 return Result.available(url=show_url)
 
             if "userid" in user_data:
-                extra = {}
+                extra: dict[str, object] = {}
                 extra["id"] = user_data.get("userid")
                 if "registration" in user_data and user_data.get("registration"):
                     extra["joined"] = user_data.get("registration")
@@ -45,4 +44,4 @@ def validate_gentoo_wiki(user: str) -> Result:
         except Exception as e:
             return Result.error(e, url=show_url)
 
-    return generic_validate(url, process, show_url=show_url, params=params, headers=headers)
+    return impersonate_validate(url, process, show_url=show_url, params=params)
