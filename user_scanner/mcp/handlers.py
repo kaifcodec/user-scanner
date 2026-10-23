@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import difflib
 import json
 import logging
 import sys
@@ -67,6 +68,58 @@ async def _run_in_thread(func: Any, *args: Any) -> Any:
                 raise
 
 
+def _module_names(is_email: bool, no_nsfw: bool) -> list[str]:
+    """Return every loadable module name for the scan type, as passed to 'module'."""
+    return sorted(
+        module.__name__.split(".")[-1]
+        for category_path in load_categories(is_email, no_nsfw).values()
+        for module in load_modules(category_path)
+    )
+
+
+def _unknown_scope_error(kind: str, name: str, valid: list[str], is_email: bool) -> ValueError:
+    """Build the error for a 'module' or 'category' value that matches nothing.
+
+    A typo or a stale agent plan must not look like a scan with no findings,
+    so the message names the rejected value, suggests the closest valid
+    choices (a different-case spelling first) and points at
+    list_available_modules for the full listing.
+    """
+    scan_type = "email" if is_email else "username"
+    by_lower = {v.lower(): v for v in valid}
+    same_case_insensitive = by_lower.get(name.lower())
+    suggestions = [same_case_insensitive] if same_case_insensitive else []
+    for match in difflib.get_close_matches(name.lower(), list(by_lower), n=3, cutoff=0.6):
+        if by_lower[match] not in suggestions:
+            suggestions.append(by_lower[match])
+
+    message = f"Unknown {scan_type} {kind} '{name}'."
+    if suggestions:
+        message += " Did you mean: " + ", ".join(f"'{s}'" for s in suggestions[:3]) + "?"
+    message += " Use list_available_modules to see the valid choices."
+    return ValueError(message)
+
+
+def _validate_scope(
+    category: str | None, module_name: str | None, is_email: bool, no_nsfw: bool
+) -> None:
+    """Reject a 'module' or 'category' value that does not resolve to anything.
+
+    Mirrors the CLI, which exits with "module 'x' not found" instead of
+    scanning nothing. Runs before the scan lock is taken, so a rejected
+    scope never touches proxies, timeouts or concurrency.
+    """
+    if module_name:
+        if not find_module(module_name, is_email=is_email, no_nsfw=no_nsfw):
+            raise _unknown_scope_error(
+                "module", module_name, _module_names(is_email, no_nsfw), is_email
+            )
+    elif category:
+        categories = load_categories(is_email, no_nsfw)
+        if category not in categories:
+            raise _unknown_scope_error("category", category, sorted(categories), is_email)
+
+
 async def execute_scan(arguments: dict, is_email: bool) -> list[types.TextContent]:
     target_key = "email" if is_email else "username"
     target = arguments.get(target_key)
@@ -102,6 +155,9 @@ async def execute_scan(arguments: dict, is_email: bool) -> list[types.TextConten
     # Normalise module name the same way the CLI does (__main__.py:518)
     if module_name:
         module_name = module_name.replace(".", "_")
+
+    # An unknown module or category is an error, not an empty scan
+    _validate_scope(category, module_name, is_email, no_nsfw)
 
     logger.info(f"Executing {'email' if is_email else 'username'} scan for: {target}")
 
@@ -198,14 +254,16 @@ def _run_scan(
     if module_name:
         modules = find_module(module_name, is_email=is_email, no_nsfw=config.no_nsfw)
         if not modules:
-            return []
+            raise _unknown_scope_error(
+                "module", module_name, _module_names(is_email, config.no_nsfw), is_email
+            )
         fn = run_email_module_batch if is_email else run_user_module
         return fn(modules, target, config)
     elif category:
         cats = load_categories(is_email, config.no_nsfw)
         cat_path = cats.get(category)
         if not cat_path:
-            return []
+            raise _unknown_scope_error("category", category, sorted(cats), is_email)
         fn_cat = run_email_category_batch if is_email else run_user_category
         return fn_cat(cat_path, target, config)
     else:
