@@ -7,6 +7,7 @@ import sys
 import mcp.types as types
 from typing import Any
 
+from user_scanner.core import limits
 from user_scanner.core.formatter import into_json
 from user_scanner.core.helpers import (
     find_module,
@@ -144,13 +145,13 @@ async def execute_scan(arguments: dict, is_email: bool) -> list[types.TextConten
     if category and module_name:
         raise ValueError("Cannot specify both 'category' and 'module'. Choose one.")
 
+    # The same bounds the CLI enforces (user_scanner/core/limits.py)
     if concurrency is not None:
-        try:
-            conc_val = int(concurrency)
-        except (ValueError, TypeError) as e:
-            raise ValueError(f"Invalid concurrency value: {concurrency}") from e
-        if conc_val < 1:
-            raise ValueError(f"Concurrency must be at least 1, got {concurrency}")
+        concurrency = limits.check_concurrency(concurrency)
+    if timeout is not None:
+        timeout = limits.check_timeout(timeout)
+    cross_depth = limits.check_cross_depth(cross_depth)
+    cross_sweep = limits.check_cross_sweep(cross_sweep)
 
     # Normalise module name the same way the CLI does (__main__.py:518)
     if module_name:
