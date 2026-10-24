@@ -261,6 +261,8 @@ def test_cli_concurrency_positive_bound(run_main, capsys):
         ("--cross-depth", "-2", "must be at least 1"),
         ("--cross-sweep", "-1", "must be at least 0"),
         ("--stop", "abc", "Invalid"),
+        ("--concurrency", "501", "must be at most 500"),
+        ("--concurrency", "1000000000000000000", "must be at most 500"),
     ],
 )
 def test_cli_numeric_options_are_bounded(run_main, capsys, flag, value, message):

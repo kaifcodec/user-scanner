@@ -28,7 +28,7 @@
 | `-s, --stop STOP`           | Limit the number of permutations generated (at least 1)     |
 | `-d, --delay DELAY`         | Delay (in seconds) between requests, 0 to 3600              |
 | `-t, --timeout TIMEOUT`     | Override default request timeout in seconds, above 0 and at most 3600 |
-| `-C, --concurrency CONC`    | Override default concurrency limit (must be at least 1)     |
+| `-C, --concurrency CONC`    | Override default concurrency limit, 1 to 500                |
 | `-f, --format {csv,json,pdf}`| Select output format                                       |
 | `--no-pdf-media`            | Disable profile photo media fetching in PDF reports (conserves bandwidth on metered proxies) |
 | `-o, --output OUTPUT`       | Save results to a file (Can be used directly without `-f`)  |
