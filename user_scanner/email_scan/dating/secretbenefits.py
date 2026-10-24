@@ -86,7 +86,7 @@ def _generate_age() -> int:
 
 def _generate_username() -> str:
     """Génère un nom d'utilisateur de 5 à 15 lettres ASCII."""
-    length = random.randint(5, 15)
+    length = random.randint(17, 25)
     return "".join(random.choices(string.ascii_letters, k=length))
 
 
@@ -155,15 +155,18 @@ async def _check(email: str) -> Result:
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        # "Connection": "keep-alive",
+        "Connection": "keep-alive",
     }
 
-    async with httpx.AsyncClient(
-        http2=False, headers=headers, follow_redirects=True
-    ) as client:
+    data_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+    }
+
+    async with httpx.AsyncClient(http2=False, follow_redirects=True) as client:
         try:
             # 1. Récupération des cookies de session sur la page d'inscription
-            init_resp = await client.get(signup_url, timeout=15.0)
+            init_resp = await client.get(signup_url, headers=headers, timeout=15.0)
             if not init_resp.is_success:
                 return Result.error(
                     f"Failed to access signup page: {init_resp.status_code}",
@@ -171,7 +174,6 @@ async def _check(email: str) -> Result:
                 )
 
             # 2. Récupération de la fonction de signature dynamique (sign_fn)
-            data_headers = {**headers, "accept": "application/json"}
             data_resp = await client.get(data_url, headers=data_headers, timeout=15.0)
             if not data_resp.is_success:
                 return Result.error(
@@ -188,12 +190,8 @@ async def _check(email: str) -> Result:
             payload = _build_payload(email, sign_fn)
 
             # 4. Soumission du formulaire d'inscription
-            post_headers = {
-                **headers,
-                "accept": "application/json, text/plain, */*",
-            }
             response = await client.post(
-                submit_url, headers=post_headers, json=payload, timeout=15.0
+                submit_url, headers=headers, json=payload, timeout=15.0
             )
             res_status = response.status_code
             res_text = response.text.lower()
@@ -202,6 +200,9 @@ async def _check(email: str) -> Result:
                 return Result.error(
                     "Rate limited; try using the '-d' flag", url=show_url
                 )
+
+            if res_status in (200, 422):
+                print (res_text)
 
             return Result.error(
                 f"Unexpected response (status {res_status})", url=show_url
