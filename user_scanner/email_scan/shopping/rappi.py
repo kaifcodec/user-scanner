@@ -1,4 +1,3 @@
-import sys
 import time
 import secrets
 import httpx
@@ -15,7 +14,7 @@ def _generate_timestamp() -> str:
     return str(int(time.time() * 1000))
 
 
-async def _check(email: str) -> Result:
+async def _check(email: str, allow_loud: bool) -> Result:
     url_check = "https://services.rappi.com.ar/api/rocket/user/account/check-email"
     url_login = "https://services.rappi.com.ar/api/rocket/login/email/application_user"
     show_url = "https://www.rappi.com"
@@ -70,14 +69,12 @@ async def _check(email: str) -> Result:
             else:
                 return Result.error(f"Unexpected response status: {response.status_code}, report it via GitHub issues", url=show_url)
 
-            # If registered (exists is True), check if --allow-loud was passed
-            allow_loud = "--allow-loud" in sys.argv
-
+            # If registered (exists is True), only go further when the scan allows loud requests
             if not allow_loud:
                 # Return TAKEN silently without hitting the loud login endpoint
                 return Result.taken(reason="Use flag '--allow-loud' to see the target's masked phone number", url=show_url)
 
-            # If --allow-loud is passed, proceed to Endpoint 2 to extract masked phone info
+            # Loud step allowed: proceed to Endpoint 2 to extract masked phone info
             payload_login = {
                 "email": email,
                 "scope": "all"
@@ -109,10 +106,10 @@ async def _check(email: str) -> Result:
             return Result.error(e, url=show_url)
 
 
-async def validate_rappi(email: str) -> Result:
+async def validate_rappi(email: str, allow_loud: bool = False) -> Result:
     """
     Rappi email validator.
     Silent by default (hits check-email endpoint).
-    When --allow-loud is passed, also hits the login endpoint to extract masked phone intelligence.
+    When allow_loud is True (--allow-loud), also hits the login endpoint to extract masked phone intelligence.
     """
-    return await _check(email)
+    return await _check(email, allow_loud)

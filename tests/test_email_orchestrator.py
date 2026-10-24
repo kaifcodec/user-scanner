@@ -90,3 +90,45 @@ def test_set_concurrency_has_a_maximum():
         assert email_orchestrator.MAX_CONCURRENT_REQUESTS == 500
     finally:
         email_orchestrator.set_concurrency(original)
+
+
+def test_run_email_batch_passes_allow_loud_from_config_not_argv(monkeypatch):
+    import sys
+    import types
+    from user_scanner.core import email_orchestrator
+    from user_scanner.core.helpers import ScanConfig
+    from user_scanner.core.result import Result
+
+    seen = {}
+
+    async def val_async(e, allow_loud=False):
+        seen["async"] = allow_loud
+        return Result.taken(username=e)
+
+    def val_sync(e, allow_loud=False):
+        seen["sync"] = allow_loud
+        return Result.taken(username=e)
+
+    async def val_plain(e):
+        seen["plain"] = True
+        return Result.taken(username=e)
+
+    modules = []
+    for name, func in (("site1", val_async), ("site2", val_sync), ("site3", val_plain)):
+        mod = types.ModuleType(f"cat_a.{name}")
+        mod.__file__ = f"/path/to/email_scan/cat_a/{name}.py"
+        setattr(mod, f"validate_{name}", func)
+        modules.append(mod)
+
+    monkeypatch.setattr(email_orchestrator, "find_category", lambda m: "Cat_a")
+    monkeypatch.setattr(email_orchestrator, "get_site_name", lambda m: m.__name__.split(".")[-1].capitalize())
+
+    # The scan policy decides, whatever the host process was started with
+    monkeypatch.setattr(sys, "argv", ["host"])
+    email_orchestrator.run_email_module_batch(modules, "alice@example.com", ScanConfig(allow_loud=True))
+    assert seen == {"async": True, "sync": True, "plain": True}
+
+    seen.clear()
+    monkeypatch.setattr(sys, "argv", ["host", "--allow-loud"])
+    email_orchestrator.run_email_module_batch(modules, "alice@example.com", ScanConfig())
+    assert seen == {"async": False, "sync": False, "plain": True}
