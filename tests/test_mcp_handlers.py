@@ -50,6 +50,28 @@ async def test_execute_scan_invalid_concurrency():
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(
+    "arguments, message",
+    [
+        ({"timeout": 0}, "greater than 0"),
+        ({"timeout": -1}, "greater than 0"),
+        ({"timeout": float("nan")}, "finite"),
+        ({"timeout": float("inf")}, "finite"),
+        ({"timeout": 99999}, "at most"),
+        ({"cross_depth": 0}, "at least 1"),
+        ({"cross_sweep": -1}, "at least 0"),
+        ({"concurrency": True}, "Invalid concurrency value"),
+    ],
+)
+async def test_execute_scan_rejects_out_of_range_numbers(arguments, message):
+    from user_scanner.mcp.handlers import _scan_lock
+
+    with pytest.raises(ValueError, match=message):
+        await execute_scan({"username": "testuser", **arguments}, is_email=False)
+    assert not _scan_lock.locked()
+
+
+@pytest.mark.anyio
 async def test_execute_scan_unknown_module_is_an_error():
     from user_scanner.mcp.handlers import _scan_lock
 
@@ -142,6 +164,11 @@ def test_tool_schema_concurrency_minimum():
         conc_prop = t.inputSchema["properties"]["concurrency"]
         assert conc_prop["type"] == "integer"
         assert conc_prop["minimum"] == 1
+        props = t.inputSchema["properties"]
+        assert props["timeout"]["exclusiveMinimum"] == 0
+        assert props["timeout"]["maximum"] == 3600
+        assert props["cross_depth"]["minimum"] == 1
+        assert props["cross_sweep"]["minimum"] == 0
 
 
 @pytest.mark.anyio

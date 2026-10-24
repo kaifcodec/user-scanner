@@ -243,6 +243,34 @@ def test_cli_concurrency_positive_bound(run_main, capsys):
     assert "must be at least 1" in err_neg
 
 
+@pytest.mark.parametrize(
+    "flag, value, message",
+    [
+        ("--stop", "0", "must be at least 1"),
+        ("--stop", "-3", "must be at least 1"),
+        ("--delay", "-1", "must be at least 0"),
+        ("--delay", "nan", "finite"),
+        ("--delay", "inf", "finite"),
+        ("--delay", "1e9", "at most"),
+        ("--timeout", "0", "greater than 0"),
+        ("--timeout", "-5", "greater than 0"),
+        ("--timeout", "nan", "finite"),
+        ("--timeout", "inf", "finite"),
+        ("--timeout", "99999", "at most"),
+        ("--cross-depth", "0", "must be at least 1"),
+        ("--cross-depth", "-2", "must be at least 1"),
+        ("--cross-sweep", "-1", "must be at least 0"),
+        ("--stop", "abc", "Invalid"),
+    ],
+)
+def test_cli_numeric_options_are_bounded(run_main, capsys, flag, value, message):
+    code = run_main(["-u", "alice", flag, value, "-m", "github"])
+    assert code == 2
+    err = capsys.readouterr().err
+    assert flag in err
+    assert message in err
+
+
 @patch("httpx.AsyncClient")
 def test_validate_proxy_all_invalid(mock_client):
     instance = MagicMock()
