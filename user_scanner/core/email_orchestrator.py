@@ -17,6 +17,7 @@ from user_scanner.core.helpers import (
     load_modules,
     get_global_timeout,
 )
+from user_scanner.core import limits
 from user_scanner.core.result import Result
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
 
@@ -56,8 +57,7 @@ httpx.Client.__init__ = _patched_client_init  # type: ignore[method-assign]
 MAX_CONCURRENT_REQUESTS = 25
 
 def set_concurrency(val: int):
-    if val < 1:
-        raise ValueError(f"Concurrency must be at least 1, got {val}")
+    val = limits.check_concurrency(val)
     global MAX_CONCURRENT_REQUESTS
     MAX_CONCURRENT_REQUESTS = val
 

@@ -110,9 +110,10 @@ def get_tool_list() -> list[types.Tool]:
         "concurrency": {
             "type": "integer",
             "minimum": 1,
+            "maximum": 500,
             "description": (
                 "Override default concurrency limit (how many requests to "
-                "make in parallel). Must be at least 1."
+                "make in parallel). Must be between 1 and 500."
             ),
         },
     }

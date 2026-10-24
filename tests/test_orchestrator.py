@@ -112,3 +112,28 @@ def test_run_batch_multiple_categories_grouped(capsys, monkeypatch):
     # Site2 belongs to Cat_b and must appear AFTER Cat_b header
     assert site2_pos > cat_b_pos
 
+
+def test_set_concurrency_rejects_huge_values_before_building_an_executor():
+    from unittest.mock import patch
+    import pytest
+    import user_scanner.core.orchestrator as orchestrator
+
+    before = (orchestrator.MAX_CONCURRENT_REQUESTS, orchestrator._shared_executor)
+    with patch("concurrent.futures.ThreadPoolExecutor") as pool:
+        for value in [501, 10**18, True, "501"]:
+            with pytest.raises(ValueError):
+                orchestrator.set_concurrency(value)
+        pool.assert_not_called()
+    assert (orchestrator.MAX_CONCURRENT_REQUESTS, orchestrator._shared_executor) == before
+
+
+def test_set_concurrency_accepts_the_maximum():
+    import user_scanner.core.orchestrator as orchestrator
+
+    original = orchestrator.MAX_CONCURRENT_REQUESTS
+    try:
+        orchestrator.set_concurrency(500)
+        assert orchestrator.MAX_CONCURRENT_REQUESTS == 500
+        assert orchestrator._shared_executor._max_workers == 1000
+    finally:
+        orchestrator.set_concurrency(original)
