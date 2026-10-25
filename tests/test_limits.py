@@ -12,7 +12,7 @@ INVALID_FLOATS = ["nan", "inf", "-inf", float("nan"), float("inf"), math.inf]
     "check, valid",
     [
         (limits.check_stop, [1, "1", 100, sys.maxsize]),
-        (limits.check_concurrency, [1, "1", 60, 10_000]),
+        (limits.check_concurrency, [1, "1", 60, limits.MAX_CONCURRENCY]),
         (limits.check_cross_depth, [1, "1", 5]),
         (limits.check_cross_sweep, [0, "0", 3, 1_000]),
     ],
@@ -45,6 +45,12 @@ def test_int_options_reject_non_integers(check):
     for value in ["abc", "", None, "1.5", 2.7, True, False, *INVALID_FLOATS]:
         with pytest.raises(ValueError):
             check(value)
+
+
+def test_concurrency_has_a_maximum():
+    for value in [limits.MAX_CONCURRENCY + 1, 10_000, 10**18, str(10**18)]:
+        with pytest.raises(ValueError, match="must be at most 500"):
+            limits.check_concurrency(value)
 
 
 def test_stop_rejects_values_islice_cannot_take():

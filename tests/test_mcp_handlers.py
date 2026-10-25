@@ -61,6 +61,9 @@ async def test_execute_scan_invalid_concurrency():
         ({"cross_depth": 0}, "at least 1"),
         ({"cross_sweep": -1}, "at least 0"),
         ({"concurrency": True}, "Invalid concurrency value"),
+        ({"concurrency": 501}, "must be at most 500"),
+        ({"concurrency": 10**18}, "must be at most 500"),
+        ({"concurrency": "501"}, "must be at most 500"),
     ],
 )
 async def test_execute_scan_rejects_out_of_range_numbers(arguments, message):
@@ -164,6 +167,7 @@ def test_tool_schema_concurrency_minimum():
         conc_prop = t.inputSchema["properties"]["concurrency"]
         assert conc_prop["type"] == "integer"
         assert conc_prop["minimum"] == 1
+        assert conc_prop["maximum"] == 500
         props = t.inputSchema["properties"]
         assert props["timeout"]["exclusiveMinimum"] == 0
         assert props["timeout"]["maximum"] == 3600

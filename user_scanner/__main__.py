@@ -169,7 +169,7 @@ def main():
         "-C",
         "--concurrency",
         type=_arg_type(limits.check_concurrency),
-        help="Override default concurrency limit (minimum: 1, default: 60 for username, 25 for email scan)",
+        help="Override default concurrency limit (1 to 500, default: 60 for username, 25 for email scan)",
     )
 
     parser.add_argument(

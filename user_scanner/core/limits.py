@@ -18,6 +18,12 @@ from typing import Any, Optional
 # likely a typo (milliseconds, an extra zero) than an intended hour-long wait.
 MAX_SECONDS = 3600.0
 
+# Most requests allowed in flight at once. The username orchestrator builds a
+# thread pool of twice this size, so an unbounded value lets one MCP call or
+# CLI typo exhaust threads or memory before any scan starts (#717). The
+# defaults are 60 (username) and 25 (email).
+MAX_CONCURRENCY = 500
+
 
 def check_int(name: str, value: Any, minimum: int, maximum: Optional[int] = None) -> int:
     """Return ``value`` as an int in ``[minimum, maximum]``.
@@ -78,7 +84,7 @@ def check_timeout(value: Any) -> float:
 
 
 def check_concurrency(value: Any) -> int:
-    return check_int("concurrency", value, 1)
+    return check_int("concurrency", value, 1, MAX_CONCURRENCY)
 
 
 def check_cross_depth(value: Any) -> int:
