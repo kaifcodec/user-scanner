@@ -577,7 +577,9 @@ def find_category(module: ModuleType) -> str | None:
 async def _validate_proxy_async(proxy: str, timeout: int) -> Optional[str]:
     try:
         async with httpx.AsyncClient(proxy=proxy, timeout=timeout) as client:
-            response = await client.get("http://gstatic.com/generate_204")
+            # HTTPS with certificate verification (httpx default), so the
+            # proxy has to tunnel TLS end to end instead of forging a reply.
+            response = await client.get("https://www.gstatic.com/generate_204")
             if response.status_code in (200, 204):
                 return proxy
     except Exception:
@@ -601,7 +603,11 @@ async def _validate_proxies_batch(proxy_list: List[str], timeout: int, max_worke
     return working_proxies
 
 def validate_proxies(proxy_list: List[str], timeout: int = 5, max_workers: int = 50) -> List[str]:
-    """Validate proxies by testing them against gstatic.com/generate_204. Returns list of working proxies."""
+    """Return the proxies that can reach https://www.gstatic.com/generate_204.
+
+    This only checks that a proxy is reachable and tunnels TLS. It says
+    nothing about whether the proxy is trustworthy.
+    """
     return asyncio.run(_validate_proxies_batch(proxy_list, timeout, max_workers))
 
 

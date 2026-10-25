@@ -24,7 +24,7 @@
 | `-m, --module MODULE`       | Scan a specific module (comma-separated for multiple); also narrows `--cross-scan` |
 | `-p, --permute PERMUTE`     | Generate username permutations using a pattern/suffix       |
 | `-P, --proxy-file FILE`     | Use proxies from file (one per line). Tip: Combine with `--no-pdf-media` to save proxy bandwidth |
-| `--validate-proxies`        | Validate proxies before scanning (tests against google.com) |
+| `--validate-proxies`        | Check that proxies are reachable before scanning (HTTPS request to gstatic.com/generate_204; not a trust check) |
 | `-s, --stop STOP`           | Limit the number of permutations generated (at least 1)     |
 | `-d, --delay DELAY`         | Delay (in seconds) between requests, 0 to 3600              |
 | `-t, --timeout TIMEOUT`     | Override default request timeout in seconds, above 0 and at most 3600 |

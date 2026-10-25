@@ -196,7 +196,7 @@ def main():
     parser.add_argument(
         "--validate-proxies",
         action="store_true",
-        help="Validate proxies before scanning (tests against gstatic.com/generate_204)",
+        help="Check that proxies are reachable before scanning (HTTPS request to gstatic.com/generate_204; not a trust check)",
     )
 
     parser.add_argument(
@@ -423,16 +423,16 @@ def main():
                 working_proxies = validate_proxies(all_proxies)
 
                 if not working_proxies:
-                    print(f"{R}[✘] No working proxies found{X}")
+                    print(f"{R}[✘] No reachable proxies found{X}")
                     sys.exit(1)
 
                 print(
-                    f"{G}[+] Found {len(working_proxies)} working proxies out of {len(all_proxies)}{X}"
+                    f"{G}[+] Found {len(working_proxies)} reachable proxies out of {len(all_proxies)}{X}"
                 )
 
                 set_proxy_manager(proxies=working_proxies)
                 proxy_count = get_proxy_count()
-                print(f"{G}[+] Using {proxy_count} validated proxies{X}")
+                print(f"{G}[+] Using {proxy_count} reachable proxies{X}")
             else:
                 set_proxy_manager(args.proxy_file)
                 proxy_count = get_proxy_count()

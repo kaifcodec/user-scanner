@@ -86,7 +86,7 @@ With **2720+ total scan vectors**—including **210+ email-integrated sites** an
 - ⚡ **High-Throughput Parallel Engine:** Powered by `httpx` and `curl_cffi` for maximum concurrency with automated TLS fingerprint impersonation.
 - 🔀 **Permutation & Alias Generator:** Wildcard-based username variation generation to catch typosquatting or alternative aliases.
 - 📂 **Multi-Format Reports:** Automated exports to **PDF** (with profile photos), **JSON**, and **CSV** for pipeline integration.
-- 🌐 **Advanced Proxy Pivoting:** Built-in proxy rotation with protocol auto-detection (`http`, `socks5`) and pre-scan health validation (`--validate-proxies`).
+- 🌐 **Advanced Proxy Pivoting:** Built-in proxy rotation with protocol auto-detection (`http`, `socks5`) and pre-scan reachability check (`--validate-proxies`).
 - 🎨 **Responsive Terminal UI:** Dynamic progress tracking, self-adaptive category grids (`-lu`/`-le`), and clear status reporting.
 
 ---
@@ -202,7 +202,7 @@ user-scanner -u johndoe -f json -o results.json
 # Verbose URL reporting and show all results (including not found)
 user-scanner -u johndoe -v --all
 
-# Rotate proxies with pre-scan validation check
+# Rotate proxies with a pre-scan reachability check
 user-scanner -u johndoe -P proxies.txt --validate-proxies
 ```
 
