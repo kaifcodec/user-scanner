@@ -105,3 +105,59 @@ def test_json_export_empty_existing_file(monkeypatch, tmp_path):
     assert len(data) == 1
     assert data[0]["username"] == "audit"
     assert "JSON Results saved" in captured.getvalue()
+
+
+def test_bulk_targets_stay_inside_the_output_directory(monkeypatch, tmp_path):
+    out = tmp_path / "out"
+    out.mkdir()
+    secret = tmp_path / "secret.txt"
+    secret.write_text("keep", encoding="utf-8")
+    names = tmp_path / "names.txt"
+    names.write_text(
+        "\n".join(
+            [
+                "../../secret.txt",
+                str(secret),
+                "a\u2215b",
+                "a\uff0fb",
+                "ok",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    # The slug for the last target is predictable. A symlink at that name
+    # points outside the output directory and must not be followed.
+    planted = out / "report_005_ok.json"
+    planted.symlink_to(secret)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "user-scanner",
+            "-uf",
+            str(names),
+            "-f",
+            "json",
+            "-o",
+            str(out / "report.json"),
+        ],
+    )
+    monkeypatch.setattr(cli, "check_for_updates", lambda: None)
+    monkeypatch.setattr(cli, "print_banner", lambda: None)
+    monkeypatch.setattr(
+        cli, "run_user_full", lambda *args: [Result.taken(site_name="Example")]
+    )
+
+    with contextlib.redirect_stdout(io.StringIO()) as captured:
+        cli.main()
+
+    assert secret.read_text(encoding="utf-8") == "keep"
+    assert planted.is_symlink()
+    reports = [path for path in out.iterdir() if path.is_file() and not path.is_symlink()]
+    assert reports
+    for path in reports:
+        assert path.resolve().is_relative_to(out.resolve())
+    stdout = captured.getvalue()
+    assert "Refusing to write scan output outside" in stdout
+    assert "JSON Results saved" in stdout

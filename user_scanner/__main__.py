@@ -39,6 +39,7 @@ from user_scanner.core.helpers import (
     EMAIL_DOMAIN_SCOPES,
     parse_email_domain_scopes,
 )
+from user_scanner.core.output_path import export_path_for_target
 from user_scanner.core.orchestrator import (
     run_user_category,
     run_user_full,
@@ -699,8 +700,6 @@ def main():
         default_ext = args.format if args.format else "pdf"
         if is_pdf_export:
             default_ext = "pdf"
-            
-        output_path = args.output or f"{targets_found[0] if targets_found else 'target'}_report.{default_ext}"
 
         target_to_results = {}
         for r in results:
@@ -712,16 +711,22 @@ def main():
             if t not in target_to_results:
                 target_to_results[t] = []
             target_to_results[t].append(r)
-            
-        for t, t_results in target_to_results.items():
-            if len(target_to_results) > 1:
-                if args.output:
-                    base, ext = os.path.splitext(args.output)
-                    t_output = f"{base}_{t}{ext}"
-                else:
-                    t_output = f"{t}_report.{default_ext}"
-            else:
-                t_output = output_path
+
+        multiple_targets = len(target_to_results) > 1
+        for index, (t, t_results) in enumerate(target_to_results.items(), start=1):
+            try:
+                t_output = os.fspath(
+                    export_path_for_target(
+                        requested=args.output,
+                        target=str(t),
+                        index=index,
+                        multiple=multiple_targets,
+                        default_ext=default_ext,
+                    )
+                )
+            except ValueError as e:
+                print(f"\n{R}[✘] {e}{X}")
+                continue
 
             if is_pdf_export:
                 version_str, _ = load_local_version()
