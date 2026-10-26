@@ -24,6 +24,20 @@ MAX_SECONDS = 3600.0
 # defaults are 60 (username) and 25 (email).
 MAX_CONCURRENCY = 500
 
+# Rounds of link-following. Each round pivots off every account the previous
+# one found, so an unbounded depth is a scan that does not finish.
+MAX_CROSS_DEPTH = 5
+
+# Full-module sweeps one cross-scan may spend. The default is 3, and each
+# sweep walks every module of that target's kind.
+MAX_CROSS_SWEEP = 20
+
+# Validator calls one cross-scan may start, shared by rounds, sweeps, named
+# sites, and email pivots. A username sweep is hundreds of calls, so this
+# still covers the default sweep of 3 and stops a pivot graph from
+# multiplying past it.
+MAX_CROSS_CALLS = 4000
+
 
 def check_int(name: str, value: Any, minimum: int, maximum: Optional[int] = None) -> int:
     """Return ``value`` as an int in ``[minimum, maximum]``.
@@ -89,9 +103,9 @@ def check_concurrency(value: Any) -> int:
 
 def check_cross_depth(value: Any) -> int:
     """Rounds of link-following; ``run_cross_scan`` always runs at least one."""
-    return check_int("cross depth", value, 1)
+    return check_int("cross depth", value, 1, MAX_CROSS_DEPTH)
 
 
 def check_cross_sweep(value: Any) -> int:
     """Targets swept against every module; 0 disables sweeping."""
-    return check_int("cross sweep", value, 0)
+    return check_int("cross sweep", value, 0, MAX_CROSS_SWEEP)

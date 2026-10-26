@@ -172,7 +172,9 @@ def test_tool_schema_concurrency_minimum():
         assert props["timeout"]["exclusiveMinimum"] == 0
         assert props["timeout"]["maximum"] == 3600
         assert props["cross_depth"]["minimum"] == 1
+        assert props["cross_depth"]["maximum"] == 5
         assert props["cross_sweep"]["minimum"] == 0
+        assert props["cross_sweep"]["maximum"] == 20
 
 
 @pytest.mark.anyio

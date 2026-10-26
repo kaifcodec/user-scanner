@@ -13,8 +13,8 @@ INVALID_FLOATS = ["nan", "inf", "-inf", float("nan"), float("inf"), math.inf]
     [
         (limits.check_stop, [1, "1", 100, sys.maxsize]),
         (limits.check_concurrency, [1, "1", 60, limits.MAX_CONCURRENCY]),
-        (limits.check_cross_depth, [1, "1", 5]),
-        (limits.check_cross_sweep, [0, "0", 3, 1_000]),
+        (limits.check_cross_depth, [1, "1", limits.MAX_CROSS_DEPTH]),
+        (limits.check_cross_sweep, [0, "0", 3, limits.MAX_CROSS_SWEEP]),
     ],
 )
 def test_int_options_accept_their_valid_range(check, valid):
@@ -45,6 +45,15 @@ def test_int_options_reject_non_integers(check):
     for value in ["abc", "", None, "1.5", 2.7, True, False, *INVALID_FLOATS]:
         with pytest.raises(ValueError):
             check(value)
+
+
+def test_cross_scan_knobs_have_a_maximum():
+    for value in [limits.MAX_CROSS_DEPTH + 1, 10_000]:
+        with pytest.raises(ValueError, match="must be at most 5"):
+            limits.check_cross_depth(value)
+    for value in [limits.MAX_CROSS_SWEEP + 1, 10_000]:
+        with pytest.raises(ValueError, match="must be at most 20"):
+            limits.check_cross_sweep(value)
 
 
 def test_concurrency_has_a_maximum():

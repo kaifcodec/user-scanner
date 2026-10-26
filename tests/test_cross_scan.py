@@ -1,5 +1,6 @@
 import pytest
 
+from user_scanner.core import limits
 from user_scanner.core.cross_scan import (
     CrossScanConfig,
     _already_scanned,
@@ -11,6 +12,7 @@ from user_scanner.core.cross_scan import (
     _named_targets,
     _scope,
     _split_budget,
+    run_cross_scan,
 )
 from user_scanner.core.helpers import ScanConfig, get_site_name, is_loud
 from user_scanner.core.pivots import PivotKind
@@ -191,3 +193,45 @@ def test_a_module_restriction_resolves_against_email_scan():
 
 def test_emails_none_loads_no_module_at_all():
     assert _email_scope(CrossScanConfig(emails="none"), ScanConfig()) == []
+
+
+def test_excessive_depth_fails_before_any_validator_runs(monkeypatch):
+    def boom(*args, **kwargs):
+        raise AssertionError("validator ran")
+
+    monkeypatch.setattr("user_scanner.core.cross_scan.run_user_full", boom)
+    monkeypatch.setattr("user_scanner.core.cross_scan.run_user_module", boom)
+    monkeypatch.setattr("user_scanner.core.cross_scan.run_email_full_batch", boom)
+    monkeypatch.setattr("user_scanner.core.cross_scan.run_email_module_batch", boom)
+
+    with pytest.raises(ValueError, match="at most"):
+        run_cross_scan([], ScanConfig(), CrossScanConfig(depth=10_000, sweep=10_000))
+
+
+def test_pivot_graph_cannot_exceed_the_validator_budget(monkeypatch):
+    monkeypatch.setattr(limits, "MAX_CROSS_CALLS", 1)
+    calls = []
+
+    def record(modules, username, configs):
+        calls.append((username, len(modules)))
+        return []
+
+    monkeypatch.setattr("user_scanner.core.cross_scan.run_user_module", record)
+    monkeypatch.setattr(
+        "user_scanner.core.cross_scan.run_user_full",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("full sweep")),
+    )
+
+    results = [
+        Result.taken(extra={"links": f"https://github.com/user{i}"}).update(
+            site_name="Gravatar", is_email=True
+        )
+        for i in range(5)
+    ]
+    run_cross_scan(
+        results,
+        ScanConfig(),
+        CrossScanConfig(sweep=0, depth=1, emails="none"),
+    )
+
+    assert calls == [("user0", 1)]
