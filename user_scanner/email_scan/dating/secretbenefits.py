@@ -157,15 +157,16 @@ async def _check(email: str) -> Result:
     signup_url = f"{show_url}/signup/man"
     data_url = f"{show_url}/signup/data/man"
     submit_url = f"{show_url}/signup/submit"
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36"
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+        "User-Agent": user_agent,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Connection": "keep-alive",
     }
 
     data_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+        "User-Agent": user_agent,
         "Accept": "application/json",
     }
 
@@ -175,7 +176,6 @@ async def _check(email: str) -> Result:
     async with httpx.AsyncClient(
         http2=False, follow_redirects=True, timeout=timeout
     ) as client:
-    
         try:
             init_resp = await client.get(signup_url, headers=headers)
         except httpx.TimeoutException:
