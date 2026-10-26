@@ -22,6 +22,7 @@ from user_scanner.core.helpers import (
 )
 from user_scanner.core import limits
 from user_scanner.core.result import Result
+from user_scanner.core.terminal import scanning_description
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
 
 
@@ -114,10 +115,10 @@ async def _run_batch(
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         transient=True,
     ) as progress:
-        task_id = progress.add_task(f"[cyan]Scanning {username}...", total=len(modules))
+        task_id = progress.add_task(scanning_description(username), total=len(modules))
 
         def on_start_cb(site: str):
-            progress.update(task_id, description=f"[cyan]Scanning {username}... ({site})")
+            progress.update(task_id, description=scanning_description(username, site))
 
         # 1. Pre-spawn all tasks for all categories (global concurrency)
         spawned_category_tasks = []
@@ -217,10 +218,10 @@ async def _run_user_full_async(username: str, configs: ScanConfig) -> List[Resul
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         transient=True,
     ) as progress:
-        task_id = progress.add_task(f"[cyan]Scanning {username}...", total=total_tasks)
-        
+        task_id = progress.add_task(scanning_description(username), total=total_tasks)
+
         def on_start_cb(site: str):
-            progress.update(task_id, description=f"[cyan]Scanning {username}... ({site})")
+            progress.update(task_id, description=scanning_description(username, site))
             
         spawned_category_tasks = []
         for display_name, modules in category_modules:
