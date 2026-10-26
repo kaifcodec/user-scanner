@@ -50,6 +50,7 @@ from user_scanner.core.hudson import run_hudson_scan
 from user_scanner.utils.update import update_self
 from user_scanner.utils.updater_logic import check_for_updates
 from user_scanner.core.loud_prompt import check_loud_module_permission
+from user_scanner.core import limits
 from user_scanner.core.patterns import expand_patterns_random, count_patterns
 
 # Color configs
@@ -60,6 +61,19 @@ Y = Fore.YELLOW
 X = Fore.RESET
 
 MAX_PERMUTATIONS_LIMIT = 100
+
+
+def _arg_type(check):
+    """Wrap a ``limits`` check as an argparse ``type``, so a bad value is a usage error."""
+
+    def convert(text):
+        try:
+            return check(text)
+        except ValueError as e:
+            raise argparse.ArgumentTypeError(str(e)) from e
+
+    convert.__name__ = check.__name__.removeprefix("check_")
+    return convert
 
 
 def _csv_names(value) -> tuple:
@@ -139,7 +153,7 @@ def main():
     parser.add_argument(
         "-s",
         "--stop",
-        type=int,
+        type=_arg_type(limits.check_stop),
         default=MAX_PERMUTATIONS_LIMIT,
         help="Limit permutations",
     )
@@ -147,19 +161,19 @@ def main():
     parser.add_argument(
         "-t",
         "--timeout",
-        type=float,
+        type=_arg_type(limits.check_timeout),
         help="Override default request timeout in seconds",
     )
 
     parser.add_argument(
         "-C",
         "--concurrency",
-        type=int,
-        help="Override default concurrency limit (minimum: 1, default: 60 for username, 25 for email scan)",
+        type=_arg_type(limits.check_concurrency),
+        help="Override default concurrency limit (1 to 500, default: 60 for username, 25 for email scan)",
     )
 
     parser.add_argument(
-        "-d", "--delay", type=float, default=0, help="Delay between requests"
+        "-d", "--delay", type=_arg_type(limits.check_delay), default=0, help="Delay between requests"
     )
 
     parser.add_argument("-f", "--format", choices=["csv", "json", "pdf"], help="Output format")
@@ -225,7 +239,7 @@ def main():
 
     parser.add_argument(
         "--cross-depth",
-        type=int,
+        type=_arg_type(limits.check_cross_depth),
         default=DEFAULT_DEPTH,
         help="Rounds of link-following. Each round pivots off the accounts the previous "
         f"one found, reaching handles only a chain of links names (default: {DEFAULT_DEPTH})",
@@ -233,7 +247,7 @@ def main():
 
     parser.add_argument(
         "--cross-sweep",
-        type=int,
+        type=_arg_type(limits.check_cross_sweep),
         default=DEFAULT_SWEEP,
         metavar="N",
         help="Targets — usernames and addresses together — a cross-scan sweeps against "
@@ -261,8 +275,6 @@ def main():
         set_global_timeout(args.timeout)
 
     if args.concurrency is not None:
-        if args.concurrency < 1:
-            parser.error(f"argument -C/--concurrency: must be at least 1, got {args.concurrency}")
         from user_scanner.core.email_orchestrator import set_concurrency as set_email_concurrency
         from user_scanner.core.orchestrator import set_concurrency as set_user_concurrency
         set_email_concurrency(args.concurrency)

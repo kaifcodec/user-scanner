@@ -75,3 +75,18 @@ def test_run_email_batch_multiple_categories_grouped(capsys, monkeypatch):
     # Site2 belongs to Cat_b and must appear AFTER Cat_b header
     assert site2_pos > cat_b_pos
 
+
+def test_set_concurrency_has_a_maximum():
+    import pytest
+    import user_scanner.core.email_orchestrator as email_orchestrator
+
+    original = email_orchestrator.MAX_CONCURRENT_REQUESTS
+    try:
+        email_orchestrator.set_concurrency(500)
+        assert email_orchestrator.MAX_CONCURRENT_REQUESTS == 500
+        for value in [501, 10**18, True]:
+            with pytest.raises(ValueError):
+                email_orchestrator.set_concurrency(value)
+        assert email_orchestrator.MAX_CONCURRENT_REQUESTS == 500
+    finally:
+        email_orchestrator.set_concurrency(original)

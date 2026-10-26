@@ -37,6 +37,7 @@ def get_tool_list() -> list[types.Tool]:
         },
         "cross_depth": {
             "type": "integer",
+            "minimum": 1,
             "description": (
                 "How deep the recursive link-following should go. Default: 1. "
                 "Increase for deeper but slower investigations."
@@ -44,6 +45,7 @@ def get_tool_list() -> list[types.Tool]:
         },
         "cross_sweep": {
             "type": "integer",
+            "minimum": 0,
             "description": (
                 "How many targets the cross-scan should automatically sweep "
                 "against all modules. Default: 3. Set to 0 to only scan sites "
@@ -98,6 +100,8 @@ def get_tool_list() -> list[types.Tool]:
         },
         "timeout": {
             "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 3600,
             "description": (
                 "Override default request timeout in seconds. Useful if the "
                 "target sites are slow or you are using slow proxies."
@@ -106,9 +110,10 @@ def get_tool_list() -> list[types.Tool]:
         "concurrency": {
             "type": "integer",
             "minimum": 1,
+            "maximum": 500,
             "description": (
                 "Override default concurrency limit (how many requests to "
-                "make in parallel). Must be at least 1."
+                "make in parallel). Must be between 1 and 500."
             ),
         },
     }
