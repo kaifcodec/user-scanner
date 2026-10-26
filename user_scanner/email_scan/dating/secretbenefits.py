@@ -86,28 +86,18 @@ def _generate_age() -> int:
 
 def _generate_username() -> str:
     """Génère un nom d'utilisateur de 5 à 15 lettres ASCII."""
-    length = random.randint(17, 25)
+    length = random.randint(2, 4)
     return "".join(random.choices(string.ascii_letters, k=length))
 
 
 def _generate_password() -> str:
     """
-    Génère un mot de passe de 7 à 20 caractères contenant un mélange
-    garanti de chiffres, de lettres minuscules et de lettres majuscules.
+    Génère un mot de passe de 2 à 5 caractères ne contenant
+    que des lettres ASCII.
     """
-    length = random.randint(7, 20)
-    alphabet = string.ascii_letters + string.digits
+    length = random.randint(2, 5)
 
-    # Garantit au moins un caractère de chaque catégorie pour éviter un rejet du formulaire
-    password_chars = [
-        random.choice(string.ascii_lowercase),
-        random.choice(string.ascii_uppercase),
-        random.choice(string.digits),
-    ]
-    password_chars.extend(random.choices(alphabet, k=length - 3))
-    random.shuffle(password_chars)
-
-    return "".join(password_chars)
+    return "".join(random.choices(string.ascii_letters, k=length))
 
 
 def _build_payload(email: str, sign_fn: str) -> dict:
@@ -147,6 +137,12 @@ async def _check(email: str) -> Result:
     Vérifie si une adresse e-mail est déjà enregistrée sur Secret Benefits
     en interrogeant le flux d'inscription en plusieurs étapes.
     """
+    from user_scanner.core.helpers import get_global_timeout
+
+    timeout = get_global_timeout()
+    if timeout is None:
+        timeout = 15.0
+
     show_url = "https://www.secretbenefits.com"
     signup_url = f"{show_url}/signup/man"
     data_url = f"{show_url}/signup/data/man"
@@ -163,53 +159,127 @@ async def _check(email: str) -> Result:
         "Accept": "application/json",
     }
 
-    async with httpx.AsyncClient(http2=False, follow_redirects=True) as client:
+    if not isinstance(email, str):
+        return Result.error("Email must be a string", url=show_url)
+
+    async with httpx.AsyncClient(
+        http2=False, follow_redirects=True, timeout=timeout
+    ) as client:
         try:
             # 1. Récupération des cookies de session sur la page d'inscription
-            init_resp = await client.get(signup_url, headers=headers, timeout=15.0)
+            try:
+                init_resp = await client.get(signup_url, headers=headers)
+            except httpx.TimeoutException:
+                return Result.error("Signup page request timed out", url=show_url)
+            except httpx.RequestError as exc:
+                return Result.error(f"Signup page request failed: {exc}", url=show_url)
+
+            if init_resp.status_code == 429:
+                return Result.error(
+                    "Rate limited while accessing signup page", url=show_url
+                )
             if not init_resp.is_success:
                 return Result.error(
-                    f"Failed to access signup page: {init_resp.status_code}",
+                    f"Failed to access signup page: HTTP {init_resp.status_code}",
                     url=show_url,
                 )
 
-            # 2. Récupération de la fonction de signature dynamique (sign_fn)
-            data_resp = await client.get(data_url, headers=data_headers, timeout=15.0)
+            # 2. Récupération de sign_fn.
+            try:
+                data_resp = await client.get(data_url, headers=data_headers)
+            except httpx.TimeoutException:
+                return Result.error("Signup data request timed out", url=show_url)
+            except httpx.RequestError as exc:
+                return Result.error(f"Signup data request failed: {exc}", url=show_url)
+
+            if data_resp.status_code == 429:
+                return Result.error(
+                    "Rate limited while fetching signup data", url=show_url
+                )
             if not data_resp.is_success:
                 return Result.error(
-                    f"Failed to fetch signup data: {data_resp.status_code}",
+                    f"Failed to fetch signup data: HTTP {data_resp.status_code}",
                     url=show_url,
                 )
 
-            data_json = data_resp.json()
-            sign_fn = data_json.get("sign_fn")
-            if not isinstance(sign_fn, str):
-                return Result.error("Missing sign_fn in signup data", url=show_url)
-
-            # 3. Construction du payload JSON signé
-            payload = _build_payload(email, sign_fn)
-
-            # 4. Soumission du formulaire d'inscription
-            response = await client.post(
-                submit_url, headers=headers, json=payload, timeout=15.0
-            )
-            res_status = response.status_code
-            res_text = response.text.lower()
-
-            if res_status == 429:
+            try:
+                data_json = data_resp.json()
+            except (ValueError, UnicodeError):
                 return Result.error(
-                    "Rate limited; try using the '-d' flag", url=show_url
+                    "Signup data response is not valid JSON", url=show_url
                 )
 
-            if res_status in (200, 422):
-                print (res_text)
+            if not isinstance(data_json, dict):
+                return Result.error(
+                    "Signup data response must be a JSON object", url=show_url
+                )
 
-            return Result.error(
-                f"Unexpected response (status {res_status})", url=show_url
+            sign_fn = data_json.get("sign_fn")
+            if not isinstance(sign_fn, str) or not sign_fn:
+                return Result.error(
+                    "Missing or invalid sign_fn in signup data", url=show_url
+                )
+
+            # 3. Construction du payload JSON signé
+            try:
+                payload = _build_payload(email, sign_fn)
+            except (ValueError, TypeError, KeyError, IndexError) as exc:
+                return Result.error(
+                    f"Failed to build signup payload: {exc}", url=show_url
+                )
+
+            # 4. Soumission du formulaire d'inscription
+            try:
+                response = await client.post(
+                    submit_url,
+                    headers=data_headers,
+                    json=payload,
+                )
+            except httpx.TimeoutException:
+                return Result.error(
+                    "Signup submission timed out; server outcome is unknown",
+                    url=show_url,
+                )
+            except httpx.RequestError as exc:
+                return Result.error(f"Signup submission failed: {exc}", url=show_url)
+            except (TypeError, ValueError, UnicodeError):
+                return Result.error("Could not encode signup payload", url=show_url)
+
+                    # 5. Décodage et validation de la réponse.
+            try:
+                data = response.json()
+            except (ValueError, UnicodeError):
+                return Result.error(
+                "Signup submission response is not valid JSON",
+                url=show_url,
             )
 
-        except Exception as exc:
-            return Result.error(str(exc), url=show_url)
+            if not isinstance(data, dict):
+                return Result.error(
+                "Signup submission response must be a JSON object",
+                url=show_url,
+            )
+
+            errors = data.get("fielderrors")
+            if not isinstance(errors, dict):
+                return Result.error(
+                "Missing or invalid fielderrors in submission response",
+                url=show_url,
+            )
+
+            email_errors = errors.get("email", [])
+            if not isinstance(email_errors, list) or not all(
+            isinstance(message, str) for message in email_errors
+        ):
+                return Result.error(
+                "Email errors must be a list of strings",
+                url=show_url,
+            )
+
+            if "email is invalid" in email_errors:
+                return Result.taken(url=show_url)
+
+            return Result.available(url=show_url)
 
 
 async def validate_secretbenefits(email: str) -> Result:
