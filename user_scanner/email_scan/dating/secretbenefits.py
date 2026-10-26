@@ -80,12 +80,12 @@ def _encode_logs(logs: dict[str, list[str]]) -> str:
 
 
 def _generate_age() -> int:
-    """Génère un âge aléatoire compris entre 20 et 80 ans inclus."""
-    return random.randint(20, 80)
+    """Génère un âge aléatoire compris entre 30 et 70 ans inclus."""
+    return random.randint(30, 70)
 
 
 def _generate_username() -> str:
-    """Génère un nom d'utilisateur de 5 à 15 lettres ASCII."""
+    """Génère un nom d'utilisateur de 2 à 4 lettres ASCII."""
     length = random.randint(2, 4)
     return "".join(random.choices(string.ascii_letters, k=length))
 
@@ -166,120 +166,113 @@ async def _check(email: str) -> Result:
         http2=False, follow_redirects=True, timeout=timeout
     ) as client:
         try:
-            # 1. Récupération des cookies de session sur la page d'inscription
-            try:
-                init_resp = await client.get(signup_url, headers=headers)
-            except httpx.TimeoutException:
-                return Result.error("Signup page request timed out", url=show_url)
-            except httpx.RequestError as exc:
-                return Result.error(f"Signup page request failed: {exc}", url=show_url)
+            init_resp = await client.get(signup_url, headers=headers)
+        except httpx.TimeoutException:
+            return Result.error("Signup page request timed out", url=show_url)
+        except httpx.RequestError as exc:
+            return Result.error(f"Signup page request failed: {exc}", url=show_url)
 
-            if init_resp.status_code == 429:
-                return Result.error(
-                    "Rate limited while accessing signup page", url=show_url
-                )
-            if not init_resp.is_success:
-                return Result.error(
-                    f"Failed to access signup page: HTTP {init_resp.status_code}",
-                    url=show_url,
-                )
+        if init_resp.status_code == 429:
+            return Result.error(
+                "Rate limited while accessing signup page", url=show_url
+            )
+        if not init_resp.is_success:
+            return Result.error(
+                f"Failed to access signup page: HTTP {init_resp.status_code}",
+                url=show_url,
+            )
 
-            # 2. Récupération de sign_fn.
-            try:
-                data_resp = await client.get(data_url, headers=data_headers)
-            except httpx.TimeoutException:
-                return Result.error("Signup data request timed out", url=show_url)
-            except httpx.RequestError as exc:
-                return Result.error(f"Signup data request failed: {exc}", url=show_url)
+        try:
+            data_resp = await client.get(data_url, headers=data_headers)
+        except httpx.TimeoutException:
+            return Result.error("Signup data request timed out", url=show_url)
+        except httpx.RequestError as exc:
+            return Result.error(f"Signup data request failed: {exc}", url=show_url)
 
-            if data_resp.status_code == 429:
-                return Result.error(
-                    "Rate limited while fetching signup data", url=show_url
-                )
-            if not data_resp.is_success:
-                return Result.error(
-                    f"Failed to fetch signup data: HTTP {data_resp.status_code}",
-                    url=show_url,
-                )
+        if data_resp.status_code == 429:
+            return Result.error("Rate limited while fetching signup data", url=show_url)
+        if not data_resp.is_success:
+            return Result.error(
+                f"Failed to fetch signup data: HTTP {data_resp.status_code}",
+                url=show_url,
+            )
 
-            try:
-                data_json = data_resp.json()
-            except (ValueError, UnicodeError):
-                return Result.error(
-                    "Signup data response is not valid JSON", url=show_url
-                )
+        try:
+            data_json = data_resp.json()
+        except (ValueError, UnicodeError):
+            return Result.error("Signup data response is not valid JSON", url=show_url)
 
-            if not isinstance(data_json, dict):
-                return Result.error(
-                    "Signup data response must be a JSON object", url=show_url
-                )
+        if not isinstance(data_json, dict):
+            return Result.error(
+                "Signup data response must be a JSON object", url=show_url
+            )
 
-            sign_fn = data_json.get("sign_fn")
-            if not isinstance(sign_fn, str) or not sign_fn:
-                return Result.error(
-                    "Missing or invalid sign_fn in signup data", url=show_url
-                )
+        sign_fn = data_json.get("sign_fn")
+        if not isinstance(sign_fn, str) or not sign_fn:
+            return Result.error(
+                "Missing or invalid sign_fn in signup data", url=show_url
+            )
 
-            # 3. Construction du payload JSON signé
-            try:
-                payload = _build_payload(email, sign_fn)
-            except (ValueError, TypeError, KeyError, IndexError) as exc:
-                return Result.error(
-                    f"Failed to build signup payload: {exc}", url=show_url
-                )
+        try:
+            payload = _build_payload(email, sign_fn)
+        except (ValueError, TypeError, KeyError, IndexError) as exc:
+            return Result.error(f"Failed to build signup payload: {exc}", url=show_url)
 
-            # 4. Soumission du formulaire d'inscription
-            try:
-                response = await client.post(
-                    submit_url,
-                    headers=data_headers,
-                    json=payload,
-                )
-            except httpx.TimeoutException:
-                return Result.error(
-                    "Signup submission timed out; server outcome is unknown",
-                    url=show_url,
-                )
-            except httpx.RequestError as exc:
-                return Result.error(f"Signup submission failed: {exc}", url=show_url)
-            except (TypeError, ValueError, UnicodeError):
-                return Result.error("Could not encode signup payload", url=show_url)
+        # 4. Soumission du formulaire d'inscription
+        try:
+            response = await client.post(
+                submit_url,
+                headers=data_headers,
+                json=payload,
+            )
+        except httpx.TimeoutException:
+            return Result.error(
+                "Signup submission timed out; server outcome is unknown",
+                url=show_url,
+            )
+        except httpx.RequestError as exc:
+            return Result.error(f"Signup submission failed: {exc}", url=show_url)
+        except (TypeError, ValueError, UnicodeError):
+            return Result.error("Could not encode signup payload", url=show_url)
 
-                    # 5. Décodage et validation de la réponse.
-            try:
-                data = response.json()
-            except (ValueError, UnicodeError):
-                return Result.error(
+        # 5. Décodage et validation de la réponse.
+        try:
+            data = response.json()
+            print(data)
+        except (ValueError, UnicodeError):
+            return Result.error(
                 "Signup submission response is not valid JSON",
                 url=show_url,
             )
 
-            if not isinstance(data, dict):
-                return Result.error(
+        if not isinstance(data, dict):
+            return Result.error(
                 "Signup submission response must be a JSON object",
                 url=show_url,
             )
 
-            errors = data.get("fielderrors")
-            if not isinstance(errors, dict):
-                return Result.error(
-                "Missing or invalid fielderrors in submission response",
+        error_message = data.get("error_message")
+        if isinstance(error_message, str) and error_message.strip():
+            return Result.error(error_message, url=show_url)
+
+        errors = data.get("fieldErrors")
+        if not isinstance(errors, dict):
+            return Result.error(
+                "Missing or invalid fieldErrors in submission response",
                 url=show_url,
             )
 
-            email_errors = errors.get("email", [])
-            if not isinstance(email_errors, list) or not all(
-            isinstance(message, str) for message in email_errors
-        ):
-                return Result.error(
+        email_errors = errors.get("email", [])
+        if not isinstance(email_errors, list):
+            return Result.error(
                 "Email errors must be a list of strings",
                 url=show_url,
             )
 
-            if "email is invalid" in email_errors:
-                return Result.taken(url=show_url)
+        if "Email is invalid" in email_errors:
+            return Result.taken(url=show_url)
 
-            return Result.available(url=show_url)
+        return Result.available(url=show_url)
 
 
 async def validate_secretbenefits(email: str) -> Result:
