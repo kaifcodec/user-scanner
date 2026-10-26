@@ -40,7 +40,7 @@ def _int32(value: int) -> int:
 def _compute_signed3(email: str, source: str) -> str:
     match = SIGN_PATTERN.fullmatch(source)
     if not match:
-        raise ValueError("Format sign_fn non reconnu")
+        raise ValueError("Unrecognized sign_fn format")
     prefix, mask, order, a, b, c, d, suffix = match.groups()
     fragments = (a, b, c, d)
     block = "".join(fragments[int(index.strip())] for index in order.split(","))
@@ -80,20 +80,20 @@ def _encode_logs(logs: dict[str, list[str]]) -> str:
 
 
 def _generate_age() -> int:
-    """Génère un âge aléatoire compris entre 30 et 70 ans inclus."""
+    """Generate a random age between 30 and 70, inclusive."""
     return random.randint(30, 70)
 
 
 def _generate_username() -> str:
-    """Génère un nom d'utilisateur de 2 à 4 lettres ASCII."""
+    """Generate a username containing 2 to 4 ASCII letters."""
     length = random.randint(2, 4)
     return "".join(random.choices(string.ascii_letters, k=length))
 
 
 def _generate_password() -> str:
     """
-    Génère un mot de passe de 2 à 5 caractères ne contenant
-    que des lettres ASCII.
+    Generate a password containing 2 to 5 characters using
+    only ASCII letters.
     """
     length = random.randint(2, 5)
 
@@ -134,8 +134,8 @@ def _build_payload(email: str, sign_fn: str) -> dict:
 
 async def _check(email: str) -> Result:
     """
-    Vérifie si une adresse e-mail est déjà enregistrée sur Secret Benefits
-    en interrogeant le flux d'inscription en plusieurs étapes.
+    Check whether an email address is already registered on Secret Benefits
+    by querying the signup flow in multiple steps.
     """
     from user_scanner.core.helpers import get_global_timeout
 
@@ -165,6 +165,7 @@ async def _check(email: str) -> Result:
     async with httpx.AsyncClient(
         http2=False, follow_redirects=True, timeout=timeout
     ) as client:
+    
         try:
             init_resp = await client.get(signup_url, headers=headers)
         except httpx.TimeoutException:
@@ -218,7 +219,6 @@ async def _check(email: str) -> Result:
         except (ValueError, TypeError, KeyError, IndexError) as exc:
             return Result.error(f"Failed to build signup payload: {exc}", url=show_url)
 
-        # 4. Soumission du formulaire d'inscription
         try:
             response = await client.post(
                 submit_url,
@@ -235,10 +235,8 @@ async def _check(email: str) -> Result:
         except (TypeError, ValueError, UnicodeError):
             return Result.error("Could not encode signup payload", url=show_url)
 
-        # 5. Décodage et validation de la réponse.
         try:
             data = response.json()
-            print(data)
         except (ValueError, UnicodeError):
             return Result.error(
                 "Signup submission response is not valid JSON",
@@ -277,6 +275,7 @@ async def _check(email: str) -> Result:
 
 async def validate_secretbenefits(email: str) -> Result:
     """
-    Validateur public utilisé par le mode email_scan de user-scanner.
+    SecretBenefits dating app email validator.
+    Checks on the registration endpoint with dummy data.
     """
     return await _check(email)
