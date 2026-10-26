@@ -23,10 +23,12 @@ SIGN_PATTERN = re.compile(
 
 
 def _js_length(value: str) -> int:
+    """Return the UTF-16 code unit count used by JavaScript string.length."""
     return len(value.encode("utf-16-le", errors="surrogatepass")) // 2
 
 
 def _codepoints(value: str) -> list[int]:
+    """Return Unicode code points, combining explicit UTF-16 surrogate pairs."""
     normalized = value.encode("utf-16-le", errors="surrogatepass").decode(
         "utf-16-le", errors="surrogatepass"
     )
@@ -34,10 +36,15 @@ def _codepoints(value: str) -> list[int]:
 
 
 def _int32(value: int) -> int:
+    """Wrap an integer to the signed 32-bit range used by JavaScript XOR."""
     return (value + 2**31) % 2**32 - 2**31
 
 
 def _compute_signed3(email: str, source: str) -> str:
+    """Reproduce the recognized sign_fn calculation without executing JavaScript.
+
+    Raise ValueError if the source does not match the supported function format.
+    """
     match = SIGN_PATTERN.fullmatch(source)
     if not match:
         raise ValueError("Unrecognized sign_fn format")
@@ -51,6 +58,7 @@ def _compute_signed3(email: str, source: str) -> str:
 
 
 def _simulate_typing(user: dict) -> dict[str, list[str]]:
+    """Build synthetic key and value-change logs for email, username, and age."""
     profile = user.get("profile_attributes", {})
     values = {
         "email": user["email"],
@@ -74,6 +82,7 @@ def _simulate_typing(user: dict) -> dict[str, list[str]]:
 
 
 def _encode_logs(logs: dict[str, list[str]]) -> str:
+    """Join field events and Base64-encode their compact UTF-8 JSON representation."""
     joined = {field: "".join(events) for field, events in logs.items()}
     text = json.dumps(joined, ensure_ascii=False, separators=(",", ":"))
     return base64.b64encode(text.encode("utf-8")).decode("ascii")
@@ -101,6 +110,7 @@ def _generate_password() -> str:
 
 
 def _build_payload(email: str, sign_fn: str) -> dict:
+    """Build signup data with generated profile values, signatures, and typing logs."""
     password = _generate_password()
     username = _generate_username()
     age = _generate_age()
