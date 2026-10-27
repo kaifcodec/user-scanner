@@ -95,10 +95,14 @@ async def _async_worker(
         try:
             import inspect
             module_timeout = (get_global_timeout() or 15.0) + 10.0
+            # Validators with an optional loud step take the scan policy as an argument
+            kwargs = {}
+            if "allow_loud" in inspect.signature(func).parameters:
+                kwargs["allow_loud"] = configs.allow_loud
             if inspect.iscoroutinefunction(func):
-                result = await asyncio.wait_for(func(email), timeout=module_timeout)
+                result = await asyncio.wait_for(func(email, **kwargs), timeout=module_timeout)
             else:
-                result = await asyncio.wait_for(asyncio.to_thread(func, email), timeout=module_timeout)
+                result = await asyncio.wait_for(asyncio.to_thread(func, email, **kwargs), timeout=module_timeout)
         except asyncio.TimeoutError:
             result = Result.error(f"Module execution timed out after {module_timeout}s")
         except Exception as e:
