@@ -339,6 +339,42 @@ def test_validate_proxy_single_worker(mock_client):
     assert result == proxies
 
 
+def test_validate_proxy_rejects_proxy_that_cannot_tunnel_tls():
+    # Answers every plaintext request with a forged 204 but refuses CONNECT,
+    # so it cannot carry an HTTPS request end to end.
+    import socket
+    import threading
+
+    server = socket.socket()
+    server.bind(("127.0.0.1", 0))
+    server.listen(8)
+    port = server.getsockname()[1]
+    requests: list[bytes] = []
+
+    def serve():
+        while True:
+            try:
+                conn, _ = server.accept()
+            except OSError:
+                return
+            with conn:
+                data = conn.recv(4096)
+                requests.append(data)
+                if data.startswith(b"CONNECT"):
+                    conn.sendall(b"HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n")
+                else:
+                    conn.sendall(b"HTTP/1.1 204 No Content\r\n\r\n")
+
+    threading.Thread(target=serve, daemon=True).start()
+    try:
+        result = helpers.validate_proxies([f"http://127.0.0.1:{port}"], timeout=2)
+    finally:
+        server.close()
+
+    assert result == []
+    assert requests and all(r.startswith(b"CONNECT") for r in requests)
+
+
 def test_proxy_manager_add_protocol(tmp_path):
     proxy_file = tmp_path / "test_proxies.txt"
     proxy_file.write_text("""proxy1.example.com:8080
