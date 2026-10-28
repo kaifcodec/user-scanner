@@ -15,7 +15,7 @@ def validate_discord(user):
         "referer": "https://discord.com/register",
     }
 
-    data = {"username": user}
+    data = {"username": user.lower()}
 
     def process(response):
         if response.status_code == 200:
