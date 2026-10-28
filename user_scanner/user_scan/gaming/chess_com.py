@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 
 from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import generic_validate
@@ -41,6 +42,12 @@ def validate_chess_com(user: str) -> Result:
                 if league := data.get("league"): extra["league"] = league
                 if location := data.get("location"): extra["location"] = location
                 if followers := data.get("followers"): extra["followers"] = str(followers)
+                if country := data.get("country"):
+                    extra["country"] = country.rstrip("/").split("/")[-1]
+                if joined := data.get("joined"):
+                    extra["joined"] = datetime.fromtimestamp(joined, timezone.utc).strftime("%Y-%m-%d")
+                if last_online := data.get("last_online"):
+                    extra["last_online"] = datetime.fromtimestamp(last_online, timezone.utc).strftime("%Y-%m-%d")
                 if avatar := data.get("avatar"): media["avatar"] = avatar
                 if twitch := data.get("twitch_url"): extra["links"] = twitch
                 return Result.taken(extra=extra, media=media)
