@@ -89,8 +89,8 @@ def _encode_logs(logs: dict[str, list[str]]) -> str:
 
 
 def _generate_age() -> int:
-    """Generate a random age between 30 and 70, inclusive."""
-    return random.randint(30, 70)
+    """Generate a random age between 1 and 15, inclusive."""
+    return random.randint(1, 15)
 
 
 def _generate_username() -> str:
