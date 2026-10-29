@@ -18,7 +18,8 @@ import pytest
 from types import ModuleType
 from user_scanner.core import engine
 from unittest.mock import Mock, AsyncMock, call
-from user_scanner.core.result import Result
+from user_scanner.core.helpers import ScanConfig
+from user_scanner.core.result import Result, Status
 
 
 @pytest.fixture
@@ -309,3 +310,78 @@ async def test_check_all_category_exception(monkeypatch):
         await engine.check_all("some_email")
 
     assert "Failed" in str(exc_info.value)
+
+
+def _loud_module():
+    module = ModuleType("netflix")
+    module.__file__ = "/some/path/email_scan/shopping/netflix.py"
+    module.validate_netflix = AsyncMock(return_value=Result.taken())
+    return module
+
+
+@pytest.mark.anyio
+async def test_loud_module_is_skipped_without_consent():
+    module = _loud_module()
+
+    result = await engine.check(module, "person@example.com")
+
+    assert result == Status.SKIPPED
+    module.validate_netflix.assert_not_awaited()
+
+
+@pytest.mark.anyio
+async def test_loud_module_runs_when_consent_is_explicit():
+    module = _loud_module()
+
+    result = await engine.check(module, "person@example.com", ScanConfig(allow_loud=True))
+
+    assert result == Status.TAKEN
+    module.validate_netflix.assert_awaited_once_with("person@example.com")
+
+
+@pytest.mark.anyio
+async def test_check_category_skips_loud_module_unless_allowed(monkeypatch):
+    module = _loud_module()
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {"shopping": "/fake"})
+    monkeypatch.setattr(engine, "load_modules", lambda path: [module])
+
+    skipped = await engine.check_category("shopping", "person@example.com")
+    assert skipped[0] == Status.SKIPPED
+    module.validate_netflix.assert_not_awaited()
+
+    module.validate_netflix.reset_mock()
+    taken = await engine.check_category(
+        "shopping", "person@example.com", configs=ScanConfig(allow_loud=True)
+    )
+    assert taken[0] == Status.TAKEN
+    module.validate_netflix.assert_awaited_once()
+
+
+@pytest.mark.anyio
+async def test_check_all_skips_loud_module_unless_allowed(monkeypatch):
+    module = _loud_module()
+    monkeypatch.setattr(engine, "load_categories", lambda is_email: {"shopping": "/fake"})
+    monkeypatch.setattr(engine, "load_modules", lambda path: [module])
+
+    skipped = await engine.check_all("person@example.com")
+    assert skipped[0] == Status.SKIPPED
+    module.validate_netflix.assert_not_awaited()
+
+    module.validate_netflix.reset_mock()
+    taken = await engine.check_all(
+        "person@example.com", configs=ScanConfig(allow_loud=True)
+    )
+    assert taken[0] == Status.TAKEN
+    module.validate_netflix.assert_awaited_once()
+
+
+@pytest.mark.anyio
+async def test_adult_module_is_skipped_when_no_nsfw_is_set():
+    module = ModuleType("redtube")
+    module.__file__ = "/some/path/email_scan/adult/redtube.py"
+    module.validate_redtube = AsyncMock(return_value=Result.taken())
+
+    result = await engine.check(module, "person@example.com", ScanConfig(no_nsfw=True))
+
+    assert result == Status.SKIPPED
+    module.validate_redtube.assert_not_awaited()
