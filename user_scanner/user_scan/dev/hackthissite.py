@@ -17,7 +17,7 @@ def validate_hackthissite(user: str) -> Result:
                     extra["points"] = r.group(2)
                 s = re.search(r"Status:\s*([^<\n]+)<br", response.text)
                 if s: extra["status"] = s.group(1).strip()
-                bad = ("", "not entered", "none", "hidden")
+                bad = ("", "not entered", "none", "hidden", "http://")
                 for label, key in [
                     ("UserID", "user_id"),
                     ("Joined", "joined"),
@@ -33,9 +33,9 @@ def validate_hackthissite(user: str) -> Result:
                         if val and val.lower() not in bad:
                             extra[key] = val
                 av = re.search(
-                    r'<img src="(/pages/user/avatar\.view\.php\?id=\d+)"', response.text
+                    r'<img src="(/pages/user/avatar\.view\.php\?id=(\d+))"', response.text
                 )
-                if av:
+                if av and av.group(2) != "404":
                     media["avatar"] = f"https://www.hackthissite.org{av.group(1)}"
                 return Result.taken(extra=extra, media=media)
             if "<title>Hack This Site</title>" in response.text:
