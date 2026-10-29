@@ -10,7 +10,7 @@ def validate_listal(user: str) -> Result:
     def process(response):
         if response.status_code != 200:
             return Result.error(f"Unexpected response status: {response.status_code}")
-        m = re.search(r"<title>([^<]+) on Listal</title>", response.text)
+        m = re.search(r"<title>([^<]+?)(?:'s stuff)? on Listal</title>", response.text)
         if m and m.group(1).strip().lower() == user.lower():
             extra, media = {}, {}
             h = re.search(r"<h1[^>]*>([^<]+)</h1>", response.text)
