@@ -13,7 +13,7 @@ def validate_mixlr(user: str) -> Result:
     }
 
     def process(response):
-        if response.status_code == 404:
+        if response.status_code == 404 and "Resource not found" in response.text:
             return Result.available()
 
         if response.status_code == 200:
