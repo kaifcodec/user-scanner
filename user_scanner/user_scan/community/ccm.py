@@ -11,7 +11,7 @@ def validate_ccm(user: str) -> Result:
         if response.status_code == 404:
             return Result.available()
         if response.status_code == 200:
-            m = re.search(r"<title>Profil de ([^<]+) - CCM</title>", response.text)
+            m = re.search(r"<title>(?:Profil de\s+)?([^<']+?)(?:'s profile)?\s*-\s*CCM</title>", response.text)
             if m and m.group(1).strip().lower() == user.lower():
                 extra = {}
                 h = re.search(r'<a href="/profile/user/[^"]+">\s*([^<]+?)\s*</a>', response.text)
