@@ -10,7 +10,9 @@ def validate_ultimate_guitar(user: str) -> Result:
 
     def process(response):
         if response.status_code == 410:
-            return Result.available()
+            if "Oops! We couldn't find that page." in response.text:
+                return Result.available()
+            return Result.error("410 response without not-found marker, report it via GitHub issues")
         if response.status_code == 200:
             m = re.search(r"<title>([^<]+) \| Ultimate-Guitar\.Com</title>", response.text)
             if m and m.group(1).strip().lower() == user.lower():
