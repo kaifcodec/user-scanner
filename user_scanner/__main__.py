@@ -53,6 +53,7 @@ from user_scanner.utils.updater_logic import check_for_updates
 from user_scanner.core.loud_prompt import check_loud_module_permission
 from user_scanner.core import limits
 from user_scanner.core.patterns import expand_patterns_random, count_patterns
+from user_scanner.core.terminal import strip_terminal_controls
 
 # Color configs
 R = Fore.RED
@@ -620,10 +621,11 @@ def main():
         if i != 0 and args.delay:
             time.sleep(args.delay)
 
+        shown_target = strip_terminal_controls(target)
         if is_email:
-            print(f"\n{Fore.CYAN} Checking email: {target}{Style.RESET_ALL}")
+            print(f"\n{Fore.CYAN} Checking email: {shown_target}{Style.RESET_ALL}")
         else:
-            print(f"\n{Fore.CYAN} Checking username: {target}{Style.RESET_ALL}")
+            print(f"\n{Fore.CYAN} Checking username: {shown_target}{Style.RESET_ALL}")
 
 
         if args.hudson_scan:

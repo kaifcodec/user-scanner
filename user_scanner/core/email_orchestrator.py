@@ -19,6 +19,7 @@ from user_scanner.core.helpers import (
 )
 from user_scanner.core import limits
 from user_scanner.core.result import Result
+from user_scanner.core.terminal import scanning_description
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
 
 # Monkey-patch httpx clients to automatically use proxies for email scans
@@ -144,10 +145,10 @@ async def _run_batch(
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         transient=True,
     ) as progress:
-        task_id = progress.add_task(f"[cyan]Scanning {email}...", total=len(modules))
+        task_id = progress.add_task(scanning_description(email), total=len(modules))
 
         def on_start_cb(site: str):
-            progress.update(task_id, description=f"[cyan]Scanning {email}... ({site})")
+            progress.update(task_id, description=scanning_description(email, site))
 
         # 1. Pre-spawn all tasks for all categories (global concurrency)
         spawned_category_tasks = []
@@ -268,10 +269,10 @@ async def _run_email_full_batch_async(email: str, configs: ScanConfig) -> List[R
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         transient=True,
     ) as progress:
-        task_id = progress.add_task(f"[cyan]Scanning {email}...", total=total_tasks)
-        
+        task_id = progress.add_task(scanning_description(email), total=total_tasks)
+
         def on_start_cb(site: str):
-            progress.update(task_id, description=f"[cyan]Scanning {email}... ({site})")
+            progress.update(task_id, description=scanning_description(email, site))
             
         spawned_category_tasks = []
         for display_name, modules in category_modules:

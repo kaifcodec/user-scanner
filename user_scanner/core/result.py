@@ -4,6 +4,7 @@ import json
 from enum import Enum
 from colorama import Fore, Style
 from user_scanner.core.helpers import ScanConfig
+from user_scanner.core.terminal import strip_terminal_controls
 
 # Added {url} to the debug message
 DEBUG_MSG = """Result {{
@@ -252,18 +253,18 @@ class Result:
             return "[✔]" if self == Status.TAKEN else "[✘]"
 
     def get_console_output(self, configs: ScanConfig | None = None) -> str:
-        site_name = self.site_name
+        site_name = strip_terminal_controls(self.site_name)
         status_text = self.status.to_label(self.is_email)
         username = ""
         if self.username:
-            username = f"({self.username})"
+            username = f"({strip_terminal_controls(self.username)})"
         color = self.get_output_color()
         icon = self.get_output_icon()
 
         # Added logic to include URL in console output if show_url is True
         ## Color the URL in white for better visibility
         url_display = (
-            f" {Fore.WHITE}[{self.url}]{color}"
+            f" {Fore.WHITE}[{strip_terminal_controls(self.url)}]{color}"
             if (configs and configs.verbose) and self.url
             else ""
         )
@@ -273,13 +274,15 @@ class Result:
         display_items = list(self.extra.items()) + list(self.media.items())
         for i, (key, value) in enumerate(display_items):
             connector = "└──" if i == len(display_items) - 1 else "├──"
+            key = strip_terminal_controls(key)
+            value = strip_terminal_controls(value)
 
-            if isinstance(value, str) and len(value.splitlines()) > 1:
+            if len(value.splitlines()) > 1:
                 value = "\n" + indent_text(value, 12, False)
 
             extra_display += f"\n{' ' * 6}{Fore.CYAN}{connector} {key}: {value}"
 
-        reason = f" ({self.get_reason()})" if self.has_reason() else ""
+        reason = f" ({strip_terminal_controls(self.get_reason())})" if self.has_reason() else ""
         reason = indent_text(reason, 12, True)
 
         return f"  {color}{icon} {site_name}{url_display} {username}: {status_text}{reason}{extra_display}{Style.RESET_ALL}"
