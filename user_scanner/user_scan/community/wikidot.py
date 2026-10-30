@@ -6,7 +6,7 @@ from user_scanner.core.impersonate import impersonate_validate
 
 def validate_wikidot(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
-    url = f"http://www.wikidot.com/user:info/{encoded_user}"
+    url = f"https://www.wikidot.com/user:info/{encoded_user}"
     show_url = url
 
     def process(response) -> Result:
@@ -46,4 +46,4 @@ def validate_wikidot(user: str) -> Result:
 
         return Result.error(f"Unexpected status code: {response.status_code}")
 
-    return impersonate_validate(url, process, show_url=show_url, impersonate="chrome")
+    return impersonate_validate(url, process, show_url=show_url, impersonate="chrome", allow_redirects=True)
