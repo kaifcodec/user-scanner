@@ -1,18 +1,14 @@
 import urllib.parse
 
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
 def validate_linuxreviews(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
     url = "https://linuxreviews.org/w/api.php"
     show_url = f"https://linuxreviews.org/wiki/User:{encoded_user}"
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "application/json",
-    }
-    params = {
+    data = {
         "action": "query",
         "format": "json",
         "list": "users",
@@ -23,8 +19,8 @@ def validate_linuxreviews(user: str) -> Result:
 
     def process(response) -> Result:
         try:
-            data = response.json()
-            users = data.get("query", {}).get("users", [])
+            res_data = response.json()
+            users = res_data.get("query", {}).get("users", [])
             if not users:
                 return Result.error("MediaWiki response missing users list")
 
@@ -52,11 +48,11 @@ def validate_linuxreviews(user: str) -> Result:
         except Exception as e:
             return Result.error(str(e))
 
-    return generic_validate(
+    return impersonate_validate(
         url,
         process,
-        headers=headers,
-        params=params,
+        method="POST",
+        data=data,
         show_url=show_url,
-        follow_redirects=True,
+        allow_redirects=True,
     )

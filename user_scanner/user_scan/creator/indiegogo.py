@@ -1,7 +1,8 @@
 import json
 from urllib.parse import quote
 
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
 def validate_indiegogo(user: str) -> Result:
@@ -25,7 +26,7 @@ def validate_indiegogo(user: str) -> Result:
 
         return Result.taken(extra=extra, media={"avatar": props.get("avatarUrl")})
 
-    return generic_validate(url, process, show_url=url)
+    return impersonate_validate(url, process, show_url=url, allow_redirects=True)
 
 
 def _props(body: str) -> dict | None:

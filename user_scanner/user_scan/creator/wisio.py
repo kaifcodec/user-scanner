@@ -20,9 +20,9 @@ def validate_wisio(user: str) -> Result:
 
         def process_profile(profile_response):
             if profile_response.status_code == 404:
-                return Result.error(
-                    "No public creator profile "
-                    "(private, reserved, and invalid usernames look the same)"
+                return Result.taken(
+                    url=show_url,
+                    extra={"account_status": "registered (private or non-creator)"},
                 )
 
             if profile_response.status_code != 200:

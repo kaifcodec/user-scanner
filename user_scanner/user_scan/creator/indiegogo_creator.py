@@ -1,7 +1,8 @@
 import json
 from urllib.parse import quote
 
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 _SOCIAL_FIELDS = {
     0: "facebook",
@@ -43,7 +44,7 @@ def validate_indiegogo_creator(user: str) -> Result:
             media["banner"] = props["bannerImages"][0]
         return Result.taken(extra=extra, media=media)
 
-    return generic_validate(url, process, show_url=url)
+    return impersonate_validate(url, process, show_url=url, allow_redirects=True)
 
 
 def _props(body: str) -> dict | None:

@@ -13,6 +13,14 @@ def validate_boot_dev(user: str) -> Result:
 
         if response.status_code == 404 and data.get("error") == "User not found":
             return Result.available()
+
+        if response.status_code == 403 and (
+            data.get("reason") == "low_level" or data.get("status") == "denied"
+        ):
+            return Result.taken(
+                url=show_url,
+                extra={"account_status": "registered (low level or private profile)"},
+            )
         profile = data.get("data", {})
         if (
             response.status_code == 200

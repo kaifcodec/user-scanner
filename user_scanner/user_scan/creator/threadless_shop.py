@@ -1,9 +1,10 @@
 import html
 import re
 
+from curl_cffi.requests import Session
 from curl_cffi.requests.exceptions import RequestException
 
-from user_scanner.core.impersonate import impersonate_request, impersonate_validate
+from user_scanner.core.impersonate import impersonate_request
 from user_scanner.core.result import Result
 
 SIGNUP_URL = "https://profile.threadless.com/artist/shops/"
@@ -19,48 +20,50 @@ def validate_threadless_shop(user: str) -> Result:
             url=show_url,
         )
 
-    def process(page):
+    try:
+        session: Session = Session(impersonate="chrome120")
+        page = session.get(SIGNUP_URL, allow_redirects=True, timeout=10)
         token = CSRF_RE.search(page.text)
         if page.status_code != 200 or not token:
             return Result.error(
-                f"Could not read Threadless signup form (HTTP {page.status_code})"
+                f"Could not read Threadless signup form (HTTP {page.status_code})",
+                url=show_url,
             )
 
-        response = impersonate_request(
+        headers = {
+            "x-requested-with": "XMLHttpRequest",
+            "origin": "https://profile.threadless.com",
+            "referer": SIGNUP_URL,
+        }
+        response = session.post(
             SIGNUP_URL,
-            "POST",
-            headers={"x-requested-with": "XMLHttpRequest"},
+            headers=headers,
             data={
                 "validate": "true",
                 "shop_name": shop,
                 "csrfmiddlewaretoken": token.group(1),
             },
+            timeout=10,
         )
         if response.status_code != 200:
             return Result.error(
-                f"Unexpected Threadless response: HTTP {response.status_code}"
+                f"Unexpected Threadless response: HTTP {response.status_code}",
+                url=show_url,
             )
 
-        match response.json():
-            case {"is_valid": True}:
-                return Result.available()
-            case {"is_valid": False}:
-                profile = _shop_profile(shop)
-                if profile:
-                    extra, media = profile
-                    return Result.taken(extra=extra, media=media)
-                return Result.error(
-                    "Shop name is unavailable but no public shop was found"
-                )
-            case _:
-                return Result.error("Unexpected Threadless response")
-
-    return impersonate_validate(
-        SIGNUP_URL,
-        process,
-        show_url=show_url,
-        allow_redirects=True,
-    )
+        res_json = response.json()
+        if res_json.get("is_valid") is True:
+            return Result.available(url=show_url)
+        elif res_json.get("is_valid") is False:
+            profile = _shop_profile(shop)
+            if profile:
+                extra, media = profile
+                return Result.taken(extra=extra, media=media, url=show_url)
+            return Result.taken(extra={"claimed": True}, url=show_url)
+        else:
+            return Result.error("Unexpected Threadless response", url=show_url)
+    except Exception as e:
+        return Result.error(f"Threadless shop request failed: {e}", url=show_url)
 
 
 def _shop_profile(shop: str) -> tuple[dict, dict] | None:

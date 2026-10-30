@@ -1,33 +1,36 @@
+import html
+import re
 import urllib.parse
 
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
 def validate_carbonmade(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
-    url = "https://{username}.carbonmade.com".replace("{username}", encoded_user)
+    url = f"https://{encoded_user}.carbonmade.com"
     show_url = f"https://{encoded_user}.carbonmade.com"
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    }
 
     def process(response) -> Result:
         status = response.status_code
 
-        if status == 404:
+        if status == 404 and "not found" in response.text.lower():
             return Result.available(url=show_url)
 
         if status == 200:
-            return Result.taken(url=show_url)
+            extra: dict[str, str] = {}
+            match = re.search(r"<title[^>]*>(.*?)</title>", response.text, re.IGNORECASE | re.DOTALL)
+            if match:
+                title = html.unescape(match.group(1)).strip()
+                if title and "carbonmade" not in title.lower():
+                    extra["name"] = title
+            return Result.taken(url=show_url, extra=extra)
 
-        return Result.error(f"Unexpected response status {status}")
+        return Result.error(f"Unexpected response status {status}", url=show_url)
 
-    return generic_validate(
+    return impersonate_validate(
         url,
         process,
-        headers=headers,
         show_url=show_url,
-        follow_redirects=True,
+        allow_redirects=True,
     )

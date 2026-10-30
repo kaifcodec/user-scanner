@@ -1,7 +1,8 @@
 import html
 import re
 
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
 def _text(value: str) -> str:
@@ -13,18 +14,26 @@ def validate_kofi(user: str) -> Result:
     if "." in user:
         return Result.available("Username cannot contain periods", url=url)
 
-    def process(response):
+    def process(response) -> Result:
+        if response.status_code == 404:
+            return Result.available(url=url)
+
         if response.status_code != 200:
             return Result.error(f"Unexpected status: {response.status_code}")
 
         page = response.text
+
+        # If redirected to the home page, the username does not exist
+        if '<meta property="og:url" content="https://ko-fi.com/"' in page or response.url.rstrip("/") == "https://ko-fi.com":
+            return Result.available(url=url)
+
         profile_marker = re.search(
-            rf'<meta property="og:url" content="{re.escape(url)}(?:[/?][^"]*)?"', page
+            rf'<meta property="og:url" content="{re.escape(url)}(?:[/?][^"]*)?"', page, re.IGNORECASE
         )
 
-        if profile_marker and 'id="displayName"' in page:
-            extra = {}
-            media = {}
+        if (profile_marker or f"ko-fi.com/{user.lower()}" in page.lower()) and 'id="displayName"' in page:
+            extra: dict[str, str | int | list[str]] = {}
+            media: dict[str, str] = {}
 
             if match := re.search(
                 r'<span id="displayName">\s*([^<]+?)\s*</span>', page
@@ -79,11 +88,8 @@ def validate_kofi(user: str) -> Result:
             if match := re.search(r'<img id="profilePicture"[^>]+src="([^"]+)"', page):
                 media["avatar"] = html.unescape(match.group(1))
 
-            return Result.taken(extra=extra, media=media)
+            return Result.taken(extra=extra, media=media, url=url)
 
-        if '<meta property="og:url" content="https://ko-fi.com/"' in page:
-            return Result.available()
+        return Result.error("Unexpected response body", url=url)
 
-        return Result.error("Unexpected response body")
-
-    return generic_validate(url, process, show_url=url, follow_redirects=True)
+    return impersonate_validate(url, process, show_url=url, allow_redirects=True)
