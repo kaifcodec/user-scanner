@@ -2,7 +2,7 @@ import html
 import re
 from urllib.parse import quote
 
-from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
 
 
@@ -73,4 +73,6 @@ def validate_weawow(user: str) -> Result:
 
         return Result.taken(extra=extra, media=media)
 
-    return generic_validate(url, process, show_url=show_url, follow_redirects=True)
+    return impersonate_validate(
+        url, process, show_url=show_url, impersonate="chrome", allow_redirects=True
+    )

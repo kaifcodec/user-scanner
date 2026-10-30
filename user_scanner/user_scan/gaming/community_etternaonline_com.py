@@ -1,16 +1,13 @@
 import urllib.parse
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.orchestrator import Result
+
 
 def validate_community_etternaonline_com(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
     url = f"https://community.etternaonline.com/u/{encoded_user}.json"
     show_url = f"https://community.etternaonline.com/u/{encoded_user}"
-
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "application/json",
-    }
 
     def process(response) -> Result:
         if response.status_code == 404:
@@ -33,6 +30,8 @@ def validate_community_etternaonline_com(user: str) -> Result:
                     extra: dict[str, str] = {}
                     media: dict[str, str] = {}
 
+                    if user_obj.get("id") is not None:
+                        extra["id"] = str(user_obj["id"])
                     if user_obj.get("name"):
                         extra["name"] = str(user_obj["name"])
                     if user_obj.get("title"):
@@ -47,6 +46,10 @@ def validate_community_etternaonline_com(user: str) -> Result:
                         extra["badges"] = str(user_obj["badge_count"])
                     if user_obj.get("created_at"):
                         extra["joined"] = str(user_obj["created_at"])
+                    if user_obj.get("last_posted_at"):
+                        extra["last_posted_at"] = str(user_obj["last_posted_at"])
+                    if user_obj.get("last_seen_at"):
+                        extra["last_seen_at"] = str(user_obj["last_seen_at"])
                     if user_obj.get("bio_raw") or user_obj.get("bio_cooked"):
                         extra["bio"] = str(user_obj.get("bio_raw") or user_obj.get("bio_cooked"))
 
@@ -64,4 +67,10 @@ def validate_community_etternaonline_com(user: str) -> Result:
 
         return Result.error(f"Unexpected status code: {response.status_code}")
 
-    return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
+    return impersonate_validate(
+        url,
+        process,
+        show_url=show_url,
+        impersonate="chrome",
+        allow_redirects=True,
+    )
