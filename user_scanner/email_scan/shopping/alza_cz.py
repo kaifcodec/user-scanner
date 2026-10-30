@@ -1,5 +1,4 @@
-import httpx
-
+from user_scanner.core.impersonate import impersonate_request_async
 from user_scanner.core.result import Result
 
 
@@ -32,30 +31,38 @@ async def _check(email: str) -> Result:
     )
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:150.0) Gecko/20100101 Firefox/150.0",
         "Referer": main_url,
         "Origin": main_url,
         "Accept": "application/json",
     }
 
-    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+    try:
         # Fetch the main page to retrieve cookies
-        response = await client.get(main_url, headers=headers)
+        response = await impersonate_request_async(
+            main_url, method="GET", headers=headers, allow_redirects=True
+        )
 
         if response.status_code != 200:
             return Result.error(
-                f"Failed to access the {main_url}, HTTP {response.status_code}"
+                f"Failed to access the {main_url}, HTTP {response.status_code}",
+                url=main_url,
             )
 
         # Send post request to the API
         payload = {"login": email}
-        response = await client.post(
-            check_login_availability_url, headers=headers, json=payload
+        response = await impersonate_request_async(
+            check_login_availability_url,
+            method="POST",
+            headers=headers,
+            json=payload,
         )
+    except Exception as exc:
+        return Result.error(exc, url=main_url)
 
     if response.status_code != 200:
         return Result.error(
-            f"Failed to retrieve information from API, HTTP {response.status_code}"
+            f"Failed to retrieve information from API, HTTP {response.status_code}",
+            url=main_url,
         )
 
     try:
@@ -63,7 +70,8 @@ async def _check(email: str) -> Result:
         login_availability_type = data.get("LoginAvailabilityType")
     except (ValueError, AttributeError):
         return Result.error(
-            "Unexpected response structure, please report it via GitHub issues"
+            "Unexpected response structure, please report it via GitHub issues",
+            url=main_url,
         )
 
     match login_availability_type:
@@ -81,7 +89,8 @@ async def _check(email: str) -> Result:
             )
         case _:
             return Result.error(
-                "Unexpected response structure, please report it via GitHub issues"
+                "Unexpected response structure, please report it via GitHub issues",
+                url=main_url,
             )
 
 

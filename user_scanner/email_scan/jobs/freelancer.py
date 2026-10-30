@@ -1,5 +1,4 @@
-import httpx
-import json
+from user_scanner.core.impersonate import impersonate_request_async
 from user_scanner.core.result import Result
 
 
@@ -14,30 +13,32 @@ async def _check(email: str) -> Result:
     }
 
     headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
         'Accept': 'application/json, text/plain, */*',
         'Content-Type': 'application/json',
         'Origin': 'https://www.freelancer.com',
     }
 
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.post(url, content=json.dumps(payload), headers=headers)
+        response = await impersonate_request_async(
+            url,
+            method="POST",
+            json=payload,
+            headers=headers,
+        )
 
-            if response.status_code == 409 and "EMAIL_ALREADY_IN_USE" in response.text:
-                return Result.taken(url=show_url)
+        if response.status_code == 409 and "EMAIL_ALREADY_IN_USE" in response.text:
+            return Result.taken(url=show_url)
 
-            elif response.status_code == 200:
-                return Result.available(url=show_url)
+        elif response.status_code == 200:
+            return Result.available(url=show_url)
 
-            return Result.error(f"Unexpected status code {response.status_code} or rate limit")
+        return Result.error(
+            f"Unexpected status code {response.status_code} or rate limit",
+            url=show_url,
+        )
 
-    except httpx.ConnectTimeout:
-        return Result.error("Connection timed out! maybe region blocks")
-    except httpx.ReadTimeout:
-        return Result.error("Server took too long to respond (Read Timeout)")
     except Exception as e:
-        return Result.error(e)
+        return Result.error(e, url=show_url)
 
 
 async def validate_freelancer(email: str) -> Result:
