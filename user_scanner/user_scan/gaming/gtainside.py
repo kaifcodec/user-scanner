@@ -1,4 +1,6 @@
+import html
 import re
+import urllib.parse
 from urllib.parse import quote
 
 from user_scanner.core.orchestrator import generic_validate
@@ -39,7 +41,7 @@ def validate_gtainside(user: str) -> Result:
     def process(response):
         text = response.text
         title_match = _TITLE_RE.search(text)
-        title = title_match.group(1) if title_match else ""
+        title = html.unescape(title_match.group(1)).strip() if title_match else ""
 
         # Available state: the dedicated 404 page, identified by its own
         # title and error block — not just the bare status code.
@@ -84,7 +86,7 @@ def validate_gtainside(user: str) -> Result:
         avatar_match = _AVATAR_RE.search(text)
         media = {}
         if avatar_match:
-            media["avatar"] = "https://www.gtainside.com" + avatar_match.group(1)
+            media["avatar"] = urllib.parse.urljoin("https://www.gtainside.com", avatar_match.group(1))
 
         return Result.taken(extra=extra, media=media)
 

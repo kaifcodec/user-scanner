@@ -1,16 +1,12 @@
 import urllib.parse
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
+
 
 def validate_v2ex(user: str) -> Result:
     url = "https://www.v2ex.com/api/members/show.json"
     encoded_user = urllib.parse.quote(user)
     show_url = f"https://www.v2ex.com/u/{encoded_user}"
-
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "application/json",
-    }
     params = {"username": user}
 
     def process(response) -> Result:
@@ -21,7 +17,7 @@ def validate_v2ex(user: str) -> Result:
             try:
                 data = response.json()
                 if data.get("status") == "found" and data.get("username"):
-                    extra: dict[str, str] = {}
+                    extra: dict[str, str | int] = {}
                     media: dict[str, str] = {}
 
                     if data.get("id") is not None:
@@ -38,8 +34,16 @@ def validate_v2ex(user: str) -> Result:
                         extra["github"] = str(data["github"])
                     if data.get("twitter"):
                         extra["twitter"] = str(data["twitter"])
+                    if data.get("psn"):
+                        extra["psn"] = str(data["psn"])
+                    if data.get("btc"):
+                        extra["btc"] = str(data["btc"])
                     if data.get("created"):
                         extra["joined"] = str(data["created"])
+                    if data.get("last_modified"):
+                        extra["last_modified"] = str(data["last_modified"])
+                    if data.get("pro") is not None:
+                        extra["pro"] = "Yes" if data.get("pro") else "No"
 
                     avatar = (
                         data.get("avatar_xxxlarge")
@@ -60,4 +64,4 @@ def validate_v2ex(user: str) -> Result:
 
         return Result.error(f"Unexpected status code: {response.status_code}")
 
-    return generic_validate(url, process, headers=headers, show_url=show_url, params=params, follow_redirects=True)
+    return impersonate_validate(url, process, show_url=show_url, params=params, impersonate="chrome")

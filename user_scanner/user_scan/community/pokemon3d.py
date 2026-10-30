@@ -22,6 +22,9 @@ def validate_pokemon3d(user: str) -> Result:
     }
 
     def process(response) -> Result:
+        if response.status_code != 200:
+            return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
+
         try:
             data = response.json()
             users = data.get("query", {}).get("users", [])

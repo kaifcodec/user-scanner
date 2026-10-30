@@ -18,7 +18,7 @@ def validate_bentbox(user):
         if person:
             return Result.taken(extra=_extra(person, html), media=_media(html), url=show_url)
 
-        if "User not found" in html:
+        if "Creator not found" in html or "User not found" in html:
             return Result.available(url=show_url)
 
         # Reserved routes (/login, /explore) and whitespace normalisation both

@@ -1,28 +1,44 @@
 from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import Result, make_request
 
-def validate_coderwall(user):
-    url = f"https://coderwall.com/{user}.json"
-    show_url = f"https://coderwall.com/{user}"
+
+def validate_coderwall(user: str) -> Result:
+    url = f"https://www.coderwall.com/{user}.json"
+    show_url = f"https://www.coderwall.com/{user}"
     headers = {"User-Agent": get_random_user_agent(), "Accept": "application/json"}
 
     try:
-        response = make_request(url, headers=headers)
+        response = make_request(url, headers=headers, follow_redirects=True)
         if response.status_code == 200:
             data = response.json()
             if data and "username" in data:
                 extra = {}
                 media = {}
-                if data.get("id"): extra["id"] = data.get("id")
-                if data.get("name"): extra["name"] = data.get("name")
-                if data.get("location"): extra["location"] = data.get("location")
-                if data.get("karma") is not None: extra["karma"] = data.get("karma")
-                if data.get("company"): extra["company"] = data.get("company")
-                if data.get("about"): extra["about"] = data.get("about").strip()
-                if data.get("thumbnail"): media["avatar"] = data.get("thumbnail")
+                if data.get("id"):
+                    extra["id"] = data.get("id")
+                if data.get("name"):
+                    extra["name"] = data.get("name")
+                if data.get("location"):
+                    extra["location"] = data.get("location")
+                if data.get("karma") is not None:
+                    extra["karma"] = data.get("karma")
+                if data.get("company"):
+                    extra["company"] = data.get("company")
+                if data.get("title"):
+                    extra["title"] = data.get("title")
+                if data.get("about"):
+                    extra["about"] = data.get("about").strip()
+                if data.get("endorsements") is not None:
+                    extra["endorsements"] = data.get("endorsements")
+                if data.get("badges"):
+                    extra["badges_count"] = len(data.get("badges", []))
+                if data.get("specialities"):
+                    extra["specialities"] = ", ".join(data.get("specialities"))
+                if data.get("thumbnail"):
+                    media["avatar"] = data.get("thumbnail")
 
                 accounts = data.get("accounts", {})
-                if accounts:
+                if accounts and isinstance(accounts, dict):
                     for platform, handle in accounts.items():
                         if handle:
                             extra[f"{platform}_handle"] = handle

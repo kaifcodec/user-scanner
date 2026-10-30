@@ -38,12 +38,12 @@ def validate_ravelry(user: str) -> Result:
 
     if (
         response.status_code == 200
-        and "Your password is incorrect\n</div>" in response.text
+        and "Your password is incorrect" in response.text
     ):
         return Result.taken(url=show_url)
     if (
-        response.status_code == 404
-        and "</strong> isn't a Ravelry user." in response.text
+        (response.status_code in (200, 404))
+        and ("Your username is incorrect" in response.text or "isn't a Ravelry user" in response.text)
     ):
         return Result.available(url=show_url)
     return Result.error(
