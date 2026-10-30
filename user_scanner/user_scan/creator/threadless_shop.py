@@ -1,7 +1,7 @@
 import html
 import re
 
-import curl_cffi.requests
+from curl_cffi.requests import Session
 from curl_cffi.requests.exceptions import RequestException
 
 from user_scanner.core.impersonate import impersonate_request
@@ -21,7 +21,7 @@ def validate_threadless_shop(user: str) -> Result:
         )
 
     try:
-        session = curl_cffi.requests.Session(impersonate="chrome120")
+        session: Session = Session(impersonate="chrome120")
         page = session.get(SIGNUP_URL, allow_redirects=True, timeout=10)
         token = CSRF_RE.search(page.text)
         if page.status_code != 200 or not token:

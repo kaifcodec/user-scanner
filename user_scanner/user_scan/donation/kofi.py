@@ -14,7 +14,7 @@ def validate_kofi(user: str) -> Result:
     if "." in user:
         return Result.available("Username cannot contain periods", url=url)
 
-    def process(response):
+    def process(response) -> Result:
         if response.status_code == 404:
             return Result.available(url=url)
 
