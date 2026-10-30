@@ -1,65 +1,71 @@
-import re
 import urllib.parse
+
 from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import Result, generic_validate
 
+
 def validate_git_donutteam_com(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
-    url = f"https://git.donutteam.com/{encoded_user}"
+    url = f"https://git.donutteam.com/api/v1/users/{encoded_user}"
     show_url = f"https://git.donutteam.com/{encoded_user}"
-
     headers = {
         "User-Agent": get_random_user_agent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept": "application/json",
     }
 
     def process(response) -> Result:
         if response.status_code == 404:
-            return Result.available(url=show_url)
+            try:
+                data = response.json()
+                msg = str(data.get("message", "")).lower()
+                if "does not exist" in msg or "not found" in msg:
+                    return Result.available(url=show_url)
+            except Exception:
+                pass
+            return Result.error("Gitea 404 response missing expected error payload")
 
         if response.status_code == 200:
-            text = response.text
-            user_lower = user.lower()
-            text_lower = text.lower()
+            try:
+                data = response.json()
+                if data.get("login") and data.get("login").lower() == user.lower():
+                    extra: dict[str, str] = {}
+                    media: dict[str, str] = {}
 
-            # Check for soft 404 or not-found text
-            not_found_markers = [
-                "user not found",
-                "member not found",
-                "profile does not exist",
-                "user does not exist",
-                "page not found",
-                "no user found",
-                "could not be found",
-            ]
-            if any(marker in text_lower for marker in not_found_markers):
-                return Result.available(url=show_url)
+                    if data.get("id") is not None:
+                        extra["id"] = str(data["id"])
+                    if data.get("full_name"):
+                        extra["full_name"] = str(data["full_name"])
+                        extra["title"] = str(data["full_name"])
+                    if data.get("email") and not data.get("email").endswith("@noreply.localhost"):
+                        extra["email"] = str(data["email"])
+                    if data.get("website"):
+                        extra["website"] = str(data["website"])
+                    if data.get("location"):
+                        extra["location"] = str(data["location"])
+                    if data.get("description"):
+                        extra["bio"] = str(data["description"])
+                    if data.get("created"):
+                        extra["joined"] = str(data["created"])
+                    if data.get("followers_count") is not None:
+                        extra["followers"] = str(data["followers_count"])
+                    if data.get("following_count") is not None:
+                        extra["following"] = str(data["following_count"])
+                    if data.get("starred_repos_count") is not None:
+                        extra["starred_repos"] = str(data["starred_repos_count"])
+                    if data.get("avatar_url"):
+                        media["avatar"] = str(data["avatar_url"])
 
-            # Strict verification of user presence in 200 response
-            if user_lower in text_lower:
-                extra: dict[str, str] = {}
-                media: dict[str, str] = {}
-
-                # Extract title or heading if present
-                title_match = re.search(r"<title>(.*?)</title>", text, re.IGNORECASE | re.DOTALL)
-                if title_match:
-                    title_clean = title_match.group(1).strip()
-                    if title_clean and len(title_clean) < 120:
-                        extra["title"] = title_clean
-
-                # Extract avatar img if present
-                avatar_match = re.search(
-                    r'<img[^>]+src=["\'](https?://[^"\']*(?:avatar|profile|user)[^"\']*)["\']',
-                    text,
-                    re.IGNORECASE,
-                )
-                if avatar_match:
-                    media["avatar"] = avatar_match.group(1)
-
-                return Result.taken(url=show_url, extra=extra, media=media)
-
-            return Result.error("Profile page returned 200 but target username was not found")
+                    return Result.taken(url=show_url, extra=extra, media=media)
+            except Exception:
+                pass
+            return Result.error("Gitea 200 response missing valid user payload")
 
         return Result.error(f"Unexpected status code: {response.status_code}")
 
-    return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
+    return generic_validate(
+        url,
+        process,
+        headers=headers,
+        show_url=show_url,
+        follow_redirects=True,
+    )
