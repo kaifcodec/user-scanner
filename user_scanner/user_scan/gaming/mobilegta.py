@@ -1,5 +1,5 @@
 import re
-from urllib.parse import quote
+from urllib.parse import quote, urljoin
 
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
@@ -111,17 +111,7 @@ def validate_mobilegta(user: str) -> Result:
         # Accounts without an uploaded picture get the shared no_avatar.jpg.
         if avatar_match and not avatar_match.group(1).endswith("no_avatar.jpg"):
             avatar_src = avatar_match.group(1)
-            if avatar_src.startswith("http"):
-                media["avatar"] = avatar_src
-            else:
-                base = (
-                    "https://www.gtainside.com"
-                    if "gtainside.com" in str(response.url)
-                    else "https://www.mobilegta.net"
-                )
-                media["avatar"] = base + (
-                    avatar_src if avatar_src.startswith("/") else f"/{avatar_src}"
-                )
+            media["avatar"] = urljoin(str(response.url), avatar_src)
 
         return Result.taken(extra=extra, media=media)
 
