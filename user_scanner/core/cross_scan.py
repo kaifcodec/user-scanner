@@ -15,6 +15,7 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from colorama import Fore, Style
 
+from user_scanner.core import limits
 from user_scanner.core.confidence import (
     ORDER,
     Confidence,
@@ -79,6 +80,20 @@ class CrossScanConfig:
     depth: int = DEFAULT_DEPTH
 
 
+def _validator_count(
+    modules: Optional[List[ModuleType]], *, is_email: bool, no_nsfw: bool
+) -> int:
+    """How many validators a sweep of ``modules`` starts.
+
+    ``None`` means every module of that scan type, which is what a full
+    sweep runs. The count is what the fan-out budget charges before the
+    sweep starts, so a sweep that cannot fit is not started.
+    """
+    if modules is not None:
+        return len(modules)
+    return sum(len(load_modules(path)) for path in load_categories(is_email, no_nsfw).values())
+
+
 def run_cross_scan(
     results: List[Result], configs: ScanConfig, cross_configs: CrossScanConfig
 ) -> List[Result]:
@@ -89,6 +104,8 @@ def run_cross_scan(
     reached. Returns every round's results; the caller owns merging them into
     its own list for export.
     """
+    depth = limits.check_cross_depth(cross_configs.depth)
+    budget = limits.check_cross_sweep(cross_configs.sweep)
     print(f"\n{Fore.MAGENTA}== CROSS-SCAN =={Style.RESET_ALL}")
 
     scope = _scope(cross_configs, configs)
@@ -102,8 +119,23 @@ def run_cross_scan(
         )
         return []
 
-    depth = max(1, cross_configs.depth)
-    budget = max(0, cross_configs.sweep)
+    calls_left = limits.MAX_CROSS_CALLS
+    announced_budget = False
+
+    def charge(cost: int) -> bool:
+        nonlocal calls_left, announced_budget
+        if cost > calls_left:
+            if not announced_budget:
+                print(
+                    f"{Fore.YELLOW}[!] Cross-scan stopped: the fan-out budget of "
+                    f"{limits.MAX_CROSS_CALLS} validator calls is exhausted."
+                    f"{Style.RESET_ALL}"
+                )
+                announced_budget = True
+            return False
+        calls_left -= cost
+        return True
+
     all_pivots: List[Pivot] = []
     cross_results: List[Result] = []
     swept: Set[str] = _already_swept(results)
@@ -137,24 +169,28 @@ def run_cross_scan(
         for_usernames, for_emails = _split_budget(budget, sweepable, len(ranked))
         usernames = _sweep_targets(pivots, for_usernames)
         to_scan = _email_targets(ranked, for_emails, email_modules)
-        budget -= len(usernames) + len(to_scan)
-        swept.update(username.lower() for username in usernames)
-        scanned_emails.update(entry.email for entry in to_scan)
-        email_ratings.update({entry.email: entry.confidence for entry in to_scan})
 
         round_results: List[Result] = []
-        for username in usernames:
-            print(
-                f"\n{Fore.CYAN}[+] Sweeping every module for username: {username}{Style.RESET_ALL}"
-            )
-            swept_results = (
-                run_user_full(username, configs)
-                if scope is None
-                else run_user_module(scope, username, configs)
-            )
-            round_results.extend(_tag(swept_results, all_pivots, username))
+        if usernames:
+            user_cost = _validator_count(scope, is_email=False, no_nsfw=configs.no_nsfw)
+            for username in usernames:
+                if not charge(user_cost):
+                    break
+                budget -= 1
+                swept.add(username.lower())
+                print(
+                    f"\n{Fore.CYAN}[+] Sweeping every module for username: {username}{Style.RESET_ALL}"
+                )
+                swept_results = (
+                    run_user_full(username, configs)
+                    if scope is None
+                    else run_user_module(scope, username, configs)
+                )
+                round_results.extend(_tag(swept_results, all_pivots, username))
 
         for username, modules in _named_targets(pivots, swept, checked, configs, scope).items():
+            if not charge(len(modules)):
+                break
             print(
                 f"\n{Fore.CYAN}[+] Checking {username} on its {len(modules)} linked "
                 f"site(s){Style.RESET_ALL}"
@@ -163,14 +199,21 @@ def run_cross_scan(
                 _tag(run_user_module(modules, username, configs), all_pivots, username)
             )
 
-        for entry in to_scan:
-            print(f"\n{Fore.CYAN}[+] Scanning email: {entry.email}{Style.RESET_ALL}")
-            email_results = (
-                run_email_full_batch(entry.email, configs)
-                if email_modules is None
-                else run_email_module_batch(email_modules, entry.email, configs)
-            )
-            round_results.extend(_tag_emails(email_results, entry))
+        if to_scan:
+            email_cost = _validator_count(email_modules, is_email=True, no_nsfw=configs.no_nsfw)
+            for entry in to_scan:
+                if not charge(email_cost):
+                    break
+                budget -= 1
+                scanned_emails.add(entry.email)
+                email_ratings[entry.email] = entry.confidence
+                print(f"\n{Fore.CYAN}[+] Scanning email: {entry.email}{Style.RESET_ALL}")
+                email_results = (
+                    run_email_full_batch(entry.email, configs)
+                    if email_modules is None
+                    else run_email_module_batch(email_modules, entry.email, configs)
+                )
+                round_results.extend(_tag_emails(email_results, entry))
 
         checked.update((p.site, p.username.lower()) for p in pivots if p.site)
         cross_results.extend(round_results)

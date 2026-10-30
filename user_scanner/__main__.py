@@ -244,7 +244,8 @@ def main():
         type=_arg_type(limits.check_cross_depth),
         default=DEFAULT_DEPTH,
         help="Rounds of link-following. Each round pivots off the accounts the previous "
-        f"one found, reaching handles only a chain of links names (default: {DEFAULT_DEPTH})",
+        f"one found, reaching handles only a chain of links names (default: {DEFAULT_DEPTH}, "
+        f"maximum: {limits.MAX_CROSS_DEPTH})",
     )
 
     parser.add_argument(
@@ -255,7 +256,7 @@ def main():
         help="Targets — usernames and addresses together — a cross-scan sweeps against "
         "every module of their kind, across all rounds. 0 disables sweeping, leaving only "
         "the sites a pivot named — fewer accounts, but no handle collisions "
-        f"(default: {DEFAULT_SWEEP})",
+        f"(default: {DEFAULT_SWEEP}, maximum: {limits.MAX_CROSS_SWEEP})",
     )
 
     parser.add_argument("-U", "--update", action="store_true", help="Update the tool")

@@ -1,6 +1,8 @@
 import mcp.types as types
 from typing import Any
 
+from user_scanner.core import limits
+
 
 def get_tool_list() -> list[types.Tool]:
     """Provide the list of tools available from this server."""
@@ -38,17 +40,20 @@ def get_tool_list() -> list[types.Tool]:
         "cross_depth": {
             "type": "integer",
             "minimum": 1,
+            "maximum": limits.MAX_CROSS_DEPTH,
             "description": (
                 "How deep the recursive link-following should go. Default: 1. "
-                "Increase for deeper but slower investigations."
+                f"Maximum: {limits.MAX_CROSS_DEPTH}."
             ),
         },
         "cross_sweep": {
             "type": "integer",
             "minimum": 0,
+            "maximum": limits.MAX_CROSS_SWEEP,
             "description": (
                 "How many targets the cross-scan should automatically sweep "
-                "against all modules. Default: 3. Set to 0 to only scan sites "
+                "against all modules. Default: 3. "
+                f"Maximum: {limits.MAX_CROSS_SWEEP}. Set to 0 to only scan sites "
                 "explicitly named in pivots (prevents handle collisions)."
             ),
         },
