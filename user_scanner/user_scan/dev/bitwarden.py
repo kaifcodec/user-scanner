@@ -1,6 +1,9 @@
 import urllib.parse
+
 from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.orchestrator import Result
+
 
 def validate_bitwarden(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
@@ -53,7 +56,9 @@ def validate_bitwarden(user: str) -> Result:
                     avatar_template = user_obj.get("avatar_template")
                     if avatar_template:
                         avatar_url = avatar_template.replace("{size}", "240")
-                        if avatar_url.startswith("/"):
+                        if avatar_url.startswith("//"):
+                            avatar_url = f"https:{avatar_url}"
+                        elif avatar_url.startswith("/"):
                             avatar_url = f"https://community.bitwarden.com{avatar_url}"
                         media["avatar"] = avatar_url
 
@@ -64,4 +69,11 @@ def validate_bitwarden(user: str) -> Result:
 
         return Result.error(f"Unexpected status code: {response.status_code}")
 
-    return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
+    return impersonate_validate(
+        url,
+        process,
+        headers=headers,
+        show_url=show_url,
+        impersonate="chrome",
+        allow_redirects=True,
+    )
