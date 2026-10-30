@@ -1,6 +1,8 @@
 import urllib.parse
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
+
 
 def validate_msp360(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
@@ -8,7 +10,6 @@ def validate_msp360(user: str) -> Result:
     show_url = f"https://forum.msp360.com/u/{encoded_user}"
 
     headers = {
-        "User-Agent": get_random_user_agent(),
         "Accept": "application/json",
     }
 
@@ -64,4 +65,5 @@ def validate_msp360(user: str) -> Result:
 
         return Result.error(f"Unexpected status code: {response.status_code}")
 
-    return generic_validate(url, process, headers=headers, show_url=show_url, follow_redirects=True)
+    return impersonate_validate(url, process, headers=headers, show_url=show_url, allow_redirects=True)
+

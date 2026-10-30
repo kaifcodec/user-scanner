@@ -2,7 +2,7 @@ import html
 import re
 from urllib.parse import quote
 
-from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
 
 NOT_FOUND = "The page you were looking for doesn't exist (404)"
@@ -53,7 +53,7 @@ def validate_kickstarter(user: str) -> Result:
             media={"avatar": _meta(document, "og:image")},
         )
 
-    return generic_validate(url, process, show_url=profile_url, follow_redirects=True)
+    return impersonate_validate(url, process, show_url=profile_url, allow_redirects=True)
 
 
 def _meta(document: str, name: str) -> str:

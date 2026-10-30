@@ -3,7 +3,7 @@ import json
 import re
 from urllib.parse import quote, urlsplit
 
-from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
 
 _LD_JSON = re.compile(
@@ -39,7 +39,7 @@ def validate_directme(user: str) -> Result:
         }
         return Result.taken(extra=extra, media={"avatar": _meta(document, "og:image")})
 
-    return generic_validate(url, process, show_url=url, follow_redirects=True)
+    return impersonate_validate(url, process, show_url=url, allow_redirects=True)
 
 
 def _is_profile(document: str, user: str) -> bool:

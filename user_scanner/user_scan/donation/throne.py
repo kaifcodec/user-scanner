@@ -46,7 +46,11 @@ def validate_throne(user: str) -> Result:
                 return Result.available()
 
         fallback = page_props.get("fallback") or {}
-        profile = fallback.get(f"$sub$public/useCreatorByUsername/{user}", {})
+        profile = (
+            fallback.get(f"public/useCreatorByUsername/{user}")
+            or fallback.get(f"$sub$public/useCreatorByUsername/{user}")
+            or {}
+        )
         if profile.get("username") != user:
             return Result.error("Profile markers did not match the requested username")
 

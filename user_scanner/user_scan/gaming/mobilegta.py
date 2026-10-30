@@ -4,15 +4,18 @@ from urllib.parse import quote
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
-_NAME_RE = re.compile(r'<h1 class="userpage_user">([^<]+)</h1>')
-_AVATAR_RE = re.compile(r'userpage_avatar"[^>]*><img src="([^"]+)"')
-_RELEASED_RE = re.compile(r"Released:\s*(\d+)\s*mods")
-_TOTAL_DOWNLOADS_RE = re.compile(r"Total:</strong>\s*([\d.,]+)\s*downloads")
+_TITLE_RE = re.compile(r"<title>([^<]*)</title>")
+_NAME_RE = re.compile(r'(?:<h1 class="userpage_user">|<h2 class="marginbottom5">)([^<]+)</h[12]>')
+_AVATAR_RE = re.compile(
+    r'(?:userpage_avatar"[^>]*><img\s+src="|src=")(/img/avatars/[^"]+)"'
+)
+_RELEASED_RE = re.compile(r"(?:Released:\s*|</i>\s*)([\d.,]+)\s*(?:mods|Mods)")
+_TOTAL_DOWNLOADS_RE = re.compile(r"(?:Total:</strong>\s*|</i>\s*)([\d.,]+)\s*[dD]ownloads")
 _VIEWS_RE = re.compile(r"<strong>Userpage:</strong><br>\s*(\d+)\s*Views")
-_LAST_ONLINE_RE = re.compile(r"<strong>Last online:</strong><br>\s*([^<]+)")
+_LAST_ONLINE_RE = re.compile(r"(?:<strong>Last online:</strong><br>|Last activity:\s*)<span[^>]*>([^<]+)")
 _RANK_POINTS_RE = re.compile(r"I have\s+(\d+)\s+<a href=\"/en/faq.php#9\">rank points</a>")
 _RANK_NAME_RE = re.compile(r"and I'm called:\s*<h2>\"?([^<\"]+)")
-_COUNTRY_RE = re.compile(r'Country:\s*<img src="/gfx/flags/[^"]+">\s*([^<]+)</span>')
+_COUNTRY_RE = re.compile(r'Country:\s*<img src="/gfx/flags/[^"]+"(?: alt="([^"]+)")?>\s*([^<]*)')
 _AGE_RE = re.compile(r"Age:\s*(\d+)")
 _CF_EMAIL_RE = re.compile(r'href="/cdn-cgi/l/email-protection#([a-f0-9]+)"')
 
@@ -49,22 +52,27 @@ def validate_mobilegta(user: str) -> Result:
     show_url = url
 
     def process(response):
+        text = response.text
+        title_match = _TITLE_RE.search(text)
+        title = title_match.group(1) if title_match else ""
+
+        # Available state: dedicated 404 page on GTAinside or embedded 404 block on MobileGTA
+        if (
+            (response.status_code == 404 and "404" in title)
+            or "<h1>404 Not Found</h1>" in text
+            or "Page not found" in title
+        ):
+            return Result.available(url=show_url)
+
         if response.status_code != 200:
             return Result.error(f"Unexpected response status: {response.status_code}")
-
-        text = response.text
-
-        # Available state: the embedded 404 page, identified by its own
-        # error block — it never contains userpage markup.
-        if "<h1>404 Not Found</h1>" in text:
-            return Result.available(url=show_url)
 
         # Taken state: the profile heading is unique to existing users.
         name_match = _NAME_RE.search(text)
         if not name_match:
-            return Result.error("Missing MobileGTA userpage markers")
+            return Result.error("Missing MobileGTA/GTAinside userpage markers")
 
-        extra = {"fullname": name_match.group(1).strip()}
+        extra: dict[str, object] = {"fullname": name_match.group(1).strip()}
 
         released_match = _RELEASED_RE.search(text)
         if released_match:
@@ -102,7 +110,18 @@ def validate_mobilegta(user: str) -> Result:
         media = {}
         # Accounts without an uploaded picture get the shared no_avatar.jpg.
         if avatar_match and not avatar_match.group(1).endswith("no_avatar.jpg"):
-            media["avatar"] = "https://www.mobilegta.net" + avatar_match.group(1)
+            avatar_src = avatar_match.group(1)
+            if avatar_src.startswith("http"):
+                media["avatar"] = avatar_src
+            else:
+                base = (
+                    "https://www.gtainside.com"
+                    if "gtainside.com" in str(response.url)
+                    else "https://www.mobilegta.net"
+                )
+                media["avatar"] = base + (
+                    avatar_src if avatar_src.startswith("/") else f"/{avatar_src}"
+                )
 
         return Result.taken(extra=extra, media=media)
 
