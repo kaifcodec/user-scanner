@@ -1,17 +1,13 @@
 import urllib.parse
 
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.orchestrator import Result
 
 
 def validate_captainshelleye(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
     url = "https://captainshelleye.miraheze.org/w/api.php"
     show_url = f"https://captainshelleye.miraheze.org/wiki/User:{encoded_user}"
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "application/json",
-    }
     params = {
         "action": "query",
         "format": "json",
@@ -52,11 +48,11 @@ def validate_captainshelleye(user: str) -> Result:
 
         return Result.error(f"Unexpected response status {response.status_code}")
 
-    return generic_validate(
+    return impersonate_validate(
         url,
         process,
-        headers=headers,
         params=params,
         show_url=show_url,
-        follow_redirects=True,
+        impersonate="chrome",
+        allow_redirects=True,
     )
