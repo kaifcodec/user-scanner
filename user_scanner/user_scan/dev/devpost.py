@@ -12,6 +12,10 @@ def validate_devpost(user: str) -> Result:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     }
 
+    # Devpost treats the dot and suffix as a format extension.
+    if "." in user:
+        return Result.error("Handles containing a period are not addressable", url=show_url)
+
     def process(response):
         response_text_lower = response.text.lower()
 

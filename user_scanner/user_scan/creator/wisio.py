@@ -9,6 +9,10 @@ API_URL = "https://be-lb-app.scaleabout.com/api/v1"
 def validate_wisio(user: str) -> Result:
     show_url = f"https://www.wisio.com/{user}"
 
+    # Wisio marks dotted names as disallowed, not as registered accounts.
+    if "." in user:
+        return Result.error("Handles containing a period are not addressable", url=show_url)
+
     def process_availability(response):
         available = response.text.strip()
         if response.status_code != 200 or available not in {"true", "false"}:

@@ -13,6 +13,10 @@ def validate_pbase(user: str) -> Result:
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     }
 
+    # PBase ignores the dot and suffix when resolving profile names.
+    if "." in user:
+        return Result.error("Handles containing a period are not addressable", url=show_url)
+
     def process(response) -> Result:
         status = response.status_code
         text = response.text

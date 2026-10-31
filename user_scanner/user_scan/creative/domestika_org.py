@@ -13,6 +13,10 @@ def validate_domestika_org(user: str) -> Result:
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     }
 
+    # Domestika redirects dotted handles to the profile before the dot.
+    if "." in user:
+        return Result.error("Handles containing a period are not addressable", url=show_url)
+
     def process(response) -> Result:
         status = response.status_code
 
