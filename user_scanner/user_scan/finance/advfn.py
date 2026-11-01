@@ -8,7 +8,7 @@ def validate_advfn(user):
     show_url = url
 
     def process(response):
-        if "Profile | ADVFN" in response.text:
+        if response.status_code == 200 and ('<img class="profile-pic"' in response.text or 'class="registration"' in response.text):
             extra = {}
             media = {}
             html = response.text
@@ -48,9 +48,9 @@ def validate_advfn(user):
 
             return Result.taken(extra=extra, media=media)
 
-        if "ADVFN ERROR - Page Not Found" in response.text:
+        if response.status_code == 404 or "Page Not Found" in response.text:
             return Result.available()
 
-        return Result.error("Unexpected response body, report it via GitHub issues.")
+        return Result.error(f"Unexpected response status: {response.status_code}")
 
     return impersonate_validate(url, process, show_url=show_url)
