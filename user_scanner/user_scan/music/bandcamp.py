@@ -6,7 +6,7 @@ def validate_bandcamp(user):
     show_url = f"https://bandcamp.com/{user}"
 
     def process(response):
-        if response.status_code == 200 and " collection | Bandcamp</title>" in response.text:
+        if response.status_code == 200 and "fan_data" in response.text:
             extra = {}
             media = {}
 
@@ -44,9 +44,9 @@ def validate_bandcamp(user):
                 pass
             return Result.taken(extra=extra, media=media)
 
-        if response.status_code == 404 or "<h2>Sorry, that something isn’t here.</h2>" in response.text:
+        if response.status_code == 404 or "not-found" in response.text:
             return Result.available()
 
-        return Result.error("Unexpected response body, report it via GitHub issues.")
+        return Result.error(f"Unexpected response status: {response.status_code}")
 
     return generic_validate(url, process, show_url=show_url)

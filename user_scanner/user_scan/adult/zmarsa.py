@@ -7,7 +7,7 @@ def validate_zmarsa(user):
     show_url = url
 
     def process(response):
-        if "Statystyki" in response.text:
+        if response.status_code == 200 and ("Użytkownik" in response.text or "Punkty:" in response.text):
             extra = {}
             media = {}
 
@@ -56,9 +56,9 @@ def validate_zmarsa(user):
 
             return Result.taken(extra=extra, media=media, url=show_url)
 
-        if "<title>Error 404 - zMarsa.com<" in response.text:
+        if response.status_code == 404 or "Error 404" in response.text:
             return Result.available(url=show_url)
 
-        return Result.error("Unexpected response body, report it via GitHub issues.", url=show_url)
+        return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
 
     return generic_validate(url, process, show_url=show_url)
