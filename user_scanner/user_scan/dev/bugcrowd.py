@@ -9,6 +9,10 @@ def validate_bugcrowd(user: str) -> Result:
     api_url = f"https://bugcrowd.com/profile-service/v1/profiles/{encoded}"
     show_url = f"https://bugcrowd.com/h/{encoded}"
 
+    # Bugcrowd resolves dotted handles to the account before the dot.
+    if "." in user:
+        return Result.error("Handles containing a period are not addressable", url=show_url)
+
     def process(response):
         data = response.json()
 
