@@ -6,15 +6,12 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Version-1.5.2.3-blueviolet?style=for-the-badge&logo=github" />
-  <img src="https://img.shields.io/badge/Tested%20on-Termux-black?style=for-the-badge&logo=termux" />
-  <img src="https://img.shields.io/badge/Tested%20on-Windows-cyan?style=for-the-badge&logo=Windows" />
-  <img src="https://img.shields.io/badge/Tested%20on-Linux-black?style=for-the-badge&logo=Linux" />
   <img src="https://img.shields.io/pepy/dt/user-scanner?style=for-the-badge" />
   <a href="https://discord.gg/tVNrKVXb49" target="_blank">
      <img src="https://img.shields.io/badge/Discord-Join%20Chat-7289da?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
   </a>
-  <a href="https://x.com/kaifcodec" target="_blank">
-     <img src="https://img.shields.io/badge/Follow-kaifcodec-000000?style=for-the-badge&logo=x&logoColor=white" alt="X Follow" />
+  <a href="https://user-scanner.app?utm_source=github&utm_medium=readme&utm_campaign=repo-badge" target="_blank">
+     <img src="https://img.shields.io/badge/Web%20App-user--scanner.app-000000?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Web App" />
   </a>
 </p>
 
