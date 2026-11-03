@@ -23,16 +23,13 @@ def validate_themeforest(user: str) -> Result:
         if _is_challenge(page):
             return Result.error("Blocked by a Cloudflare challenge")
 
-        if response.status_code == 404:
-            if _title(page) == "Page Not Found | ThemeForest":
-                return Result.available()
-            return Result.error("Unexpected 404 (not the not-found page)")
+        if response.status_code == 404 or "not found" in _title(page).lower():
+            return Result.available()
 
         if response.status_code != 200:
             return Result.error(f"Unexpected status: {response.status_code}")
 
-        # A live profile is titled "<handle>'s profile on ThemeForest" and
-        # canonicalises to the handle's own URL; both miss pages fall back to
+        # A live profile canonicalises to the handle's own URL; both miss pages fall back to
         # the generic site chrome.
         canonical = re.search(r'<link rel="canonical" href="[^"]*/user/([^"/]+)"', page)
         if not canonical or canonical.group(1).lower() != user.lower():

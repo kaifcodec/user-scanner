@@ -11,7 +11,7 @@ def validate_artbreeder(user: str) -> Result:
     url = f"https://www.artbreeder.com/{quote(user, safe='')}"
 
     def process(response) -> Result:
-        if response.status_code == 404 and 'error: {message:"User not found"}' in response.text:
+        if response.status_code == 404 or "User not found" in response.text:
             return Result.available()
         if response.status_code != 200:
             return Result.error(f"Unexpected response status: {response.status_code}")

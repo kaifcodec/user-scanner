@@ -43,7 +43,7 @@ def validate_librarything(user: str) -> Result:
         body = response.text
         if response.status_code != 200:
             return Result.error(f"Unexpected status: {response.status_code}")
-        if "Error: This user doesn't exist" in body:
+        if "<p>Error:" in body and "doesn't exist" in body:
             return Result.available()
 
         member = MEMBER_RE.search(body)
