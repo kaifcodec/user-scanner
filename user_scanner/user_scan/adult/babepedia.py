@@ -8,7 +8,7 @@ def validate_babepedia(user):
     show_url = url
 
     def process(response):
-        if response.status_code == 200 and "'s Profile</title>" in response.text:
+        if response.status_code == 200 and ("Account status:" in response.text or "Signed up on:" in response.text):
             extra = {}
 
             # Extract standard account info fields from the Profile Page table
@@ -39,9 +39,9 @@ def validate_babepedia(user):
 
             return Result.taken(extra=extra, url=show_url)
 
-        if "Profile not found" in response.text:
+        if response.status_code == 404 or "not found" in response.text.lower():
             return Result.available(url=show_url)
 
-        return Result.error("Unexpected response body, report it via GitHub issues", url=show_url)
+        return Result.error(f"Unexpected response status: {response.status_code}", url=show_url)
 
     return impersonate_validate(url, process, show_url=show_url)

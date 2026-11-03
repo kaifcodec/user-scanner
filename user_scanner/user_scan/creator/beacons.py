@@ -6,7 +6,6 @@ from user_scanner.core.impersonate import impersonate_validate
 from user_scanner.core.result import Result
 
 
-NOT_FOUND = "The page you are looking for does not seem to exist anymore."
 PROFILE_RE = re.compile(
     r'<script\b[^>]*\btype=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
     re.DOTALL | re.IGNORECASE,
@@ -45,7 +44,7 @@ def validate_beacons(user: str) -> Result:
                 media={"avatar": profile.get("image") or person.get("image")},
             )
 
-        if NOT_FOUND in response.text:
+        if response.status_code == 404 or "__next_error__" in response.text or "does not seem to exist" in response.text:
             return Result.available()
 
         return Result.error(f"Unexpected Beacons response: {response.status_code}")

@@ -29,10 +29,10 @@ def validate_tindie(user: str) -> Result:
             return Result.error(f"Unexpected check status: {response.status_code}")
 
         match response.json():
-            case {"valid": False, "errors": ["Username taken!"]}:
+            case {"valid": False}:
                 extra, media = _seller_profile(user)
                 return Result.taken(extra=extra, media=media)
-            case {"valid": True, "errors": [], "message": "Username available!"}:
+            case {"valid": True}:
                 return Result.available()
             case {"errors": [error, *_]}:
                 return Result.error(str(error))

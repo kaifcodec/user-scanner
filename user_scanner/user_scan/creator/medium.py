@@ -11,7 +11,7 @@ JSON_GUARD = "])}while(1);</x>"
 
 # The HTML profile answers unknown handles with 200 and renders its 404 view, so
 # the status code carries no verdict there — only these body markers do.
-NOT_FOUND_MARKERS = (">PAGE NOT FOUND<", "Out of nothing, something.")
+NOT_FOUND_MARKERS = (">PAGE NOT FOUND<", "PAGE NOT FOUND", "404 Not Found")
 
 AVATAR_CDN = "https://miro.medium.com/v2/resize:fit:2400/"
 
