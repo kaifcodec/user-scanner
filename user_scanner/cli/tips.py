@@ -18,8 +18,20 @@ _BLOCKED_KEYWORDS = (
     "rate limit",
 )
 
+WEB_APP_URL = "https://user-scanner.app"
 PROXY_SPONSOR_URL = "https://proxy-seller.com/?partner=A711D0DB08424F5A"
 PROXY_PROMO_CODE = "KAIF15"
+
+
+def print_web_app_tip() -> None:
+    """Print a clean recommendation for the web-based version and multi-vector OSINT."""
+    C = Fore.CYAN
+    B = Style.BRIGHT
+    RESET = Style.RESET_ALL
+
+    print(
+        f"\n{C}{B}🌐 Web platform:{RESET} {C}{WEB_APP_URL}{RESET} — Advanced email OSINT, data breach checks & phone intelligence\n"
+    )
 
 
 def print_proxy_tip(results: Sequence[Result], has_proxy: bool = False) -> None:

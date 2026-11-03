@@ -10,7 +10,7 @@ from itertools import islice
 from dataclasses import replace
 
 from user_scanner.cli.banner import print_banner
-from user_scanner.cli.tips import print_loud_skip_tip, print_proxy_tip
+from user_scanner.cli.tips import print_loud_skip_tip, print_proxy_tip, print_web_app_tip
 from user_scanner.core import formatter
 from user_scanner.core.cross_scan import (
     DEFAULT_DEPTH,
@@ -818,6 +818,7 @@ def main():
         print_loud_skip_tip(total_skipped)
 
     print_proxy_tip(results, has_proxy=bool(args.proxy_file))
+    print_web_app_tip()
 
 if __name__ == "__main__":
     main()
