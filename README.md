@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.5.2.4-blueviolet?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/badge/Version-1.5.2.5-blueviolet?style=for-the-badge&logo=github" />
   <img src="https://img.shields.io/pepy/dt/user-scanner?style=for-the-badge" />
   <a href="https://discord.gg/tVNrKVXb49" target="_blank">
      <img src="https://img.shields.io/badge/Discord-Join%20Chat-7289da?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
