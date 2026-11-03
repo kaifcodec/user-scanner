@@ -8,6 +8,7 @@ from user_scanner.core.result import Result
 from user_scanner.core.helpers import (
     ScanConfig,
     find_category,
+    get_scan_func,
     get_site_name,
     is_loud,
     load_categories,
@@ -49,7 +50,13 @@ async def check(module: ModuleType, target: str, configs: ScanConfig | None = No
     if _blocked(configs, site_label, category, is_email):
         return Result.skipped().update(**meta)
 
+    # The CLI resolves any validate_* function (helpers.get_scan_func); a
+    # module whose validator cannot match its file stem (digit-leading names
+    # like cups7/validate_7cups, or legacy names like besoccer/validate_okcats)
+    # must behave the same in library mode instead of erroring out.
     func = getattr(module, func_name, None)
+    if func is None:
+        func = get_scan_func(module)
     if not func:
         return Result.error(f"Function {func_name} not found").update(**meta)
 
@@ -105,4 +112,3 @@ async def check_all(
         results.extend(sublist)
 
     return results
-
