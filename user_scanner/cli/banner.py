@@ -16,8 +16,12 @@ BANNER_ASCII = fr"""{C_CYAN}      _   _ ___  ___ _ __      ___  ___ __ _ _ __  _
 {Style.RESET_ALL}""".strip()
 
 
+WEB_APP_URL = "https://user-scanner.app"
+
+
 def print_banner():
     print(BANNER_ASCII)
+    print(f"      {C_CYAN}🌐 Web App:{Style.RESET_ALL} {WEB_APP_URL}\n")
 
 
 if __name__ == "__main__":
