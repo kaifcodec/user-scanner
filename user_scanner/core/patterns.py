@@ -98,7 +98,12 @@ def _parse_lenset(lexer: Lexer) -> Set[int]:
                 lexer.next()
                 rhs = lexer.parse_number()
 
-                if lhs is not None and rhs is not None:
+                # "{2-}" consumed the dash but has no end: erroring matches
+                # "{-2}", while skipping silently expands to zero permutations
+                # and the scan runs on no targets without a word.
+                if rhs is None:
+                    raise ValueError('Missing range end after "-" in lenset')
+                if lhs is not None:
                     for i in range(lhs, rhs + 1):
                         lenset.add(i)
             elif lhs is not None:
