@@ -48,6 +48,13 @@ def medium_stub():
     return module
 
 
+@pytest.fixture
+def cups7_stub():
+    module = ModuleType("cups7")
+    module.__file__ = "/some/path/user_scan/social/cups7.py"
+    return module
+
+
 # check
 @pytest.mark.anyio
 async def test_async_module_func(monkeypatch, github_stub):
@@ -385,3 +392,40 @@ async def test_adult_module_is_skipped_when_no_nsfw_is_set():
 
     assert result == Status.SKIPPED
     module.validate_redtube.assert_not_awaited()
+
+
+# check — validator resolution fallback
+# A module whose validator cannot match its file stem (digit-leading names
+# such as cups7/validate_7cups, legacy names such as besoccer/validate_okcats)
+# resolves through the CLI in helpers.get_scan_func; library mode must too.
+@pytest.mark.anyio
+async def test_non_stem_validator_name_resolves(cups7_stub):
+    def validate_7cups(target):
+        return Result.taken(reason=f"checked {target}")
+
+    cups7_stub.validate_7cups = validate_7cups
+
+    result = await engine.check(cups7_stub, "alice")
+
+    assert result.status == Status.TAKEN
+    assert result.username == "alice"
+
+
+@pytest.mark.anyio
+async def test_non_stem_async_validator_resolves(cups7_stub):
+    async def validate_7cups(target):
+        return Result.available()
+
+    cups7_stub.validate_7cups = validate_7cups
+
+    result = await engine.check(cups7_stub, "alice")
+
+    assert result.status == Status.AVAILABLE
+
+
+@pytest.mark.anyio
+async def test_module_without_any_validator_still_errors(cups7_stub):
+    result = await engine.check(cups7_stub, "alice")
+
+    assert result.status == Status.ERROR
+    assert "not found" in result.get_reason()
