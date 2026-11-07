@@ -186,6 +186,13 @@ def test_error_unclosed_brace():
         list(expand_patterns("test[a]{1-3"))
 
 
+def test_error_open_range_missing_end():
+    """"{2-}" consumes the dash and finds no end: same error class as "{-2}",
+    not a silent expansion to zero permutations."""
+    with pytest.raises(ValueError, match="range end"):
+        list(expand_patterns("test[a-c]{2-}"))
+
+
 def test_error_lone_open_bracket():
     with pytest.raises(ValueError):
         list(expand_patterns("["))
