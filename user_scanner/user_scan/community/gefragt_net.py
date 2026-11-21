@@ -1,7 +1,9 @@
+import html
 import re
 import urllib.parse
 from user_scanner.core.helpers import get_random_user_agent
 from user_scanner.core.orchestrator import Result, generic_validate
+
 
 def validate_gefragt_net(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
@@ -19,46 +21,41 @@ def validate_gefragt_net(user: str) -> Result:
 
         if response.status_code == 200:
             text = response.text
-            user_lower = user.lower()
-            text_lower = text.lower()
 
-            # Check for soft 404 or not-found text
-            not_found_markers = [
-                "user not found",
-                "member not found",
-                "profile does not exist",
-                "user does not exist",
-                "page not found",
-                "no user found",
-                "could not be found",
-            ]
-            if any(marker in text_lower for marker in not_found_markers):
-                return Result.available(url=show_url)
+            # Question2Answer profile activity heading or username element confirms profile existence
+            act_match = re.search(r'<span id="activity">\s*Aktivit[äa]t von (.*?)\s*</span>', text, re.IGNORECASE)
+            has_activity_form = "qa-part-form-activity" in text
+            has_user_banner = "qa-upb-avatar" in text or "qa-upb-username" in text
 
-            # Strict verification of user presence in 200 response
-            if user_lower in text_lower:
+            if act_match or (has_activity_form and has_user_banner):
                 extra: dict[str, str] = {}
                 media: dict[str, str] = {}
 
-                # Extract title or heading if present
-                title_match = re.search(r"<title>(.*?)</title>", text, re.IGNORECASE | re.DOTALL)
-                if title_match:
-                    title_clean = title_match.group(1).strip()
-                    if title_clean and len(title_clean) < 120:
-                        extra["title"] = title_clean
+                username_match = re.search(r'<h3 class="qa-upb-username"[^>]*>(.*?)</h3>', text)
+                if username_match:
+                    display_name = username_match.group(1).strip()
+                    if display_name and display_name.lower() != user.lower():
+                        extra["display_name"] = display_name
 
-                # Extract avatar img if present
-                avatar_match = re.search(
-                    r'<img[^>]+src=["\'](https?://[^"\']*(?:avatar|profile|user)[^"\']*)["\']',
-                    text,
-                    re.IGNORECASE,
-                )
+                points_match = re.search(r'<span class="qa-uf-user-points">([^<]+)</span>', text)
+                if points_match:
+                    extra["points"] = points_match.group(1).strip()
+
+                rank_match = re.search(r'<span class="qa-uf-user-rank">([^<]+)</span>', text)
+                if rank_match:
+                    extra["rank"] = rank_match.group(1).strip()
+
+                # Avatar image
+                avatar_match = re.search(r'<img[^>]+class="[^"]*qa-lazy-img[^"]*"[^>]+data-src="([^"]+)"', text)
                 if avatar_match:
-                    media["avatar"] = avatar_match.group(1)
+                    avatar_src = html.unescape(avatar_match.group(1))
+                    if avatar_src.startswith("../"):
+                        avatar_src = f"https://gefragt.net/{avatar_src[3:]}"
+                    media["avatar"] = avatar_src
 
                 return Result.taken(url=show_url, extra=extra, media=media)
 
-            return Result.error("Profile page returned 200 but target username was not found")
+            return Result.available(url=show_url)
 
         return Result.error(f"Unexpected status code: {response.status_code}")
 

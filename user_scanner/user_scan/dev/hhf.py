@@ -1,19 +1,18 @@
 import urllib.parse
 
-from user_scanner.core.helpers import get_random_user_agent
-from user_scanner.core.orchestrator import Result, generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.result import Result
 
 
 def validate_hhf(user: str) -> Result:
     encoded_user = urllib.parse.quote(user)
     url = f"https://forum.hhf.technology/u/{encoded_user}.json"
     show_url = f"https://forum.hhf.technology/u/{encoded_user}"
-    headers = {
-        "User-Agent": get_random_user_agent(),
-        "Accept": "application/json",
-    }
 
     def process(response) -> Result:
+        if response.headers.get("x-honeypot") or "_hp" in response.text:
+            return Result.error("Honeypot canary response received", url=show_url)
+
         if response.status_code == 404:
             try:
                 data = response.json()
@@ -23,13 +22,16 @@ def validate_hhf(user: str) -> Result:
                     return Result.available(url=show_url)
             except Exception:
                 pass
-            return Result.error("Discourse 404 response missing expected error payload")
+            return Result.error("Discourse 404 response missing expected error payload", url=show_url)
 
         if response.status_code == 200:
             try:
                 data = response.json()
                 user_obj = data.get("user")
                 if user_obj and isinstance(user_obj, dict) and user_obj.get("username"):
+                    if str(user_obj.get("username")).casefold() != user.casefold():
+                        return Result.available(url=show_url)
+
                     extra: dict[str, str] = {}
                     media: dict[str, str] = {}
 
@@ -60,14 +62,8 @@ def validate_hhf(user: str) -> Result:
                     return Result.taken(url=show_url, extra=extra, media=media)
             except Exception:
                 pass
-            return Result.error("Discourse 200 response missing valid user payload")
+            return Result.error("Discourse 200 response missing valid user payload", url=show_url)
 
-        return Result.error(f"Unexpected status code: {response.status_code}")
+        return Result.error(f"Unexpected status code: {response.status_code}", url=show_url)
 
-    return generic_validate(
-        url,
-        process,
-        headers=headers,
-        show_url=show_url,
-        follow_redirects=True,
-    )
+    return impersonate_validate(url, process, show_url=show_url)
