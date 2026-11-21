@@ -3,9 +3,14 @@ from user_scanner.core.result import Result
 
 
 def validate_tindie(user: str) -> Result:
+    if len(user) > 15:
+        return Result.error("Username must be at most 15 characters")
+
     signup_url = "https://www.tindie.com/accounts/signup/"
 
     def process(landing):
+        if landing.status_code == 429:
+            return Result.error("Rate limited; try again later")
         if landing.status_code != 200:
             return Result.error(f"Unexpected signup status: {landing.status_code}")
 
@@ -23,13 +28,18 @@ def validate_tindie(user: str) -> Result:
             },
         )
 
-        if response.status_code == 429:
+        if response.status_code == 429 or "Too many requests" in response.text:
             return Result.error("Rate limited; try again later")
         if response.status_code != 200:
             return Result.error(f"Unexpected check status: {response.status_code}")
 
-        match response.json():
-            case {"valid": False}:
+        try:
+            data = response.json()
+        except Exception:
+            return Result.error(f"Unexpected check response: {response.text[:100]}")
+
+        match data:
+            case {"valid": False, "errors": ["Username taken!"]}:
                 extra, media = _seller_profile(user)
                 return Result.taken(extra=extra, media=media)
             case {"valid": True}:
