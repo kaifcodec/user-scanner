@@ -1,4 +1,3 @@
-import html
 import json
 import re
 from urllib.parse import quote, unquote, urlsplit
@@ -6,16 +5,6 @@ from urllib.parse import quote, unquote, urlsplit
 from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
-_REGISTRATION_URL = "https://leanpub.com/authors/create/book"
-# Leanpub's default publisher; this decodes to gid://leanpub/Org::Publisher/1.
-_PUBLISHER_ID = "Z2lkOi8vbGVhbnB1Yi9Pcmc6OlB1Ymxpc2hlci8x"
-_ENGLISH_ID = "Z2lkOi8vbGVhbnB1Yi9TaGFyZWQ6Okxhbmd1YWdlLzEyNA"
-_PASSWORD_ERROR = (
-    "Password must be at least 8 characters long, be no longer than 140 "
-    "characters, contain at least one letter, and contain at least one "
-    "non-letter character."
-)
-_USERNAME_TAKEN = "Username has already been taken"
 _PROFILE = re.compile(
     r'<script\b[^>]*\btype=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
     re.IGNORECASE | re.DOTALL,
@@ -25,53 +14,20 @@ _PROFILE = re.compile(
 def validate_leanpub(user: str) -> Result:
     profile_url = f"https://leanpub.com/u/{quote(user, safe='')}"
 
-    def process(response):
-        if response.status_code != 200 or _PASSWORD_ERROR not in response.text:
-            return Result.error(
-                f"Unexpected Leanpub registration response: {response.status_code}"
-            )
+    def process(response) -> Result:
+        if response.status_code == 404:
+            if "errors-" in response.text or "r_error_alert" in response.text:
+                return Result.available()
+            return Result.error("Unexpected Leanpub not-found response")
 
-        username_input = re.search(
-            r'<input\b(?=[^>]*\bname="username")[^>]*>',
-            response.text,
-            re.IGNORECASE,
-        )
-        value = (
-            re.search(r'\bvalue="([^"]*)"', username_input.group(), re.IGNORECASE)
-            if username_input
-            else None
-        )
-        if not value or html.unescape(value.group(1)) != user:
-            return Result.error("Leanpub did not echo the requested username")
+        if response.status_code != 200:
+            return Result.error(f"Unexpected status code: {response.status_code}")
 
-        if _USERNAME_TAKEN in response.text:
-            enrichment = generic_validate(
-                profile_url,
-                lambda profile_response: _profile_result(profile_response, user),
-                follow_redirects=True,
-            )
-            return enrichment if enrichment.extra else Result.taken()
-
-        if 'aria-invalid="true"' not in username_input.group():
-            return Result.available()
-
-        return Result.error("Leanpub returned an unknown username validation error")
+        return _profile_result(response, user)
 
     return generic_validate(
-        _REGISTRATION_URL,
+        profile_url,
         process,
-        method="POST",
-        data={
-            "title": "Username availability probe",
-            "publisherId": _PUBLISHER_ID,
-            "slug": "user-scanner-username-probe",
-            "languageId": _ENGLISH_ID,
-            "syncMode": "lexical",
-            "name": "Username Probe",
-            "username": user,
-            "email": "user-scanner@example.com",
-            "password": "x",  # Intentionally invalid; the probe cannot create an account.
-        },
         show_url=profile_url,
         follow_redirects=True,
     )
