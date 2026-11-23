@@ -13,29 +13,49 @@ GRAPHQL_URL = "https://www.tripadvisor.com/data/graphql/ids"
 PROFILE_QUERY_ID = "b7f6eb32ff629f60"
 
 
-def validate_tripadvisor(user):
+def validate_tripadvisor(user: str) -> Result:
     url = f"https://www.tripadvisor.com/Profile/{user}"
 
-    def process(response):
+    def process(response) -> Result:
+        if response.status_code == 404:
+            return Result.available()
+
         if response.status_code == 200:
-            extra, media = _fetch_profile(user)
+            if "<title>404 Not Found" in response.text or 'name="robots" content="noindex"' in response.text:
+                return Result.available()
+
+            profile, extra, media = _fetch_profile(user)
+            if isinstance(profile, dict):
+                if str(profile.get("username", "")).casefold() == user.casefold():
+                    return Result.taken(extra=extra, media=media)
+                return Result.available()
+
+            if profile is False:
+                return Result.available()
+
             return Result.taken(extra=extra, media=media)
+
         # Handles are case-canonicalized: a non-canonical casing 301-redirects
         # to the real profile, so a redirect back to /Profile/ still means the
         # account exists. Only a genuinely missing handle returns 404.
         if response.status_code in (301, 302):
             location = response.headers.get("location", "")
             if "/profile/" in location.lower():
-                extra, media = _fetch_profile(user)
+                profile, extra, media = _fetch_profile(user)
+                if isinstance(profile, dict):
+                    if str(profile.get("username", "")).casefold() == user.casefold():
+                        return Result.taken(extra=extra, media=media)
+                    return Result.available()
+                if profile is False:
+                    return Result.available()
                 return Result.taken(extra=extra, media=media)
-        if response.status_code == 404:
-            return Result.available()
+
         return Result.error(f"Unexpected status: {response.status_code}")
 
     return impersonate_validate(url, process, warmup_url=WARMUP_URL, show_url=url)
 
 
-def _fetch_profile(user: str) -> tuple[dict, dict]:
+def _fetch_profile(user: str) -> tuple[dict | bool | None, dict, dict]:
     payload = [
         {
             "variables": {"username": user},
@@ -48,11 +68,19 @@ def _fetch_profile(user: str) -> tuple[dict, dict]:
         response = impersonate_request(
             GRAPHQL_URL, method="POST", warmup_url=WARMUP_URL, json=payload
         )
-        profiles = response.json()[0]["data"]["memberProfiles"]
-        profile = profiles[0] if profiles else None
-        return _parse_profile(profile) if profile else ({}, {})
+        if response.status_code == 200:
+            data = response.json()
+            if data and isinstance(data, list) and "data" in data[0]:
+                profiles = data[0]["data"].get("memberProfiles")
+                if profiles and profiles[0] and isinstance(profiles[0], dict):
+                    profile = profiles[0]
+                    extra, media = _parse_profile(profile)
+                    return profile, extra, media
+                if profiles == [None] or profiles == []:
+                    return False, {}, {}
     except Exception:
-        return ({}, {})
+        pass
+    return None, {}, {}
 
 
 def _parse_profile(profile: dict) -> tuple[dict, dict]:
