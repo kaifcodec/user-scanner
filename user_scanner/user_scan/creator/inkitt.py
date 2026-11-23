@@ -1,39 +1,42 @@
 import json
+import re
 from urllib.parse import quote
 
-from user_scanner.core.orchestrator import generic_validate
+from user_scanner.core.impersonate import impersonate_validate
+from user_scanner.core.nextjs import iter_next_app_flight_chunks
 from user_scanner.core.result import Result
-
-USER_DATA_MARKER = "globalData.user = "
 
 
 def validate_inkitt(user: str) -> Result:
     url = f"https://www.inkitt.com/{quote(user, safe='')}"
 
     def process(response) -> Result:
-        try:
-            start = response.text.index(USER_DATA_MARKER) + len(USER_DATA_MARKER)
-            profile, _ = json.JSONDecoder().raw_decode(response.text[start:])
-        except (ValueError, TypeError):
-            return Result.error("Inkitt profile data was missing")
-
         if response.status_code == 404:
-            if (
-                profile == {}
-                and 'controller: "errors"' in response.text
-                and 'action: "not_found"' in response.text
-            ):
+            if "__next_error__" in response.text or "not-found" in response.text:
                 return Result.available()
             return Result.error("Unexpected Inkitt not-found response")
 
         if response.status_code != 200:
             return Result.error(f"Unexpected status code: {response.status_code}")
 
-        if (
-            not isinstance(profile, dict)
-            or not profile.get("id")
-            or str(profile.get("username", "")).casefold() != user.casefold()
-        ):
+        profile = None
+        for chunk in iter_next_app_flight_chunks(response.text):
+            if '"user":{' not in chunk:
+                continue
+            m = re.search(r'"user":(\{(?:[^{}]|(?:\{[^{}]*\}))*\})', chunk)
+            if m:
+                try:
+                    data = json.loads(m.group(1))
+                    if isinstance(data, dict) and data.get("username"):
+                        profile = data
+                        break
+                except Exception:
+                    pass
+
+        if not profile:
+            return Result.error("Inkitt profile data was missing")
+
+        if str(profile.get("username", "")).casefold() != user.casefold():
             return Result.error("Inkitt profile markers were missing")
 
         galatea = profile.get("user_galatea_settings")
@@ -95,6 +98,7 @@ def validate_inkitt(user: str) -> Result:
                 if isinstance(tier, dict) and tier.get("image")
             }
         )
+
         return Result.taken(extra=extra, media=media)
 
-    return generic_validate(url, process, show_url=url, follow_redirects=True)
+    return impersonate_validate(url, process, show_url=url)
