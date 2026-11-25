@@ -69,6 +69,18 @@ With **2720+ total scan vectors**—including **210+ email-integrated sites** an
 ---
 
 <p align="center">
+  <a href="https://mangoproxy.com/?utm_source=kaifcodec&utm_medium=partner&utm_campaign=kaifcodec_github" target="_blank">
+    <img width="700" style="max-width: 100%; height: auto;" alt="MangoProxy Banner" src="https://github.com/user-attachments/assets/a4fb6560-3dc7-4ab9-af45-edecc190dc48" />
+  </a>
+  <br>
+  <strong>Residential, ISP, Mobile, and Datacenter proxies built for stability, speed, and anonymity. Use promo code <em>KAIFCODEC</em> for 7% OFF Static ISP proxies!</strong>
+  <br>
+  <a href="https://mangoproxy.com/?utm_source=kaifcodec&utm_medium=partner&utm_campaign=kaifcodec_github" target="_blank"><strong>Get Started with 7% OFF →</strong></a>
+</p>
+
+---
+
+<p align="center">
   🔍 <strong>Looking for Phone Number OSINT?</strong> Check out our other project <a href="https://github.com/kaifcodec/phonsint"><strong>phonsint</strong></a> to uncover accounts, masked emails, and profile photos with zero SMS alerts. 
   <a href="https://github.com/kaifcodec/phonsint"><strong>Explore phonsint →</strong></a>
 </p>
